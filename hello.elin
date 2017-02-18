@@ -1,0 +1,15 @@
+(defn var-test ()
+  (let n1 10
+  (let n2 +1
+  (let x -1
+  (let f1 1.0
+  (let f2 +1.0
+  (let f3 -1.0
+  (let b1 true
+  (let b2 false
+  (let c 'a'
+  (let s "ab\nc")))))))))))
+
+(defn hello (msg)
+  (let x (concat "Hello, " msg)
+    (print x)))
