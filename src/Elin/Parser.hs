@@ -2,8 +2,8 @@ module Elin.Parser
   ( parse
   ) where
 
-import Elin.Type (SourceCode, EliAST(..))
+import Elin.Type
 
 
-parse :: SourceCode -> Either String EliAST
+parse :: SourceCode -> Either String SExpr
 parse = undefined
