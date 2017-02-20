@@ -15,6 +15,7 @@ library
   hs-source-dirs:      src
   build-depends:       base >= 4.7 && < 5
                      , text
+                     , containers
   default-language:    Haskell2010
   exposed-modules:     Elin.Main
                      , Elin.Parser
