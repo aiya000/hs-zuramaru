@@ -1,0 +1,3 @@
+(defn const-10 [] 10)
+(defn id [x] x)
+(defn first [x y] x)
