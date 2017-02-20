@@ -30,10 +30,15 @@ eliningen (エリ人間) is a lisp processor :smile:
         - `"abc"`
         - `"あ\nb"`
         - string is the list of characters
+- [ ] syntax
+    - [ ] def
+    - [ ] let
+    - [ ] lambda
+        - `(lambda [] foo)`
+        - `(lambda [a b c] bar)`
+    - [ ] defn
 - [ ] functions
     - [ ] print
-    - [ ] defn
-    - [ ] let
     - [ ] concat
     - [ ] +
     - [ ] -
@@ -46,5 +51,4 @@ eliningen (エリ人間) is a lisp processor :smile:
     - float exponential notation
 - functions
     - recurse
-    - and more
 - comment
