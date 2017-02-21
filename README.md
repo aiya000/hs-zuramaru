@@ -49,6 +49,7 @@ eliningen (エリ人間) is a lisp processor :smile:
 - literals
     - dictionary
     - float exponential notation
+    - integer hexadecimal notation
 - functions
     - recurse
 - comment
