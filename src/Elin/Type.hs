@@ -1,15 +1,9 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
-module Elin.Type
-  ( SourceCode
-  , SExpr (..)
-  , FuncName
-  , SyntaxType (..)
-  , EliLiteral (..)
-  , EliIdentifier
-  , EliScope
-  ) where
+module Elin.Type where
 
 import Data.Map.Lazy (Map)
 import Data.Text (Text)
@@ -19,37 +13,24 @@ import Data.Text (Text)
 -- this type doesn't mean the file of source code
 type SourceCode = Text
 
--- | n-ary tree with node type
-data SExpr = SNil                           -- ^ ex: ()
-           | SLit EliLiteral SExpr          -- ^ ex: (10) ~ SLit (EliInt 10) Nil
-           | SSyntax SyntaxType SExpr SExpr -- ^ ex: (let a (10)) ~ SSyntax Let (SLit (EliInt 10) Nil) Nil
-           | SVar VarName SExpr SExpr       -- ^ ex: (a (10)) ~ SVar "a" (SLit (EliInt 10) Nil) Nil
-           | SFunc FuncName SExpr SExpr     -- ^ ex: (concat [10] [20 30]) ~ SFunc "concat" (SLit (EliInt 10) Nil) (SLit (EliInt 20) (SLit (EliInt 30) Nil)
-  deriving (Show)
+-- | n-ary tree and terms
+data SExpr = SExpr [SExpr]  -- ^ Simple n-ary tree
+           | SQuote SExpr  -- ^ An evaluation Of specify SExpr is delayed
+           | forall a. (EliLiteral a, Show a) => SLit a
+           | SName Identifier  -- ^ The name of variable and function
+instance Show SExpr where
+  show (SExpr xs) = "S( " ++ show xs ++ " )"
+  show (SQuote x) = "'" ++ show x
+  show (SLit   x) = show x
+  show (SName  x) = show x
 
--- | The tag for a function
-type FuncName = EliIdentifier
+-- | The identifier for function and variable
+type Identifier = String
 
--- | The tag for a variable
-type VarName  = EliIdentifier
-
--- | The tag for a syntax
-data SyntaxType = Let
-                | Def
-                | Lambda
-                | Defn
-  deriving (Show)
-
-
--- | A literal type
-data EliLiteral = EliInt Int
-                | EliFloat Float
-                | EliBool Bool
-                | EliChar Char
-  deriving (Show)
-
--- | The identifier for function, variable and etc
-type EliIdentifier = String
-
--- | Global dynamic scope
-type EliScope = Map EliIdentifier SExpr
+-- | eliningen's value terms
+class EliLiteral a
+instance EliLiteral Int
+instance EliLiteral Float
+instance EliLiteral Char
+instance EliLiteral Bool
+instance EliLiteral String
