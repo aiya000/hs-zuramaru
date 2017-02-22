@@ -22,21 +22,24 @@ eliningen (エリ人間) is a lisp processor :smile:
     - [ ] character
         - `'a'`
         - `'あ'`
-    - [ ] list
-        - `[1 2 3]`
-        - `[[1] [2 3]]`
-        - The list is made by only one type
     - [ ] string
         - `"abc"`
         - `"あ\nb"`
-        - string is the list of characters
-- [ ] syntax
-    - [ ] def
+    - [ ] quote
+        - `'1`
+        - `'(1 2)`
+        - `'(1 (+ 2 3))`
+- [ ] macros
     - [ ] let
+    - [ ] defun
+        - `(defun foo () (+ 1 2))`
+        - `(defun bar (a b) (+ a b))`
+    - [ ] defvar
+        - `(defvar *baz* 10)`
+        - `(defvar *boo* (+ 10 20))`
     - [ ] lambda
-        - `(lambda [] foo)`
-        - `(lambda [a b c] bar)`
-    - [ ] defn
+        - `(lambda () 1)`
+        - `(lambda (a b c) '(c b a))`
 - [ ] functions
     - [ ] print
     - [ ] concat
