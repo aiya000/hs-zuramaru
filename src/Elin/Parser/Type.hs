@@ -5,7 +5,9 @@
 module Elin.Parser.Type
   ( ParseLog (..)
   , ElinState (..)
-  , ElinParser (..)
+  , parseLogs
+  , parseNestLevel
+  , ElinParser
   , runElinParser
   , tell
   , tellMsg

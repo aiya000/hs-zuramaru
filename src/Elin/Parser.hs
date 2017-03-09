@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Elin.Parser
-  ( ElinParser (..)
+  ( module Elin.Parser.Type
   , parseTest
   , parse
   , debugParse

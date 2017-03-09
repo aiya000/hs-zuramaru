@@ -1,8 +1,8 @@
+-- | Common types for eliningen
 module Elin.Type
   ( SourceCode
   , Token
   , SExpr (..)
-  , Identifier
   ) where
 
 import Data.Text (Text)
@@ -17,10 +17,7 @@ type SourceCode = Text
 type Token = P.Token Text
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
-           | Nil  -- ^ A representation of empty list
-           | Symbol Identifier  -- ^ Some element
+data SExpr = Cons SExpr SExpr -- ^ Appending list and list
+           | Nil              -- ^ A representation of empty list
+           | Symbol Text      -- ^ A name of variable, function or macro
   deriving (Show)
-
--- | Symbol identifier
-type Identifier = Text
