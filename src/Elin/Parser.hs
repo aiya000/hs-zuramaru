@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | The parsers
 module Elin.Parser
   ( module Elin.Parser.Type
   , parseTest
@@ -12,7 +13,7 @@ import Control.Monad (mapM_)
 import Data.List (foldl')
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import Elin.Parser.Type (ParseLog(..), ElinParser(..), runElinParser, tellMsg, tellItem, increaseNestLevel, decreaseNestLevel)
+import Elin.Parser.Type (ParseLog(..), ElinParser, runElinParser, tellMsg, tellItem, increaseNestLevel, decreaseNestLevel)
 import Elin.Type
 import Text.Megaparsec (ParseError, Dec)
 import qualified Data.Text as T
@@ -20,7 +21,7 @@ import qualified Data.Text.IO as TIO
 import qualified Text.Megaparsec as P
 
 
--- | Parse code, and show parse logs and result
+-- | Parse code to AST, and show AST and logs
 parseTest :: SourceCode -> IO ()
 parseTest x = do
   let (parseResult, logs) = debugParse x
@@ -36,16 +37,16 @@ parseTest x = do
     sourt (messages, itemResult) (Message msg)     = (msg:messages, itemResult)
     sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
 
--- | Parse code
+-- | Parse code to AST without logs
 parse :: SourceCode -> Either (ParseError Token Dec) SExpr
 parse = fst . debugParse
 
--- | Parse code with logging
+-- | Parse code to AST with logs
 debugParse :: SourceCode -> (Either (ParseError Token Dec) SExpr, [ParseLog])
 debugParse = runElinParser sexprParser
 
 
--- | Parse a text and tell it if the parsing is succeed
+-- | Parse a text and `tell` its result as an item, if the parsing is succeed
 identifier' :: ElinParser Text
 identifier' = do
   ident <- identifier
@@ -56,7 +57,7 @@ identifier' = do
     identifier :: ElinParser Text
     identifier = T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
 
--- | Parse a char and tell it if the parsing is succeed
+-- | Parse a char and `tell` its result as an item, if the parsing is succeed
 char' :: Char -> ElinParser Char
 char' c = do
   x <- P.char c
@@ -89,6 +90,7 @@ sexprParser = do
       decreaseNestLevel
       return $ Symbol ident
 
+-- Terminate or continue the parsing
 listParser :: ElinParser SExpr
 listParser = do
   P.space

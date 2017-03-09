@@ -9,11 +9,11 @@ import Data.Text (Text)
 import qualified Text.Megaparsec as P
 
 -- |
--- eliningen source code,
--- this type doesn't mean the file of source code
+-- Format of eliningen source code
+-- (this doesn't mean the file path of source code)
 type SourceCode = Text
 
--- | The source code tokens is Text in SourceCode
+-- | Format of parser token
 type Token = P.Token Text
 
 -- | n-ary tree and terms
