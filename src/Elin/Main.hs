@@ -4,6 +4,7 @@ import Control.Monad ((<$!>))
 import Safe (headMay)
 import System.Environment (getArgs)
 import qualified Data.Text as T
+import qualified Elin.Eval as EV
 import qualified Elin.Parser as EP
 
 
@@ -15,7 +16,11 @@ defaultMain = do
   maybeFilePath <- headMay <$> getArgs
   case maybeFilePath of
     Nothing -> putStrLn description
-    Just x  -> T.pack <$!> readFile x >>= EP.parseTest
+    Just x  -> do
+      code <- T.pack <$!> readFile x
+      case EP.debugParse code of
+        y@(Left _, _)    -> EP.parseErrorPretty y
+        (Right sexpr, _) -> EV.eval sexpr
 
 
 -- TODO

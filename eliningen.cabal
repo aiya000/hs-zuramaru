@@ -26,6 +26,7 @@ library
   default-language:    Haskell2010
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind
   exposed-modules:     Elin.Main
+                     , Elin.Eval
                      , Elin.Parser
                      , Elin.Parser.Type
                      , Elin.Type
