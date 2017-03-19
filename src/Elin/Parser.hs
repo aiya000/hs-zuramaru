@@ -4,6 +4,7 @@
 module Elin.Parser
   ( module Elin.Parser.Type
   , parseTest
+  , parseErrorPretty
   , parse
   , debugParse
   ) where
@@ -23,9 +24,12 @@ import qualified Text.Megaparsec as P
 
 -- | Parse code to AST, and show AST and logs
 parseTest :: SourceCode -> IO ()
-parseTest x = do
-  let (parseResult, logs) = debugParse x
-      (messages, item)    = foldl' sourt ([], "") logs
+parseTest = parseErrorPretty . debugParse
+
+-- | Pretty print result of debugParse
+parseErrorPretty :: (Either (ParseError Token Dec) SExpr, [ParseLog]) -> IO ()
+parseErrorPretty (parseResult, logs) = do
+  let (messages, item) = foldl' sourt ([], "") logs
   mapM_ TIO.putStrLn $ reverse messages
   putStrLn ""
   TIO.putStrLn item
