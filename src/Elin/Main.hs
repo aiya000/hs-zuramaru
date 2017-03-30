@@ -20,7 +20,8 @@ defaultMain = do
       code <- T.pack <$!> readFile x
       case EP.debugParse code of
         y@(Left _, _)    -> EP.parseErrorPretty y
-        (Right sexpr, _) -> EV.eval sexpr
+        --(Right sexpr, _) -> EV.eval sexpr
+        y@(Right sexpr, _) -> EP.parseErrorPretty y >> EV.eval sexpr
 
 
 -- TODO
