@@ -8,7 +8,7 @@ import Prelude hiding (lookup)
 import qualified Data.Map.Lazy as M
 
 -- | A EliIdent and value pair for a stack layer
-type NameLayer = Map EliIdent EliValue
+type NameLayer = Map EliIdent EliTerm
 
 -- |
 -- A layer.
@@ -18,17 +18,7 @@ type NameLayer = Map EliIdent EliValue
 type ProgramStack = [NameLayer]
 
 
--- | Eliningen builtin variables, macros and functions
-emptyProgramStack :: ProgramStack
-emptyProgramStack = M.fromList [ ("print", error "print")
-                               , ("defun", error "defun")
-                               , ("defvar", error "defvar")
-                               , ("lambda", error "lambda")
-                               , ("let", error "let")
-                               ]
-
-
 -- | O(nm)
-lookup :: EliIdent -> ProgramStack -> Maybe EliValue
+lookup :: EliIdent -> ProgramStack -> Maybe EliTerm
 lookup _ [] = Nothing
 lookup name (layer:stack) = M.lookup name layer <|> lookup name stack
