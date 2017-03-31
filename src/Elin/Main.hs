@@ -24,9 +24,9 @@ run = do
     Just x  -> do
       code <- T.pack <$!> readFile x
       case EP.debugParse code of
-        y@(Left _, _)    -> EP.parseErrorPretty y
+        y@(Left _, _)    -> EP.prettyPrint y
         --(Right sexpr, _) -> EV.eval sexpr
-        y@(Right sexpr, _) -> EP.parseErrorPretty y >> EV.eval sexpr
+        y@(Right sexpr, _) -> EP.prettyPrint y >> EV.eval sexpr
   where
     -- TODO
     description :: String
