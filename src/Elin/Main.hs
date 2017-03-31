@@ -1,4 +1,7 @@
-module Elin.Main (defaultMain) where
+module Elin.Main
+  ( run
+  , repl
+  ) where
 
 import Control.Monad ((<$!>))
 import Safe (headMay)
@@ -11,8 +14,8 @@ import qualified Elin.Parser as EP
 -- |
 -- Parse specified source code.
 -- And evaluate its result
-defaultMain :: IO ()
-defaultMain = do
+run :: IO ()
+run = do
   maybeFilePath <- headMay <$> getArgs
   case maybeFilePath of
     Nothing -> putStrLn description
@@ -22,8 +25,13 @@ defaultMain = do
         y@(Left _, _)    -> EP.parseErrorPretty y
         --(Right sexpr, _) -> EV.eval sexpr
         y@(Right sexpr, _) -> EP.parseErrorPretty y >> EV.eval sexpr
+  where
+    -- TODO
+    description :: String
+    description = "TODO (description)"
 
-
--- TODO
-description :: String
-description = "TODO (description)"
+-- |
+-- Startup REPL.
+-- Parse and evaluate successively
+repl :: IO ()
+repl = undefined

@@ -1,6 +1,6 @@
 module Main where
 
-import Elin.Main (defaultMain)
+import Elin.Main
 
 main :: IO ()
-main = defaultMain
+main = repl
