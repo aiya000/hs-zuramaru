@@ -27,6 +27,8 @@ library
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind
   exposed-modules:     Elin.Main
                      , Elin.Eval
+                     , Elin.Eval.Type
+                     , Elin.Eval.Type.ProgramStack
                      , Elin.Parser
                      , Elin.Parser.Type
                      , Elin.Type

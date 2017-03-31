@@ -51,13 +51,12 @@ module Elin.Eval
   ) where
 
 import Control.Monad (void)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.State.Class (MonadState, gets)
-import Control.Monad.State.Lazy (StateT, get, put, runStateT)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.State.Class (MonadState)
+import Control.Monad.State.Lazy (StateT, runStateT)
 import Elin.Eval.Type
 import Elin.Eval.Type.ProgramStack
 import Elin.Type (SExpr(..))
-import qualified Elin.Eval.Type.ProgramStack as PS
 
 -- | TODO
 newtype SExprEvaluator a = SExprEvaluator
@@ -65,11 +64,6 @@ newtype SExprEvaluator a = SExprEvaluator
   } deriving ( Functor, Applicative, Monad
              , MonadState ProgramStack, MonadIO
              )
-
--- | TODO
-type Something = Int
--- | TODO
-type NilType = [Something]
 
 
 -- | TODO
@@ -79,4 +73,4 @@ eval = void . flip runStateT [] . runSExprParser . execute
 
 execute :: SExpr -> SExprEvaluator EliTerm
 execute Nil = return $ EliTerm NoArg undefined
-execute (Cons _ _) = undefined
+execute _ = undefined
