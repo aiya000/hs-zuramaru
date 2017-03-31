@@ -5,17 +5,16 @@ module Elin.Main
   , repl
   ) where
 
-import Control.Exception.Safe (try, IOException)
 import Control.Monad ((<$!>), mapM)
 import Data.Maybe (isNothing)
 import Data.Text (Text)
 import Safe (headMay)
 import System.Environment (getArgs)
-import System.IO (hFlush, stdout)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Elin.Eval as EV
 import qualified Elin.Parser as EP
+import qualified System.Console.Readline as R
 
 
 -- |
@@ -42,7 +41,6 @@ run = do
 -- Parse and evaluate successively
 repl :: IO ()
 repl = do
-  putStr' "elin> "
   escapeIsRequired <- rep
   if escapeIsRequired
      then putStrLn "Bye"
@@ -55,16 +53,14 @@ rep = do
   maybeUnit  <- mapM evalPrintPhase maybeInput
   return $ isNothing maybeUnit
   where
-    -- Read stdin.
-    -- Return Nothing if stdin gives to interrupt
+    -- Read line from stdin.
+    -- If stdin gives to interrupt, return Nothing.
+    -- If it's not, return it and it is added to history file
     readPhase :: IO (Maybe Text)
     readPhase = do
-      input <- try (T.pack <$> getLine)
-      case input of
-        Left  e -> if isKeyboardInterrupt e
-                      then return Nothing
-                      else return . Just $ tShow e
-        Right a -> return $ Just a
+      maybeInput <- R.readline "elin> "
+      mapM R.addHistory maybeInput
+      return $ fmap T.pack maybeInput
 
     -- Evaluate 'read' result.
     evalPrintPhase :: Text -> IO ()
@@ -72,11 +68,6 @@ rep = do
       case EP.parse code of
         Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult --TODO: Optimize error column and representation
         Right ast        -> tPrint ast
-
---NOTE: How is another cool way ?
--- | Judge what IOException is result of stdio interruption
-isKeyboardInterrupt :: IOException -> Bool
-isKeyboardInterrupt e = show e == "<stdin>: hGetLine: end of file"
 
 -- | Convert Show instance as Text
 tShow :: Show a => a -> Text
@@ -93,7 +84,3 @@ tPutStrLn = TIO.putStrLn . T.pack
 -- And do Data.Text.IO.putStrLn it
 tPrint :: Show a => a -> IO ()
 tPrint = TIO.putStrLn . tShow
-
--- | Do putStr directly (Don't lazy)
-putStr' :: String -> IO ()
-putStr' x = putStr x >> hFlush stdout
