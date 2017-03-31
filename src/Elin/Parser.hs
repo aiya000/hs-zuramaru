@@ -5,6 +5,7 @@ module Elin.Parser
   ( module Elin.Parser.Type
   , parseTest
   , prettyPrint
+  , P.parseErrorPretty
   , parse
   , debugParse
   ) where
