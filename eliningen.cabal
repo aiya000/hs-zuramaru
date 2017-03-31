@@ -33,7 +33,7 @@ library
                      , Elin.Parser.Type
                      , Elin.Type
 
-executable elin-run
+executable elin
   hs-source-dirs:      app
   main-is:             Main.hs
   default-language:    Haskell2010
