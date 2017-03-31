@@ -3,9 +3,11 @@ module Elin.Main
   , repl
   ) where
 
+import Control.Exception.Safe (try, IOException)
 import Control.Monad ((<$!>))
 import Safe (headMay)
 import System.Environment (getArgs)
+import System.IO (hFlush, stdout)
 import qualified Data.Text as T
 import qualified Elin.Eval as EV
 import qualified Elin.Parser as EP
@@ -34,4 +36,27 @@ run = do
 -- Startup REPL.
 -- Parse and evaluate successively
 repl :: IO ()
-repl = undefined
+repl = do
+  putStr' "elin> "
+  escapeIsRequired <- rep
+  if escapeIsRequired
+     then putStrLn "Bye"
+     else repl
+  where
+    rep :: IO Bool
+    rep = do
+      input <- try getLine
+      case input of
+        Left  e -> return $ isKeyboardInterrupt e
+        Right a -> do
+          putStrLn a
+          return False
+
+    --NOTE: How is another cool way ?
+    isKeyboardInterrupt :: IOException -> Bool
+    isKeyboardInterrupt e = show e == "<stdin>: hGetLine: end of file"
+
+
+-- | Strict evaluate version putStr
+putStr' :: String -> IO ()
+putStr' x = putStr x >> hFlush stdout
