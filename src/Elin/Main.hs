@@ -6,7 +6,7 @@ module Elin.Main
   ) where
 
 import Control.Monad ((<$!>), mapM)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, isJust)
 import Data.Text (Text)
 import Safe (headMay)
 import System.Environment (getArgs)
@@ -50,8 +50,10 @@ repl = do
 -- | Read, eval and print
 rep :: IO Bool
 rep = do
+  maybeSome <- headMay <$> getArgs  --TODO: Use some option library
+  let inDebugMode = isJust maybeSome
   maybeInput <- readPhase
-  maybeUnit  <- mapM evalPrintPhase maybeInput
+  maybeUnit  <- mapM (evalPrintPhase inDebugMode) maybeInput
   return $ isNothing maybeUnit
   where
     -- Read line from stdin.
@@ -64,11 +66,12 @@ rep = do
       return $ fmap T.pack maybeInput
 
     -- Evaluate 'read' result.
-    evalPrintPhase :: Text -> IO ()
-    evalPrintPhase code = do
+    evalPrintPhase :: Bool -> Text -> IO ()
+    evalPrintPhase inDebugMode code = do
       case EP.parse code of
         Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult --TODO: Optimize error column and representation
-        Right ast        -> TIO.putStrLn $ ET.lispnize ast
+        Right ast        -> if inDebugMode then TIO.putStrLn $ T.pack . show $ ast  -- Show ast directly
+                                           else TIO.putStrLn $ ET.lispnize ast
 
 -- |
 -- Regard String as Text.
