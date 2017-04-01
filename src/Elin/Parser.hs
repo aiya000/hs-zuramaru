@@ -14,8 +14,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
 import Data.List (foldl')
 import Data.Monoid ((<>))
-import Data.Text (Text)
-import Elin.Parser.Type (ParseLog(..), ElinParser, runElinParser, tellMsg, tellItem, increaseNestLevel, decreaseNestLevel)
+import Elin.Parser.Type
 import Elin.Type
 import Text.Megaparsec (ParseError, Dec)
 import qualified Data.Text as T
@@ -51,17 +50,6 @@ debugParse :: SourceCode -> (Either (ParseError Token Dec) SExpr, [ParseLog])
 debugParse = runElinParser sexprParser
 
 
--- | Parse a text and `tell` its result as an item, if the parsing is succeed
-identifier' :: ElinParser Text
-identifier' = do
-  ident <- identifier
-  tellItem $ ident <> " "
-  return ident
-  where
-    -- Parse an identifier
-    identifier :: ElinParser Text
-    identifier = T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
-
 -- | Parse a char and `tell` its result as an item, if the parsing is succeed
 char' :: Char -> ElinParser Char
 char' c = do
@@ -74,7 +62,7 @@ sexprParser :: ElinParser SExpr
 sexprParser = do
   P.space
   tellMsg "-> sexprParser"
-  result <- consParser <|> quoteParser <|> symbolParser
+  result <- consParser <|> quoteParser <|> termParser
   tellMsg "<- leave from sexprParser"
   return result
   where
@@ -88,12 +76,25 @@ sexprParser = do
       tellMsg ".  quoteParser"
       increaseNestLevel
       x <- sexprParser
-      return $ Cons (Symbol "quote") x
-    symbolParser = do
-      ident <- identifier'
-      tellMsg ".  symbolParser"
+      return $ Quote x
+    termParser = do
+      term <- intParser <|> nameParser
+      tellMsg ".  termParser"
       decreaseNestLevel
-      return $ Symbol ident
+      return $ TermItem term
+
+    intParser :: ElinParser ElinTerm
+    intParser = do
+      digit <- P.some P.digitChar
+      let digitText = T.pack . show $ digit
+      tellItem $ digitText <> " "
+      return $ TermInt $ read digit
+
+    nameParser :: ElinParser ElinTerm
+    nameParser = do
+      name <- T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
+      tellItem $ name <> " "
+      return $ TermName name
 
 -- Terminate or continue the parsing
 listParser :: ElinParser SExpr

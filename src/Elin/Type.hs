@@ -3,6 +3,7 @@ module Elin.Type
   ( SourceCode
   , Token
   , SExpr (..)
+  , ElinTerm (..)
   ) where
 
 import Data.Text (Text)
@@ -13,11 +14,18 @@ import qualified Text.Megaparsec as P
 -- (this doesn't mean the file path of source code)
 type SourceCode = Text
 
+--TODO: Rename to ElinToken
 -- | Format of parser token
 type Token = P.Token Text
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr -- ^ Appending list and list
-           | Nil              -- ^ A representation of empty list
-           | Symbol Text      -- ^ A name of variable, function or macro
+data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
+           | Nil               -- ^ A representation of empty list
+           | Quote SExpr       -- ^ For lazy evaluation
+           | TermItem ElinTerm -- ^ Some term item
+  deriving (Show)
+
+-- | A literal, a name of variable, function or macro for eliningen language
+data ElinTerm = TermInt Int    -- ^ Integer literal
+              | TermName Text  -- ^ Name of variable, function or macro
   deriving (Show)
