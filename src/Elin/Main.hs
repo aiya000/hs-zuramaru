@@ -14,6 +14,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Elin.Eval as EV
 import qualified Elin.Parser as EP
+import qualified Elin.Type as ET
 import qualified System.Console.Readline as R
 
 
@@ -67,20 +68,10 @@ rep = do
     evalPrintPhase code = do
       case EP.parse code of
         Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult --TODO: Optimize error column and representation
-        Right ast        -> tPrint ast
-
--- | Convert Show instance as Text
-tShow :: Show a => a -> Text
-tShow = T.pack . show
+        Right ast        -> TIO.putStrLn $ ET.lispnize ast
 
 -- |
 -- Regard String as Text.
 -- And do putStrLn it
 tPutStrLn :: String -> IO ()
 tPutStrLn = TIO.putStrLn . T.pack
-
--- |
--- Convert Show instance as Text.
--- And do Data.Text.IO.putStrLn it
-tPrint :: Show a => a -> IO ()
-tPrint = TIO.putStrLn . tShow

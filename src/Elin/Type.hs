@@ -1,12 +1,17 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Common types for eliningen
 module Elin.Type
   ( SourceCode
   , ElinToken
   , SExpr (..)
   , ElinTerm (..)
+  , lispnize
   ) where
 
+import Data.Monoid ((<>))
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Text.Megaparsec as P
 
 -- |
@@ -28,3 +33,12 @@ data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
 data ElinTerm = TermInt Int    -- ^ Integer literal
               | TermName Text  -- ^ Name of variable, function or macro
   deriving (Show)
+
+
+-- | Convert SExpr to readable lisp syntax
+lispnize :: SExpr -> Text
+lispnize Nil = "nil"
+lispnize (Quote x) = "'" <> lispnize x
+lispnize (TermItem (TermInt  x)) = T.pack . show $ x
+lispnize (TermItem (TermName x)) = x
+lispnize (Cons l r) = "(" <> lispnize l <> " " <> lispnize r <> ")"
