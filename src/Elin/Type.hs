@@ -1,7 +1,7 @@
 -- | Common types for eliningen
 module Elin.Type
   ( SourceCode
-  , Token
+  , ElinToken
   , SExpr (..)
   , ElinTerm (..)
   ) where
@@ -14,9 +14,8 @@ import qualified Text.Megaparsec as P
 -- (this doesn't mean the file path of source code)
 type SourceCode = Text
 
---TODO: Rename to ElinToken
 -- | Format of parser token
-type Token = P.Token Text
+type ElinToken = P.Token Text
 
 -- | n-ary tree and terms
 data SExpr = Cons SExpr SExpr  -- ^ Appending list and list

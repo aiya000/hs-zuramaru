@@ -22,7 +22,7 @@ import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import Elin.Type (Token)
+import Elin.Type
 import Lens.Micro.Mtl ((%=), (+=), (-=))
 import Lens.Micro.TH (makeLenses)
 import Text.Megaparsec (ParsecT, ParseError, Dec, runParserT)
@@ -49,7 +49,7 @@ newtype ElinParser a = ElinParser { _runElinParser :: ParsecT Dec Text (State El
            )
 
 -- | Run parser and extract result and logs
-runElinParser :: ElinParser a -> Text -> (Either (ParseError Token Dec) a, [ParseLog])
+runElinParser :: ElinParser a -> Text -> (Either (ParseError ElinToken Dec) a, [ParseLog])
 runElinParser parser source =
   let initialState = ElinState [] 0
       bareness     = _runElinParser parser

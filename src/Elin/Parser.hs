@@ -27,7 +27,7 @@ parseTest :: SourceCode -> IO ()
 parseTest = prettyPrint . debugParse
 
 -- | Pretty print result of debugParse
-prettyPrint :: (Either (ParseError Token Dec) SExpr, [ParseLog]) -> IO ()
+prettyPrint :: (Either (ParseError ElinToken Dec) SExpr, [ParseLog]) -> IO ()
 prettyPrint (parseResult, logs) = do
   let (messages, item) = foldl' sourt ([], "") logs
   mapM_ TIO.putStrLn $ reverse messages
@@ -42,11 +42,11 @@ prettyPrint (parseResult, logs) = do
     sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
 
 -- | Parse code to AST without logs
-parse :: SourceCode -> Either (ParseError Token Dec) SExpr
+parse :: SourceCode -> Either (ParseError ElinToken Dec) SExpr
 parse = fst . debugParse
 
 -- | Parse code to AST with logs
-debugParse :: SourceCode -> (Either (ParseError Token Dec) SExpr, [ParseLog])
+debugParse :: SourceCode -> (Either (ParseError ElinToken Dec) SExpr, [ParseLog])
 debugParse = runElinParser sexprParser
 
 
