@@ -1,14 +1,14 @@
 -- | For `ProgramStack` manupilation
-module Elin.Eval.Type.ProgramStack where
+module Maru.Eval.Type.ProgramStack where
 
 import Control.Applicative ((<|>))
 import Data.Map.Lazy (Map)
-import Elin.Eval.Type
+import Maru.Eval.Type
 import Prelude hiding (lookup)
 import qualified Data.Map.Lazy as M
 
--- | A EliIdent and value pair for a stack layer
-type NameLayer = Map EliIdent EliTerm
+-- | A MaruIdent and value pair for a stack layer
+type NameLayer = Map MaruIdent MaruTerm
 
 -- |
 -- A layer.
@@ -19,6 +19,6 @@ type ProgramStack = [NameLayer]
 
 
 -- | O(nm)
-lookup :: EliIdent -> ProgramStack -> Maybe EliTerm
+lookup :: MaruIdent -> ProgramStack -> Maybe MaruTerm
 lookup _ [] = Nothing
 lookup name (layer:stack) = M.lookup name layer <|> lookup name stack

@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | The parsers
-module Elin.Parser
-  ( module Elin.Parser.Type
+module Maru.Parser
+  ( module Maru.Parser.Type
   , parseTest
   , prettyPrint
   , P.parseErrorPretty
@@ -14,8 +14,8 @@ import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
 import Data.List (foldl')
 import Data.Monoid ((<>))
-import Elin.Parser.Type
-import Elin.Type
+import Maru.Parser.Type
+import Maru.Type
 import Text.Megaparsec (ParseError, Dec)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -27,7 +27,7 @@ parseTest :: SourceCode -> IO ()
 parseTest = prettyPrint . debugParse
 
 -- | Pretty print result of debugParse
-prettyPrint :: (Either (ParseError ElinToken Dec) SExpr, [ParseLog]) -> IO ()
+prettyPrint :: (Either (ParseError MaruToken Dec) SExpr, [ParseLog]) -> IO ()
 prettyPrint (parseResult, logs) = do
   let (messages, item) = foldl' sourt ([], "") logs
   mapM_ TIO.putStrLn $ reverse messages
@@ -42,23 +42,23 @@ prettyPrint (parseResult, logs) = do
     sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
 
 -- | Parse code to AST without logs
-parse :: SourceCode -> Either (ParseError ElinToken Dec) SExpr
+parse :: SourceCode -> Either (ParseError MaruToken Dec) SExpr
 parse = fst . debugParse
 
 -- | Parse code to AST with logs
-debugParse :: SourceCode -> (Either (ParseError ElinToken Dec) SExpr, [ParseLog])
-debugParse = runElinParser sexprParser
+debugParse :: SourceCode -> (Either (ParseError MaruToken Dec) SExpr, [ParseLog])
+debugParse = runMaruParser sexprParser
 
 
 -- | Parse a char and `tell` its result as an item, if the parsing is succeed
-char' :: Char -> ElinParser Char
+char' :: Char -> MaruParser Char
 char' c = do
   x <- P.char c
   tellItem $ T.singleton c
   return x
 
 --NOTE: Can I logging with more elegant code?
-sexprParser :: ElinParser SExpr
+sexprParser :: MaruParser SExpr
 sexprParser = do
   P.space
   tellMsg "-> sexprParser"
@@ -83,21 +83,21 @@ sexprParser = do
       decreaseNestLevel
       return $ TermItem term
 
-    intParser :: ElinParser ElinTerm
+    intParser :: MaruParser MaruTerm
     intParser = do
       digit <- P.some P.digitChar
       let digitText = T.pack . show $ digit
       tellItem $ digitText <> " "
       return $ TermInt $ read digit
 
-    nameParser :: ElinParser ElinTerm
+    nameParser :: MaruParser MaruTerm
     nameParser = do
       name <- T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
       tellItem $ name <> " "
       return $ TermName name
 
 -- Terminate or continue the parsing
-listParser :: ElinParser SExpr
+listParser :: MaruParser SExpr
 listParser = do
   P.space
   tellMsg "-> listParser"

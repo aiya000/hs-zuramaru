@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Common types for eliningen
-module Elin.Type
+-- | Common types for zuramaru
+module Maru.Type
   ( SourceCode
-  , ElinToken
+  , MaruToken
   , SExpr (..)
-  , ElinTerm (..)
+  , MaruTerm (..)
   , lispnize
   ) where
 
@@ -15,22 +15,22 @@ import qualified Data.Text as T
 import qualified Text.Megaparsec as P
 
 -- |
--- Format of eliningen source code
+-- Format of zuramaru source code
 -- (this doesn't mean the file path of source code)
 type SourceCode = Text
 
 -- | Format of parser token
-type ElinToken = P.Token Text
+type MaruToken = P.Token Text
 
 -- | n-ary tree and terms
 data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
            | Nil               -- ^ A representation of empty list
            | Quote SExpr       -- ^ For lazy evaluation
-           | TermItem ElinTerm -- ^ Some term item
+           | TermItem MaruTerm -- ^ Some term item
   deriving (Show)
 
--- | A literal, a name of variable, function or macro for eliningen language
-data ElinTerm = TermInt Int    -- ^ Integer literal
+-- | A literal, a name of variable, function or macro for zuramaru language
+data MaruTerm = TermInt Int    -- ^ Integer literal
               | TermName Text  -- ^ Name of variable, function or macro
   deriving (Show)
 

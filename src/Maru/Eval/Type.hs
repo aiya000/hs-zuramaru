@@ -2,12 +2,12 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | TODO
-module Elin.Eval.Type where
+module Maru.Eval.Type where
 
 import Data.Text (Text)
 
--- | EliIdent for variable, macro, and function
-type EliIdent = Text
+-- | MaruIdent for variable, macro, and function
+type MaruIdent = Text
 
 -- |
 -- Num of a term's argument
@@ -18,7 +18,7 @@ data ArgumentNum = ConstNum Int
                  | NoArg
 
 -- | A dynamic typed value
-data EliTerm = forall a. EliTerm
+data MaruTerm = forall a. MaruTerm
   { termArgNum :: ArgumentNum
   , termValue  :: a
   }

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Elin.Main
+module Maru.Main
   ( run
   , repl
   ) where
@@ -12,9 +12,9 @@ import Safe (headMay)
 import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Elin.Eval as EV
-import qualified Elin.Parser as EP
-import qualified Elin.Type as ET
+import qualified Maru.Eval as EV
+import qualified Maru.Parser as EP
+import qualified Maru.Type as ET
 import qualified System.Console.Readline as R
 
 
@@ -61,7 +61,7 @@ rep = do
     -- If it's not, return it and it is added to history file
     readPhase :: IO (Maybe Text)
     readPhase = do
-      maybeInput <- R.readline "elin> "
+      maybeInput <- R.readline "zuramaru> "
       mapM R.addHistory maybeInput
       return $ fmap T.pack maybeInput
 

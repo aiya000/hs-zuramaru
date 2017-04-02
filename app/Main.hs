@@ -1,6 +1,6 @@
 module Main where
 
-import Elin.Main
+import Maru.Main
 
 main :: IO ()
 main = repl

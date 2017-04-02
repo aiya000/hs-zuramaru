@@ -46,7 +46,7 @@
 --               ...    ...
 
 -- | TODO
-module Elin.Eval
+module Maru.Eval
   ( eval
   ) where
 
@@ -54,9 +54,9 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.State.Lazy (StateT, runStateT)
-import Elin.Eval.Type
-import Elin.Eval.Type.ProgramStack
-import Elin.Type (SExpr(..))
+import Maru.Eval.Type
+import Maru.Eval.Type.ProgramStack
+import Maru.Type (SExpr(..))
 
 -- | TODO
 newtype SExprEvaluator a = SExprEvaluator
@@ -71,6 +71,6 @@ eval :: SExpr -> IO ()
 eval = void . flip runStateT [] . runSExprParser . execute
 
 
-execute :: SExpr -> SExprEvaluator EliTerm
-execute Nil = return $ EliTerm NoArg undefined
+execute :: SExpr -> SExprEvaluator MaruTerm
+execute Nil = return $ MaruTerm NoArg undefined
 execute _ = undefined
