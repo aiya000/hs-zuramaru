@@ -67,14 +67,27 @@ rep = do
 
     -- Evaluate 'read' result.
     evalPrintPhase :: Bool -> Text -> IO ()
-    evalPrintPhase inDebugMode code = do
+    evalPrintPhase False code = do
       case EP.parse code of
         Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult --TODO: Optimize error column and representation
-        Right ast        -> if inDebugMode then TIO.putStrLn $ T.pack . show $ ast  -- Show ast directly
-                                           else TIO.putStrLn $ ET.lispnize ast
+        Right ast        -> TIO.putStrLn $ ET.lispnize ast
+
+    -- Debug mode
+    evalPrintPhase True code = do
+      case EP.debugParse code of
+        x@(Left _, _)  -> EP.prettyPrint x
+        (Right ast, _) -> do
+          tPrint ast -- Show ast directly
+          TIO.putStrLn $ ET.lispnize ast
+
 
 -- |
 -- Regard String as Text.
--- And do putStrLn it
+-- And apply putStrLn to it
 tPutStrLn :: String -> IO ()
 tPutStrLn = TIO.putStrLn . T.pack
+
+-- | Convert a to Text.
+-- And apply Data.Text.IO.putStrLn to it
+tPrint :: Show a => a -> IO ()
+tPrint = TIO.putStrLn . T.pack . show
