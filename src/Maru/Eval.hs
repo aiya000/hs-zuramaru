@@ -72,5 +72,4 @@ eval = void . flip runStateT [] . runSExprParser . execute
 
 
 execute :: SExpr -> SExprEvaluator MaruTerm
-execute Nil = return $ MaruTerm NoArg undefined
 execute _ = undefined
