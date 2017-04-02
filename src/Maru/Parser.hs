@@ -50,70 +50,35 @@ debugParse :: SourceCode -> (Either (ParseError MaruToken Dec) SExpr, [ParseLog]
 debugParse = runMaruParser sexprParser
 
 
--- | Parse a char and `tell` its result as an item, if the parsing is succeed
-char' :: Char -> MaruParser Char
-char' c = do
-  x <- P.char c
-  tellItem $ T.singleton c
-  return x
-
---NOTE: Can I logging with more elegant code?
 sexprParser :: MaruParser SExpr
 sexprParser = do
   P.space
-  tellMsg "-> sexprParser"
-  result <- consParser <|> quoteParser <|> termParser
-  tellMsg "<- leave from sexprParser"
-  return result
+  atomParser <|> listParser
   where
-    consParser = do
-      char' '('
-      tellMsg ".  consParser"
-      increaseNestLevel
-      listParser
-    quoteParser = do
-      char' '\''
-      tellMsg ".  quoteParser"
-      increaseNestLevel
-      x <- sexprParser
-      return $ Quote x
-    termParser = do
-      term <- intParser <|> nameParser
-      tellMsg ".  termParser"
-      decreaseNestLevel
-      return $ TermItem term
+    atomParser :: MaruParser SExpr
+    atomParser = Atom <$> (numberParser <|> symbolParser)
+
+    listParser :: MaruParser SExpr
+    listParser = do
+      P.char '('
+      P.space
+      xs <- P.many sexprParser
+      P.space
+      P.char ')'
+      P.space
+      return $ scottEncode xs
+
+    numberParser :: MaruParser MaruTerm
+    numberParser = intParser
+
+    symbolParser :: MaruParser MaruTerm
+    symbolParser = TermSymbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
 
     intParser :: MaruParser MaruTerm
-    intParser = do
-      digit <- P.some P.digitChar
-      let digitText = T.pack . show $ digit
-      tellItem $ digitText <> " "
-      return $ TermInt $ read digit
+    intParser = TermInt . read <$> P.some P.digitChar
 
-    nameParser :: MaruParser MaruTerm
-    nameParser = do
-      name <- T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
-      tellItem $ name <> " "
-      return $ TermName name
 
--- Terminate or continue the parsing
-listParser :: MaruParser SExpr
-listParser = do
-  P.space
-  tellMsg "-> listParser"
-  result <- endOfParen <|> childSExprParser
-  tellMsg "<- leave from listParser"
-  decreaseNestLevel
-  return result
-  where
-    endOfParen = do
-      char' ')'
-      tellMsg ".  endOfParen"
-      return Nil
-    childSExprParser = do
-      tellMsg ".  childSExprParser"
-      increaseNestLevel
-      x <- sexprParser
-      increaseNestLevel
-      y <- listParser
-      return $ Cons x y
+-- | Normalize each SExpr
+scottEncode :: [SExpr] -> SExpr
+scottEncode [] = Nil
+scottEncode (x:xs) = Cons x $ scottEncode xs
