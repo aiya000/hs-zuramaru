@@ -65,20 +65,20 @@ rep = do
       mapM R.addHistory maybeInput
       return $ fmap T.pack maybeInput
 
-    -- Evaluate 'read' result.
+    -- Evaluate 'read' result
     evalPrintPhase :: Bool -> Text -> IO ()
     evalPrintPhase False code = do
       case EP.parse code of
-        Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult --TODO: Optimize error column and representation
-        Right ast        -> TIO.putStrLn $ ET.lispnize ast
+        Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult  --TODO: Optimize error column and representation
+        Right ast        -> TIO.putStrLn $ ET.toSyntax ast
 
-    -- Debug mode
+    -- Evaluate 'read' result with debugging
     evalPrintPhase True code = do
       case EP.debugParse code of
         x@(Left _, _)  -> EP.prettyPrint x
         (Right ast, _) -> do
-          tPrint ast -- Show ast directly
-          TIO.putStrLn $ ET.lispnize ast
+          tPrint ast  -- Show ast directly
+          TIO.putStrLn $ ET.toSyntax ast
 
 
 -- |
@@ -87,7 +87,8 @@ rep = do
 tPutStrLn :: String -> IO ()
 tPutStrLn = TIO.putStrLn . T.pack
 
--- | Convert a to Text.
+-- |
+-- Convert a to Text.
 -- And apply Data.Text.IO.putStrLn to it
 tPrint :: Show a => a -> IO ()
 tPrint = TIO.putStrLn . T.pack . show

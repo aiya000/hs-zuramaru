@@ -6,13 +6,16 @@ module Maru.Type
   , MaruToken
   , SExpr (..)
   , MaruTerm (..)
-  , lispnize
+  , scottEncode
+  , toSyntax
   ) where
 
+import Data.List (foldl1')
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import qualified Data.Text as T
+import TextShow (TextShow, showb, showt)
 import qualified Text.Megaparsec as P
+import qualified TextShow as TS
 
 -- |
 -- Format of zuramaru source code
@@ -30,15 +33,46 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
   deriving (Show)
 
 -- | A literal, a name of variable, function or macro for zuramaru language
-data MaruTerm = TermInt Int    -- ^ Integer literal
-              | TermSymbol Text  -- ^ Name of variable, function or macro. (this includes nil)
+data MaruTerm = TermInt Int     -- ^ Integer literal
+              | TermSymbol Text -- ^ Name of variable, function or macro. (this includes nil)
   deriving (Show)
 
+instance TextShow MaruTerm where
+  showb (TermInt x)    = showb x
+  showb (TermSymbol x) = TS.fromText x
 
--- | Convert SExpr to readable lisp syntax
-lispnize :: SExpr -> Text
-lispnize Nil = ""
-lispnize (Atom (TermInt    x)) = T.pack . show $ x
-lispnize (Atom (TermSymbol x)) = x
-lispnize (Quote x)  = "'" <> lispnize x
-lispnize (Cons l r) = "(" <> lispnize l <> " " <> lispnize r <> ")"
+
+-- | Concatenate SExpr by Cons
+--
+-- >>> let xs = [(Atom (TermInt 1)), (Cons (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil)) Nil)] -- [1, (2 3)]
+-- >>> scottEncode xs
+-- Cons (Atom (TermInt 1)) (Cons (Cons (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil)) Nil) Nil)
+-- >>> let ys = [Atom (TermInt 1), Atom (TermInt 2), Atom (TermInt 3)] -- [1, 2, 3]
+-- >>> scottEncode ys
+-- Cons (Atom (TermInt 1)) (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil))
+-- >>> let zs = [Atom (TermInt 1), Nil] -- [1, ()]
+-- >>> scottEncode zs
+-- Cons (Atom (TermInt 1)) (Cons Nil Nil)
+scottEncode :: [SExpr] -> SExpr
+scottEncode [] = Nil
+scottEncode (x:xs) = Cons x $ scottEncode xs
+
+-- | The inverse function of @scottEncode@
+scottDecode :: SExpr -> [SExpr]
+scottDecode (Cons x y) = x : scottDecode y
+scottDecode Nil = []
+scottDecode (Atom x) = [Atom x]
+
+
+-- |
+-- Convert AST to human readable syntax.
+-- This maybe the inverse function of the parser.
+toSyntax :: SExpr -> Text
+toSyntax (Cons x y) =
+  let innerListSyntax = foldl1' (<<>>) . map toSyntax $ scottDecode y
+  in "(" <> toSyntax x <<>> innerListSyntax <> ")"
+  where
+    a <<>> b = a <> " " <> b
+
+toSyntax (Atom x) = showt x
+toSyntax Nil = "()"

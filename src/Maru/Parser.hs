@@ -76,9 +76,3 @@ sexprParser = do
 
     intParser :: MaruParser MaruTerm
     intParser = TermInt . read <$> P.some P.digitChar
-
-
--- | Normalize each SExpr
-scottEncode :: [SExpr] -> SExpr
-scottEncode [] = Nil
-scottEncode (x:xs) = Cons x $ scottEncode xs

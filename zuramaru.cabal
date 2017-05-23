@@ -24,6 +24,7 @@ library
                      , safe
                      , safe-exceptions
                      , text
+                     , text-show
   default-language:    Haskell2010
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind
   exposed-modules:     Maru.Main
