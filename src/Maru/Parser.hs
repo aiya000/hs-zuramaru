@@ -56,7 +56,7 @@ sexprParser = do
   atomParser <|> listParser
   where
     atomParser :: MaruParser SExpr
-    atomParser = Atom <$> (numberParser <|> symbolParser)
+    atomParser = Atom <$> (numberParser <|> symbolParser) <* P.space
 
     listParser :: MaruParser SExpr
     listParser = do

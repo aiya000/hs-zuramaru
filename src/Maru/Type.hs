@@ -10,7 +10,7 @@ module Maru.Type
   , toSyntax
   ) where
 
-import Data.List (foldl1')
+import Data.List (foldl')
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import TextShow (TextShow, showb, showt)
@@ -57,6 +57,7 @@ scottEncode :: [SExpr] -> SExpr
 scottEncode [] = Nil
 scottEncode (x:xs) = Cons x $ scottEncode xs
 
+--TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
 -- | The inverse function of @scottEncode@
 scottDecode :: SExpr -> [SExpr]
 scottDecode (Cons x y) = x : scottDecode y
@@ -64,15 +65,18 @@ scottDecode Nil = []
 scottDecode (Atom x) = [Atom x]
 
 
+--TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
 -- |
 -- Convert AST to human readable syntax.
 -- This maybe the inverse function of the parser.
 toSyntax :: SExpr -> Text
 toSyntax (Cons x y) =
-  let innerListSyntax = foldl1' (<<>>) . map toSyntax $ scottDecode y
+  let innerListSyntax = foldl' (<<>>) "" $ map toSyntax $ scottDecode y
   in "(" <> toSyntax x <<>> innerListSyntax <> ")"
   where
-    a <<>> b = a <> " " <> b
+    a  <<>> "" = a
+    "" <<>> b  = b
+    a  <<>> b  = a <> " " <> b
 
 toSyntax (Atom x) = showt x
 toSyntax Nil = "()"
