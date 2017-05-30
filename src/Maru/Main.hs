@@ -12,9 +12,9 @@ import Safe (headMay)
 import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Maru.Eval as EV
-import qualified Maru.Parser as EP
-import qualified Maru.Type as ET
+import qualified Maru.Eval as Eval
+import qualified Maru.Parser as Parser
+import qualified Maru.Type as MT
 import qualified System.Console.Readline as R
 
 
@@ -28,12 +28,11 @@ run = do
     Nothing -> putStrLn description
     Just x  -> do
       code <- T.pack <$!> readFile x
-      case EP.debugParse code of
-        y@(Left _, _)    -> EP.prettyPrint y
-        --(Right sexpr, _) -> EV.eval sexpr
-        y@(Right sexpr, _) -> EP.prettyPrint y >> EV.eval sexpr
+      case Parser.debugParse code of
+        y@(Left _, _)      -> Parser.prettyPrint y
+        y@(Right sexpr, _) -> Parser.prettyPrint y >> Eval.eval sexpr
   where
-    -- TODO
+    --TODO: Write
     description :: String
     description = "TODO (description)"
 
@@ -68,17 +67,17 @@ rep = do
     -- Evaluate 'read' result
     evalPrintPhase :: Bool -> Text -> IO ()
     evalPrintPhase False code = do
-      case EP.parse code of
-        Left errorResult -> tPutStrLn $ EP.parseErrorPretty errorResult  --TODO: Optimize error column and representation
-        Right ast        -> TIO.putStrLn $ ET.toSyntax ast
+      case Parser.parse code of
+        Left errorResult -> tPutStrLn $ Parser.parseErrorPretty errorResult  --TODO: Optimize error column and representation
+        Right ast        -> TIO.putStrLn $ MT.toSyntax ast
 
     -- Evaluate 'read' result with debugging
     evalPrintPhase True code = do
-      case EP.debugParse code of
-        x@(Left _, _)  -> EP.prettyPrint x
+      case Parser.debugParse code of
+        x@(Left _, _)  -> Parser.prettyPrint x
         (Right ast, _) -> do
           tPrint ast  -- Show ast directly
-          TIO.putStrLn $ ET.toSyntax ast
+          TIO.putStrLn $ MT.toSyntax ast
 
 
 -- |
