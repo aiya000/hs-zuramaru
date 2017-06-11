@@ -5,7 +5,8 @@ module Maru.Main
   , repl
   ) where
 
-import Control.Monad ((<$!>), mapM)
+import Control.Monad ((<$!>), mapM, when)
+import Control.Monad.Cont (ContT(..), runContT)
 import Data.Maybe (isNothing, isJust)
 import Data.Text (Text)
 import Safe (headMay)
@@ -38,22 +39,22 @@ run = do
 
 -- |
 -- Startup REPL.
--- Parse and evaluate successively
+-- Parse and evaluate successively.
 repl :: IO ()
-repl = do
-  escapeIsRequired <- rep
-  if escapeIsRequired
-     then putStrLn "Bye"
-     else repl
+repl = continue ()
+  where
+    -- An argument is needed by the loop, it can be anything
+    continue :: () -> IO ()
+    continue () = flip runContT continue $ ContT rep
 
 -- | Read, eval and print
-rep :: IO Bool
-rep = do
+rep :: (() -> IO ()) -> IO ()
+rep continue = do
   maybeSome <- headMay <$> getArgs  --TODO: Use some option library
   let inDebugMode = isJust maybeSome
   maybeInput <- readPhase
   maybeUnit  <- mapM (evalPrintPhase inDebugMode) maybeInput
-  return $ isNothing maybeUnit
+  when (not $ isNothing maybeUnit) $ continue ()
   where
     -- Read line from stdin.
     -- If stdin gives to interrupt, return Nothing.

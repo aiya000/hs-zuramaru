@@ -3,4 +3,4 @@ module Main where
 import Maru.Main
 
 main :: IO ()
-main = repl
+main = repl >> putStrLn "Bye"
