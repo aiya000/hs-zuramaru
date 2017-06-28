@@ -2,12 +2,12 @@
 
 module Maru.Main
   ( run
-  , repl
+  , runRepl
   ) where
 
 import Control.Monad ((<$!>), mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
-import Data.Maybe (isNothing, isJust)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Safe (headMay)
 import System.Environment (getArgs)
@@ -40,22 +40,35 @@ run = do
 -- |
 -- Startup REPL.
 -- Parse and evaluate successively.
-repl :: IO ()
-repl = continue ()
+runRepl :: IO ()
+runRepl = continue ()
   where
     -- An argument is needed by the loop, it can be anything
     continue :: () -> IO ()
-    continue () = flip runContT continue $ ContT rep
+    continue () = flip runContT continue $ ContT repl
 
--- | Read, eval and print
-rep :: (() -> IO ()) -> IO ()
-rep continue = do
-  maybeSome <- headMay <$> getArgs  --TODO: Use some option library
-  let inDebugMode = isJust maybeSome
-  maybeInput <- readPhase
-  maybeUnit  <- mapM (evalPrintPhase inDebugMode) maybeInput
-  when (not $ isNothing maybeUnit) $ continue ()
+-- | 'Loop' of 'Read', 'eval', and 'Print'
+repl :: (() -> IO ()) -> IO ()
+repl continue = do
+  loopIsRequired <- rep
+  when loopIsRequired $ continue ()
   where
+    -- Do 'Read', 'Eval', and 'Print' of 'REPL'.
+    -- Return False if Ctrl+d is input.
+    -- Return True otherwise.
+    rep :: IO Bool
+    rep = do
+      maybeSome <- headMay <$> getArgs  --TODO: Use some option library
+      let inDebugMode = isJust maybeSome
+      maybeInput <- readPhase
+      iso <$> mapM (evalPrintPhase inDebugMode) maybeInput
+
+    -- An isomorphism of Maybe () and Bool,
+    -- Just () ~= True, Nothing ~= False.
+    iso :: Maybe () -> Bool
+    iso (Just _) = True
+    iso Nothing  = False
+
     -- Read line from stdin.
     -- If stdin gives to interrupt, return Nothing.
     -- If it's not, return it and it is added to history file
