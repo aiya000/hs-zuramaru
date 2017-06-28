@@ -26,7 +26,7 @@ library
                      , text
                      , text-show
   default-language:    Haskell2010
-  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind
+  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults
   exposed-modules:     Maru.Main
                      , Maru.Eval
                      , Maru.Eval.Type
@@ -39,7 +39,7 @@ executable maru
   hs-source-dirs:      app
   main-is:             Main.hs
   default-language:    Haskell2010
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Wno-name-shadowing -Wno-unused-do-bind
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults
   build-depends:       base >= 4.7 && < 5
                      , zuramaru
 
@@ -48,7 +48,7 @@ test-suite maru-test
   hs-source-dirs:      test
   main-is:             Tasty.hs
   default-language:    Haskell2010
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Wno-type-defaults
   other-modules:       Steps.Step1Test
   build-depends:       base
                      , tasty
