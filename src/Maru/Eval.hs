@@ -31,8 +31,4 @@ newtype MaruEvaluator a = MaruEvaluator
 
 -- | TODO
 eval :: SExpr -> IO SExpr
-eval = undefined --void . flip runStateT [] . runMaruEvaluator . execute
-
-
-execute :: SExpr -> MaruEvaluator MaruTerm
-execute _ = undefined
+eval = return --void . flip runStateT [] . runMaruEvaluator . execute

@@ -5,22 +5,22 @@ module Maru.Parser
   ( parseTest
   , prettyPrint
   , P.parseErrorPretty
+  , prettyPrintLogs
   , parse
   , debugParse
-  , ParseResult
-  , ErrorResult
   ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
 import Data.List (foldl')
 import Data.Monoid ((<>))
-import Maru.Type.Parser
+import Maru.Type.Parser (ParseLog(..), ParseErrorResult, MaruParser, runMaruParser)
 import Maru.Type.SExpr
-import Text.Megaparsec (ParseError, Dec)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.Megaparsec as P
+
+type ParseResult = Either ParseErrorResult SExpr
 
 
 -- | Parse code to AST, and show AST and logs
@@ -30,14 +30,19 @@ parseTest = prettyPrint . debugParse
 -- | Pretty print result of debugParse
 prettyPrint :: (ParseResult, [ParseLog]) -> IO ()
 prettyPrint (parseResult, logs) = do
-  let (messages, item) = foldl' sourt ([], "") logs
-  mapM_ TIO.putStrLn $ reverse messages
-  putStrLn ""
-  TIO.putStrLn item
+  prettyPrintLogs logs
   putStrLn ""
   case parseResult of
     Left  e -> putStrLn $ P.parseErrorPretty e
     Right a -> putStrLn $ "Success:\n> " ++ show a
+
+-- | Pretty print @[ParseLog]@
+prettyPrintLogs :: [ParseLog] -> IO ()
+prettyPrintLogs logs = do
+  let (messages, item) = foldl' sourt ([], "") logs
+  mapM_ TIO.putStrLn $ reverse messages
+  putStrLn ""
+  TIO.putStrLn item
   where
     sourt (messages, itemResult) (Message msg)     = (msg:messages, itemResult)
     sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
