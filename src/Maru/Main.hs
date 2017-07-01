@@ -9,6 +9,8 @@ module Maru.Main
 
 import Control.Monad (mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.Maybe (isJust)
 import Data.Text (Text)
 import Maru.Eval (Env)
@@ -37,17 +39,6 @@ instance Applicative (StandBy a) where
   (a `With` f) <*> (_ `With` b) = a `With` f b
 
 
--- | @n@ can be flipped up to the top in @flipUp@
-class (Functor m, Functor n) => FlipUp m n where
-  flipUp :: m (n a) -> n (m a)
-
---NOTE: I may can use MMonad's embed with MaybeT, if evalPhase has @Bool -> Text -> MaybeT IO ([ParseLog] `StandBy` Either ParseErrorResult SExpr)@
-instance FlipUp Maybe IO where
-  flipUp :: Maybe (IO a) -> IO (Maybe a)
-  flipUp Nothing  = return Nothing
-  flipUp (Just x) = Just <$> x
-
-
 type EvalResult = Either ParseErrorResult SExpr
 
 
@@ -64,22 +55,25 @@ runRepl = continue ()
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- for @ContT@.
+--
+-- And enable debug mode if some command line args is given.
 repl :: Env -> (() -> IO ()) -> IO ()
 repl env continue = do
-  loopIsRequired <- rep env
+  maybeSome <- headMay <$> getArgs
+  let inDebugMode = isJust maybeSome
+  loopIsRequired <- iso <$> runMaybeT (rep inDebugMode env)
   when loopIsRequired $ continue ()
   where
     -- Do 'Read', 'Eval', and 'Print' of 'REPL'.
     -- Return False if Ctrl+d is input.
     -- Return True otherwise.
-    rep :: Env -> IO Bool
-    rep env = do
-      maybeSome <- headMay <$> getArgs  --TODO: Use some option library
-      let inDebugMode = isJust maybeSome
-      maybeInput          <- readPhase
-      maybeResultWithLogs <- flipUp (evalPhase inDebugMode <$> maybeInput)
-      maybeUnit           <- flipUp (printPhase <$> maybeResultWithLogs)
-      return $ iso maybeUnit
+    --
+    -- If this result is Nothing, it means what the user needed exiting.
+    rep :: Bool -> Env -> MaybeT IO ()
+    rep inDebugMode env = do
+      input          <- MaybeT readPhase
+      resultWithLogs <- lift (evalPhase inDebugMode input)
+      lift $ printPhase resultWithLogs
 
     -- Read line from stdin.
     -- If stdin gives to interrupt, return Nothing.
