@@ -4,16 +4,20 @@
 
 -- | TODO
 module Maru.Eval
-  ( eval
+  ( Env
+  , initialEnv
+  , eval
   ) where
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.State.Lazy (StateT, runStateT)
+import Data.Map.Lazy (Map)
 import Data.Text (Text)
 import Data.Void (Void)
 import Maru.Type (SExpr(..))
+import qualified Data.Map.Lazy as M
 
 -- | TODO
 type ProgramStack = Void
@@ -27,6 +31,16 @@ newtype MaruEvaluator a = MaruEvaluator
              , MonadState ProgramStack, MonadIO
              )
 
+data SomeFunc = forall a b. SomeFunc (a -> b)
+type Env = Map Text SomeFunc
+
+
+initialEnv :: Env
+initialEnv = M.fromList [ ("+", SomeFunc (+))
+                        , ("-", SomeFunc (-))
+                        , ("*", SomeFunc (*))
+                        , ("/", SomeFunc div)
+                        ]
 
 
 -- | TODO

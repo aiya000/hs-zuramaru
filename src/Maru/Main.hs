@@ -78,21 +78,21 @@ runRepl = continue ()
   where
     -- An argument is needed by the loop, it can be anything
     continue :: () -> IO ()
-    continue () = flip runContT continue $ ContT repl
+    continue () = flip runContT continue . ContT $ repl Eval.initialEnv
 
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- for @ContT@.
-repl :: (() -> IO ()) -> IO ()
-repl continue = do
+repl :: Env -> (() -> IO ()) -> IO ()
+repl env continue = do
   loopIsRequired <- rep env
   when loopIsRequired $ continue ()
   where
     -- Do 'Read', 'Eval', and 'Print' of 'REPL'.
     -- Return False if Ctrl+d is input.
     -- Return True otherwise.
-    rep :: IO Bool
-    rep = do
+    rep :: Env -> IO Bool
+    rep env = do
       maybeSome <- headMay <$> getArgs  --TODO: Use some option library
       let inDebugMode = isJust maybeSome
       maybeInput          <- readPhase
