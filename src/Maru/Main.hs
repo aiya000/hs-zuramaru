@@ -4,11 +4,10 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Maru.Main
-  ( run
-  , runRepl
+  ( runRepl
   ) where
 
-import Control.Monad ((<$!>), mapM, when)
+import Control.Monad (mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
 import Data.Maybe (isJust)
 import Data.Text (Text)
@@ -51,24 +50,6 @@ instance FlipUp Maybe IO where
 
 type EvalResult = Either ParseErrorResult SExpr
 
-
--- |
--- Parse specified source code.
--- And evaluate its result
-run :: IO ()
-run = do
-  maybeFilePath <- headMay <$> getArgs
-  case maybeFilePath of
-    Nothing -> putStrLn description
-    Just x  -> do
-      code <- T.pack <$!> readFile x
-      case Parser.debugParse code of
-        resultWithLogs@(Left _, _) -> Parser.prettyPrint resultWithLogs
-        (Right sexpr, _)           -> Eval.eval sexpr >>= TIO.putStrLn . MT.visualize
-  where
-    --TODO: Write
-    description :: String
-    description = "TODO (description)"
 
 -- |
 -- Startup REPL.
