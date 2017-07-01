@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | The type for Maru.Parser
-module Maru.Parser.Type
+module Maru.Type.Parser
   ( ParseLog (..)
   , MaruState (..)
   , parseLogs
@@ -14,6 +14,7 @@ module Maru.Parser.Type
   , tellItem
   , increaseNestLevel
   , decreaseNestLevel
+  , ParseErrorResult
   ) where
 
 import Control.Applicative (Alternative)
@@ -22,12 +23,15 @@ import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import Maru.Type
 import Lens.Micro.Mtl ((%=), (+=), (-=))
 import Lens.Micro.TH (makeLenses)
+import Maru.Type.SExpr
 import Text.Megaparsec (ParsecT, ParseError, Dec, runParserT)
 import Text.Megaparsec.Prim (MonadParsec)
 import qualified Data.Text as T
+
+type ParseErrorResult = ParseError MaruToken Dec
+
 
 -- | A log of MaruParser
 data ParseLog = Message Text     -- ^ Simple message

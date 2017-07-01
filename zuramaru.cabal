@@ -29,11 +29,10 @@ library
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults
   exposed-modules:     Maru.Main
                      , Maru.Eval
-                     , Maru.Eval.Type
-                     , Maru.Eval.Type.ProgramStack
                      , Maru.Parser
-                     , Maru.Parser.Type
                      , Maru.Type
+                     , Maru.Type.Parser
+                     , Maru.Type.SExpr
 
 executable maru
   hs-source-dirs:      app

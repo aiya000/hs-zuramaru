@@ -9,6 +9,7 @@ import Control.Monad ((<$!>), mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
 import Data.Maybe (isJust)
 import Data.Text (Text)
+import Maru.Type (SExpr, ParseLog, ErrorResult, ParseResult)
 import Safe (headMay)
 import System.Environment (getArgs)
 import qualified Data.Text as T

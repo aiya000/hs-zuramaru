@@ -1,49 +1,6 @@
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
--- Cons (Symbol "print") (Cons (Symbol "10") Nil)
---
---       Cons
---      /    \
---   print  Cons
---         /    \
---       10    Nil
---
---
--- Cons (Symbol "defun") (Cons (Symbol "first")
---   (Cons (Cons (Symbol "x") (Cons (Symbol "y") Nil))
---     (Cons (Symbol "x") Nil)))
---
---      Cons
---     /    \
---   defun  Cons
---         /    \
---       first  Cons
---             /    \
---           Cons    \
---          /    \    \
---         x    Cons   \
---             /    \   \
---            y     Nil  \
---                      Cons
---                     /    \
---                    x     Nil
---
---
--- Cons (Symbol "print") (Cons (Cons (Symbol "cons") (Cons (Symbol "1") (Cons (Cons (Symbol "cons") (Cons (Symbol "2") (Cons (Cons (Symbol "cons") (Cons (Symbol "3") (Cons (Cons (Symbol "cons") (Cons (Symbol "4") (Cons (Symbol "nil") Nil))) Nil))) Nil)))
---
---       Cons
---      /    \
---   print  Cons
---         /    \
---       Cons  Nil
---      /   \
---    cons  Cons
---         /    \
---        1     Cons
---             /    \
---           cons   Cons
---                 /    \
---               ...    ...
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | TODO
 module Maru.Eval
@@ -54,22 +11,28 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.State.Lazy (StateT, runStateT)
-import Maru.Eval.Type
-import Maru.Eval.Type.ProgramStack
+import Data.Text (Text)
+import Data.Void (Void)
 import Maru.Type (SExpr(..))
 
 -- | TODO
-newtype SExprEvaluator a = SExprEvaluator
-  { runSExprParser :: StateT ProgramStack IO a
+type ProgramStack = Void
+-- | TODO
+type MaruTerm = Void
+
+-- | A monad for evaluating the program
+newtype MaruEvaluator a = MaruEvaluator
+  { runMaruEvaluator :: StateT ProgramStack IO a
   } deriving ( Functor, Applicative, Monad
              , MonadState ProgramStack, MonadIO
              )
 
 
+
 -- | TODO
-eval :: SExpr -> IO ()
-eval = void . flip runStateT [] . runSExprParser . execute
+eval :: SExpr -> IO SExpr
+eval = undefined --void . flip runStateT [] . runMaruEvaluator . execute
 
 
-execute :: SExpr -> SExprEvaluator MaruTerm
+execute :: SExpr -> MaruEvaluator MaruTerm
 execute _ = undefined

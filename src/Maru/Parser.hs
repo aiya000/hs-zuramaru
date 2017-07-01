@@ -2,20 +2,21 @@
 
 -- | The parsers
 module Maru.Parser
-  ( module Maru.Parser.Type
-  , parseTest
+  ( parseTest
   , prettyPrint
   , P.parseErrorPretty
   , parse
   , debugParse
+  , ParseResult
+  , ErrorResult
   ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
 import Data.List (foldl')
 import Data.Monoid ((<>))
-import Maru.Parser.Type
-import Maru.Type
+import Maru.Type.Parser
+import Maru.Type.SExpr
 import Text.Megaparsec (ParseError, Dec)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -27,7 +28,7 @@ parseTest :: SourceCode -> IO ()
 parseTest = prettyPrint . debugParse
 
 -- | Pretty print result of debugParse
-prettyPrint :: (Either (ParseError MaruToken Dec) SExpr, [ParseLog]) -> IO ()
+prettyPrint :: (ParseResult, [ParseLog]) -> IO ()
 prettyPrint (parseResult, logs) = do
   let (messages, item) = foldl' sourt ([], "") logs
   mapM_ TIO.putStrLn $ reverse messages
@@ -42,11 +43,11 @@ prettyPrint (parseResult, logs) = do
     sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
 
 -- | Parse code to AST without logs
-parse :: SourceCode -> Either (ParseError MaruToken Dec) SExpr
+parse :: SourceCode -> ParseResult
 parse = fst . debugParse
 
 -- | Parse code to AST with logs
-debugParse :: SourceCode -> (Either (ParseError MaruToken Dec) SExpr, [ParseLog])
+debugParse :: SourceCode -> (ParseResult, [ParseLog])
 debugParse = runMaruParser sexprParser
 
 
