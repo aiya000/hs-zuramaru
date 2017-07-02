@@ -1,5 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -42,9 +40,7 @@ instance Applicative (StandBy a) where
 type EvalResult = Either ParseErrorResult SExpr
 
 
--- |
--- Startup REPL.
--- Parse and evaluate successively.
+-- | Run REPL of Maru
 runRepl :: IO ()
 runRepl = continue ()
   where
@@ -53,10 +49,12 @@ runRepl = continue ()
     continue () = flip runContT continue . ContT $ repl Eval.initialEnv
 
 -- |
--- Do 'Loop' of 'Read', 'eval', and 'Print',
--- for @ContT@.
+-- Do 'Loop' of 'Read', 'eval', and 'Print'.
 --
--- And enable debug mode if some command line args is given.
+-- This signature of the type means a stuff of @ContT@.
+--
+-- If some command line arguments are given, enable debug mode.
+-- Debug mode shows the parse and the evaluation's optionally result.
 repl :: Env -> (() -> IO ()) -> IO ()
 repl env continue = do
   maybeSome <- headMay <$> getArgs
@@ -68,11 +66,11 @@ repl env continue = do
     -- Return False if Ctrl+d is input.
     -- Return True otherwise.
     --
-    -- If this result is Nothing, it means what the user needed exiting.
+    -- If this result is Nothing, it means what the loop of REP exiting is required.
     rep :: Bool -> Env -> MaybeT IO ()
     rep inDebugMode env = do
       input          <- MaybeT readPhase
-      resultWithLogs <- lift (evalPhase inDebugMode input)
+      resultWithLogs <- lift $ evalPhase inDebugMode input
       lift $ printPhase resultWithLogs
 
     -- Read line from stdin.
@@ -113,6 +111,7 @@ repl env continue = do
     printEvalResult (Left errorResult) = tPutStrLn $ Parser.parseErrorPretty errorResult --TODO: Optimize error column and representation
     printEvalResult (Right sexpr)      = TIO.putStrLn $ MT.visualize sexpr
 
+
 -- |
 -- Regard String as Text.
 -- And apply putStrLn to it
@@ -121,8 +120,11 @@ tPutStrLn = TIO.putStrLn . T.pack
 
 
 -- |
--- An isomorphism of Maybe () and Bool,
--- Just () ~= True, Nothing ~= False.
+-- An isomorphism of Maybe () to Bool,
+--
+-- @Just ()@ is regarted to @True@.
+-- @Nothing@ is regarted to @False@.
+-- (Just () ~= True, Nothing ~= False.)
 iso :: Maybe () -> Bool
 iso (Just _) = True
 iso Nothing  = False
