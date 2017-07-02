@@ -11,7 +11,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.Maybe (isJust)
 import Data.Text (Text)
-import Maru.Eval (Env)
+import Maru.Eval (MaruEnv)
 import Maru.Type (SExpr, ParseLog, ParseErrorResult)
 import Safe (headMay)
 import System.Environment (getArgs)
@@ -55,7 +55,7 @@ runRepl = continue ()
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: Env -> (() -> IO ()) -> IO ()
+repl :: MaruEnv -> (() -> IO ()) -> IO ()
 repl env continue = do
   maybeSome <- headMay <$> getArgs
   let inDebugMode = isJust maybeSome
@@ -67,10 +67,10 @@ repl env continue = do
     -- Return True otherwise.
     --
     -- If this result is Nothing, it means what the loop of REP exiting is required.
-    rep :: Bool -> Env -> MaybeT IO ()
+    rep :: Bool -> MaruEnv -> MaybeT IO ()
     rep inDebugMode env = do
       input          <- MaybeT readPhase
-      resultWithLogs <- lift $ evalPhase inDebugMode input
+      resultWithLogs <- lift $ evalPhase env inDebugMode input
       lift $ printPhase resultWithLogs
 
     -- Read line from stdin.
@@ -87,16 +87,17 @@ repl env continue = do
     -- it is ParseErrorResult if the parse is failed.
     --
     -- Logs with @ParseResult@ if @Bool@ is True.
-    evalPhase :: Bool -> Text -> IO ([ParseLog] `StandBy` EvalResult)
-    evalPhase False code =
+    evalPhase :: MaruEnv -> Bool -> Text -> IO ([ParseLog] `StandBy` EvalResult)
+    evalPhase env False code =
       case Parser.parse code of
         Left parseErrorResult -> return . Lonely $ Left parseErrorResult
-        Right sexpr           -> Lonely . Right <$> Eval.eval sexpr
+        --TODO: Load new MaruEnv
+        Right sexpr           -> Lonely . Right . fst <$> Eval.eval env sexpr
 
-    evalPhase True code =
+    evalPhase env True code =
       case Parser.debugParse code of
         (Left errorResult, _) -> return . Lonely $ Left errorResult 
-        (Right sexpr, logs)   -> With logs . Right <$> Eval.eval sexpr
+        (Right sexpr, logs)   -> With logs . Right . fst <$> Eval.eval env sexpr
 
     -- Do 'Print' for a result of 'Read' and 'Eval'
     printPhase :: [ParseLog] `StandBy` EvalResult -> IO ()
