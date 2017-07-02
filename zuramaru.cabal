@@ -25,6 +25,7 @@ library
                      , safe-exceptions
                      , text
                      , text-show
+                     , throwable-exceptions
                      , transformers
   default-language:    Haskell2010
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults
