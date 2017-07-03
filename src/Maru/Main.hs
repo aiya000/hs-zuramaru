@@ -1,9 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Maru.Main
   ( runRepl
   ) where
+
 
 import Control.Monad (mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
@@ -14,13 +16,30 @@ import Data.Text (Text)
 import Maru.Eval (MaruEnv)
 import Maru.Type (SExpr, ParseLog, ParseErrorResult)
 import Safe (headMay)
-import System.Environment (getArgs)
+import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=), Data, Typeable)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as Eval
 import qualified Maru.Parser as Parser
 import qualified Maru.Type as MT
 import qualified System.Console.Readline as R
+
+-- | Command line options
+data CliOptions = CliOptions
+  { debugMode :: Bool
+  , doEval    :: Bool
+  } deriving (Show, Data, Typeable)
+
+-- | Default of @CliOptions@
+cliOptions :: CliOptions
+cliOptions = CliOptions
+  { debugMode = False &= name "debug-mode"
+  , doEval    = True &= name "do-eval"
+                     &= help "If you don't want to evaluation, disable this"
+                     &= explicit
+  }
+  &= summary "マルのLisp処理系ずら〜〜"
+  &= program "maru"
 
 
 -- | @a@ is exist or nothing
@@ -42,35 +61,41 @@ type EvalResult = Either ParseErrorResult SExpr
 
 -- | Run REPL of Maru
 runRepl :: IO ()
-runRepl = continue ()
+runRepl = do
+  options <- cmdArgs cliOptions
+  run options
   where
-    -- An argument is needed by the loop, it can be anything
-    continue :: () -> IO ()
-    continue () = flip runContT continue . ContT $ repl Eval.initialEnv
+    -- An argument is needed by the loop, it can be anything,
+    -- with specified cli options.
+    continue :: CliOptions -> () -> IO ()
+    continue options () = flip runContT (continue options) . ContT $ repl options Eval.initialEnv
+    -- An alias
+    run = flip continue ()
 
 -- |
--- Do 'Loop' of 'Read', 'eval', and 'Print'.
+-- Do 'Loop' of 'Read', 'eval', and 'Print',
+-- with the startup options.
 --
 -- This signature of the type means a stuff of @ContT@.
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: MaruEnv -> (() -> IO ()) -> IO ()
-repl env continue = do
-  maybeSome <- headMay <$> getArgs
-  let inDebugMode = isJust maybeSome
-  loopIsRequired <- iso <$> runMaybeT (rep inDebugMode env)
+repl :: CliOptions -> MaruEnv -> (() -> IO ()) -> IO ()
+repl options env continue = do
+  loopIsRequired <- iso <$> runMaybeT (rep options env)
   when loopIsRequired $ continue ()
   where
     -- Do 'Read', 'Eval', and 'Print' of 'REPL'.
     -- Return False if Ctrl+d is input.
     -- Return True otherwise.
     --
+    -- Branch by @CliOptions@.
+    --
     -- If this result is Nothing, it means what the loop of REP exiting is required.
-    rep :: Bool -> MaruEnv -> MaybeT IO ()
-    rep inDebugMode env = do
+    rep :: CliOptions -> MaruEnv -> MaybeT IO ()
+    rep options env = do
       input          <- MaybeT readPhase
-      resultWithLogs <- lift $ evalPhase env inDebugMode input
+      resultWithLogs <- lift $ evalPhase options env input
       lift $ printPhase resultWithLogs
 
     -- Read line from stdin.
@@ -87,17 +112,27 @@ repl env continue = do
     -- it is ParseErrorResult if the parse is failed.
     --
     -- Logs with @ParseResult@ if @Bool@ is True.
-    evalPhase :: MaruEnv -> Bool -> Text -> IO ([ParseLog] `StandBy` EvalResult)
-    evalPhase env False code =
+    evalPhase :: CliOptions -> MaruEnv -> Text -> IO ([ParseLog] `StandBy` EvalResult)
+    evalPhase (CliOptions False evalIsNeeded) env code =
       case Parser.parse code of
         Left parseErrorResult -> return . Lonely $ Left parseErrorResult
-        --TODO: Load new MaruEnv
-        Right sexpr           -> Lonely . Right . fst <$> Eval.eval env sexpr
+        --TODO: Don't abandon new MaruEnv
+        Right sexpr -> do
+          let evalOrNOOP = getEvaluator evalIsNeeded
+          Lonely . Right . fst <$> evalOrNOOP env sexpr
 
-    evalPhase env True code =
+    evalPhase (CliOptions True evalIsNeeded) env code =
       case Parser.debugParse code of
-        (Left errorResult, _) -> return . Lonely $ Left errorResult 
-        (Right sexpr, logs)   -> With logs . Right . fst <$> Eval.eval env sexpr
+        (Left parseErrorResult, _) -> return . Lonely $ Left parseErrorResult 
+        (Right sexpr, logs) -> do
+          let evalOrNOOP = getEvaluator evalIsNeeded
+          With logs . Right . fst <$> evalOrNOOP env sexpr
+
+    -- If --do-eval=False is specified,
+    -- return a function that doesn't touch arguments.
+    getEvaluator :: Bool -> MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
+    getEvaluator True  = Eval.eval
+    getEvaluator False = (return .) . flip (,)
 
     -- Do 'Print' for a result of 'Read' and 'Eval'
     printPhase :: [ParseLog] `StandBy` EvalResult -> IO ()
