@@ -11,11 +11,9 @@ import Control.Monad (mapM, when)
 import Control.Monad.Cont (ContT(..), runContT)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
-import Data.Maybe (isJust)
 import Data.Text (Text)
 import Maru.Eval (MaruEnv)
 import Maru.Type (SExpr, ParseLog, ParseErrorResult)
-import Safe (headMay)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=), Data, Typeable)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -33,7 +31,7 @@ data CliOptions = CliOptions
 -- | Default of @CliOptions@
 cliOptions :: CliOptions
 cliOptions = CliOptions
-  { debugMode = False &= name "debug-mode"
+  { debugMode = False &= name "debug"
   , doEval    = True &= name "do-eval"
                      &= help "If you don't want to evaluation, disable this"
                      &= explicit
