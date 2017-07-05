@@ -5,6 +5,6 @@ packages:
   - '.'
   - location:
       git: https://github.com/aiya000/hs-throwable-exceptions.git
-      commit: bfc052b585134b9a0f7247ff744276da169016d2
+      commit: 6c377199d61c23c7c89a185c40327432790e3be8
 extra-deps:
   - throwable-exceptions-0.1.0.7
