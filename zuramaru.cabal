@@ -26,6 +26,7 @@ library
                      , readline
                      , safe
                      , safe-exceptions
+                     , template-haskell
                      , text
                      , text-show
                      , throwable-exceptions
