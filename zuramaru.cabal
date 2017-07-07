@@ -17,6 +17,7 @@ library
                      , cmdargs
                      , containers
                      , either
+                     , extensible-effects
                      , megaparsec
                      , microlens
                      , microlens-mtl
