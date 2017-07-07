@@ -184,6 +184,7 @@ repl = do
         (Right sexpr, logs) -> do
           --TODO: DRY (evalPhase')
           let (messages, item) = Parser.prettyShowLogs logs
+          replLogsA . evalLogsA %= (++ messages ++ item : ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
           (result, newEnv) <- lift $ eval env sexpr
           replEnvA .= newEnv
           return $ Right result
