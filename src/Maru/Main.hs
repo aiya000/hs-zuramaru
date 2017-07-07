@@ -15,15 +15,17 @@ module Maru.Main
 import Control.Eff (Eff, Member, SetMember)
 import Control.Eff.Lift (Lift, lift, runLift)
 import Control.Eff.State.Lazy (State, runState)
-import Control.Monad (mapM, when)
-import Control.Monad.State.Class (MonadState(..))
-import Control.Monad.Trans.Class (lift)
+import Control.Monad (mapM, when, void, forM_)
+import Control.Monad.State.Class (MonadState(..), gets)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.Data (Data)
+import Data.Function ((&))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
-import Lens.Micro.TH (DefName(..), lensField)
+import Language.Haskell.TH (Name, mkName, nameBase, DecsQ, )
+import Lens.Micro ((.~))
+import Lens.Micro.Mtl ((.=), (%=))
+import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
 import Maru.Eval (MaruEnv)
 import Maru.Type (SExpr, ParseLog, ParseErrorResult)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
@@ -35,23 +37,17 @@ import qualified Maru.Parser as Parser
 import qualified Maru.Type as MT
 import qualified System.Console.Readline as R
 
--- |
--- makeLenses with 'A' suffix.
--- e.g. replEnv -> replEnvA
-makeLensesA :: String -> Name -> DecsQ
-makeLensesA = makeLensesWith (lensRules & lensField .~ addSuffix)
-  where
-    addSuffix :: Name -> [Name] -> Name -> [DefName]
-    addSuffix _ _ recordName = [TopName . mkName $ nameBase recordName ++ "A"]
-
-
 -- | Command line options
 data CliOptions = CliOptions
   { debugMode :: Bool
   , doEval    :: Bool
   } deriving (Show, Data, Typeable)
 
-makeLensesA ''CliOptions
+--TODO: Use makeLensesA after GHC is fixed (https://ghc.haskell.org/trac/ghc/ticket/13932)
+makeLensesFor [ ("debugModeA", "debugMode")
+              , ("doEvalA", "doEval")
+              ] ''CliOptions
+--makeLensesA ''CliOptions
 
 -- | Default of @CliOptions@
 cliOptions :: CliOptions
@@ -78,7 +74,10 @@ data DebugLogs = DebugLogs
   , evalLogs :: [String]
   } deriving (Show)
 
-makeLensesA ''DebugLogs
+makeLensesFor [ ("readLogs", "readLogsA")
+              , ("evalLogs", "evalLogsA")
+              ] ''DebugLogs
+--makeLensesA ''DebugLogs
 
 emptyDebugLog :: DebugLogs
 emptyDebugLog = DebugLogs [] []
@@ -89,9 +88,17 @@ data ReplState = ReplState
   { replOpts :: CliOptions -- ^ specified CLI options (not an initial value)
   , replEnv  :: MaruEnv    -- ^ The symbols of zuramaru
   , replLogs :: DebugLogs  -- ^ this value is appended in the runtime
-  } deriving (Show)
+  }
 
-makeLensesA ''ReplState
+makeLensesFor [ ("replOpts", "replOptsA")
+              , ("replEnv", "replEnvA")
+              , ("replLogs", "replLogsA")
+              ] ''ReplState
+--makeLensesA ''ReplState
+
+
+type EvalResult = Either ParseErrorResult SExpr
+type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
 
 
 -- | For Lens Accessors
@@ -100,16 +107,12 @@ instance Member (State ReplState) r => MonadState ReplState (Eff r) where
   put = EST.put
 
 
-type EvalResult = Either ParseErrorResult SExpr
-
-type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
-
 -- | Run REPL of zuramaru
 runRepl :: IO ()
 runRepl = do
   options <- cmdArgs cliOptions
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
-  runLift $ runState initialState repl
+  void . runLift $ runState initialState repl
 
 --TODO: Organize scopes
 -- |
@@ -150,7 +153,7 @@ repl = do
     --
     -- Logs with @ParseResult@ if @Bool@ is True.
     evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-                 Eff r EvalResult--Text -> IO ([ParseLog] `StandBy` EvalResult)
+                 Text -> Eff r EvalResult--Text -> IO ([ParseLog] `StandBy` EvalResult)
     evalPhase code = do
       opts <- gets replOpts
       env  <- gets replEnv
@@ -179,7 +182,7 @@ repl = do
         (Left parseErrorResult, _) -> return $ Left parseErrorResult
         (Right sexpr, logs) -> do
           --TODO: DRY (evalPhase')
-          replLogsA . evalLogsA %= (++ "parse result: " ++ show sexpr) --TODO: Replace to low order algorithm
+          replLogsA . evalLogsA %= (++ ["parse result: " ++ show sexpr]) --TODO: Replace to low order algorithm
           (result, newEnv) <- lift $ eval env sexpr
           replEnvA .= newEnv
           return $ Right result
@@ -191,16 +194,17 @@ repl = do
     getEvaluator False = (return .) . flip (,)
 
     -- Do 'Print' for a result of 'Read' and 'Eval'
-    printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()
+    printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
+                  EvalResult -> Eff r ()
     printPhase sexprOrError = do
       DebugLogs readLogs' evalLogs' <- gets replLogs
       debugMode'                    <- gets $ debugMode . replOpts
-      case sexprOrError of
+      lift $ case sexprOrError of
         Left errorResult -> tPutStrLn $ Parser.parseErrorPretty errorResult --TODO: Optimize error column and representation
         Right sexpr      -> TIO.putStrLn $ MT.visualize sexpr
-      when debugMode' $ do
+      lift . when debugMode' $ do
         forM_ readLogs' $ putStrLn . ("<debug>(readPhase): " ++)
-        forM_ evalLogs' $ putStrLn . ("<debug>(readPhase): " ++)
+        forM_ evalLogs' $ putStrLn . ("<debug>(evalPhase): " ++)
 
 
 -- |
@@ -219,3 +223,13 @@ tPutStrLn = TIO.putStrLn . T.pack
 iso :: Maybe () -> Bool
 iso (Just _) = True
 iso Nothing  = False
+
+
+-- |
+-- makeLenses with 'A' suffix.
+-- e.g. replEnv -> replEnvA
+makeLensesA :: Name -> DecsQ
+makeLensesA = makeLensesWith (lensRules & lensField .~ addSuffix)
+  where
+    addSuffix :: Name -> [Name] -> Name -> [DefName]
+    addSuffix _ _ recordName = [TopName . mkName $ nameBase recordName ++ "A"]
