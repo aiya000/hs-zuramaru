@@ -14,9 +14,9 @@ import Control.Exception.Safe (Exception)
 import Control.Exception.Throwable.TH (declareException)
 import Control.Monad (mzero)
 import Control.Monad.Fail (MonadFail(..))
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.State.Class (MonadState)
-import Control.Monad.State.Lazy (StateT, runStateT, get, put)
+import Control.Monad.State.Lazy (StateT, runStateT, get)
 import Control.Monad.Trans.Either (EitherT(..), runEitherT)
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>))
@@ -72,10 +72,10 @@ data SomeFunc = forall a b. SomeFunc (a -> b)
 --
 -- This maybe passed to @eval@
 initialEnv :: MaruEnv
-initialEnv = M.fromList [ ("+", SomeFunc (+))
-                        , ("-", SomeFunc (-))
-                        , ("*", SomeFunc (*))
-                        , ("/", SomeFunc div)
+initialEnv = M.fromList [ ("+", SomeFunc ((+) :: Int -> Int -> Int))
+                        , ("-", SomeFunc ((-) :: Int -> Int -> Int))
+                        , ("*", SomeFunc ((*) :: Int -> Int -> Int))
+                        , ("/", SomeFunc (div :: Int -> Int -> Int))
                         ]
 
 -- |
