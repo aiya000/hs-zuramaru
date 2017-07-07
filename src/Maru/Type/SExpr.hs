@@ -32,6 +32,10 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
            | Atom MaruTerm    -- ^ Some term item
   deriving (Show)
 
+-- | Same as Show
+instance TextShow SExpr where
+  showb = TS.fromString . show
+
 
 -- | The abstract syntax tree
 class AST a where
