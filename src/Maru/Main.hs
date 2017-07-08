@@ -66,7 +66,6 @@ cliOptions = CliOptions
   &= program "maru"
 
 
----TODO: Use Text instead of String for an algorithm order and locales
 -- |
 -- Logs of REPL.
 --
@@ -119,7 +118,6 @@ runRepl = do
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
   void . runLift $ runState initialState repl
 
---TODO: Organize scopes
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
@@ -130,93 +128,72 @@ repl :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()
 repl = do
   loopIsRequired <- iso <$> rep
   when loopIsRequired repl
-  where
-    -- Do 'Read', 'Eval', and 'Print' of 'REPL'.
-    -- Return False if Ctrl+d is input.
-    -- Return True otherwise.
-    --
-    -- If this result is Nothing, it means what the loop of REP exiting is required.
-    rep :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r (Maybe ())
-    rep = do
-      --TODO: Use a context of MaybeT (for fmap omission)
-      maybeInput      <- lift readPhase
-      maybeEvalResult <- sequence (evalPhase <$> maybeInput)
-      sequence (printPhase <$> maybeEvalResult)
 
-    -- Read line from stdin.
-    -- If stdin gives to interrupt, return Nothing.
-    -- If it's not, return it and it is added to history file
-    readPhase :: IO (Maybe Text)
-    readPhase = do
-      maybeInput <- R.readline "zuramaru> "
-      mapM R.addHistory maybeInput
-      return (T.pack <$> maybeInput)
-
-    -- Do parse and evaluate a Text to a SExpr, and return its result.
-    -- The result is SEpxr (maru's AST) if a parse is succeed,
-    -- it is ParseErrorResult if the parse is failed.
-    --
-    -- Logs with @ParseResult@ if @Bool@ is True.
-    evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-                 Text -> Eff r EvalResult
-    evalPhase code = do
-      opts <- gets replOpts
-      let evalOrNOOP = getEvaluator $ doEval opts
-      if debugMode opts
-         then evalPhaseInDebugMode code evalOrNOOP
-         else evalPhase' code evalOrNOOP
-
-    evalPhase' :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-                 Text -> Evaluator -> Eff r EvalResult
-    evalPhase' code eval = do
-      env <- gets replEnv
-      case Parser.parse code of
-        Left parseErrorResult -> return $ Left parseErrorResult
-        Right sexpr -> do
-          --TODO: DRY (evalPhaseInDebugMode)
-          (result, newEnv) <- lift $ eval env sexpr
-          replEnvA .= newEnv
-          return $ Right result
-
-    evalPhaseInDebugMode :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-                 Text -> Evaluator -> Eff r EvalResult
-    evalPhaseInDebugMode code eval = do
-      env <- gets replEnv
-      case Parser.debugParse code of
-        (Left parseErrorResult, _) -> return $ Left parseErrorResult
-        (Right sexpr, logs) -> do
-          --TODO: DRY (evalPhase')
-          let (messages, item) = Parser.prettyShowLogs logs
-          replLogsA . evalLogsA %= (++ messages ++ item : ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
-          (result, newEnv) <- lift $ eval env sexpr
-          replEnvA .= newEnv
-          return $ Right result
-
-    -- If --do-eval=False is specified,
-    -- return a function that doesn't touch arguments.
-    getEvaluator :: Bool -> Evaluator
-    getEvaluator True  = Eval.eval
-    getEvaluator False = (return .) . flip (,)
-
-    -- Do 'Print' for a result of 'Read' and 'Eval'
-    printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-                  EvalResult -> Eff r ()
-    printPhase sexprOrError = do
-      DebugLogs readLogs' evalLogs' <- gets replLogs
-      debugMode'                    <- gets $ debugMode . replOpts
-      lift $ case sexprOrError of
-        Left errorResult -> tPutStrLn $ Parser.parseErrorPretty errorResult --TODO: Optimize error column and representation
-        Right sexpr      -> TIO.putStrLn $ MT.visualize sexpr
-      lift . when debugMode' $ do
-        forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
-        forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
+-- |
+-- Do 'Read', 'Eval', and 'Print' of 'REPL'.
+-- Return False if Ctrl+d is input.
+-- Return True otherwise.
+--
+-- If this result is Nothing, it means what the loop of REP exiting is required.
+rep :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r (Maybe ())
+rep = do
+  --TODO: Use a context of MaybeT (for fmap omission)
+  maybeInput      <- lift readPhase
+  maybeEvalResult <- sequence (evalPhase <$> maybeInput)
+  sequence (printPhase <$> maybeEvalResult)
 
 
 -- |
--- Regard String as Text.
--- And apply putStrLn to it
-tPutStrLn :: String -> IO ()
-tPutStrLn = TIO.putStrLn . T.pack
+-- Read line from stdin.
+-- If stdin gives to interrupt, return Nothing.
+-- If it's not, return it and it is added to history file
+readPhase :: IO (Maybe Text)
+readPhase = do
+  maybeInput <- R.readline "zuramaru> "
+  mapM R.addHistory maybeInput
+  return (T.pack <$> maybeInput)
+
+-- |
+-- Do parse and evaluate a Text to a SExpr, and return its result.
+-- The result is SEpxr (maru's AST) if a parse is succeed,
+-- it is ParseErrorResult if the parse is failed.
+--
+-- Logs with @ParseResult@ if @Bool@ is True.
+--
+-- Execute the evaluation.
+-- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
+-- A state of @MaruEnv@ is updated by new environment of the result.
+evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
+             Text -> Eff r EvalResult
+evalPhase code = do
+  evalIsNeeded <- gets $ doEval . replOpts
+  -- Get a real evaluator or an empty evaluator.
+  -- The empty evaluator doesn't touch any arguments.
+  let eval' = if evalIsNeeded then Eval.eval
+                              else (return .) . flip (,)
+  case Parser.debugParse code of
+    (Left parseErrorResult, _) ->
+      return $ Left parseErrorResult
+    (Right sexpr, logs) -> do
+      let (messages, item) = Parser.prettyShowLogs logs
+      replLogsA . evalLogsA %= (++ messages ++ item : ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
+      env              <- gets replEnv
+      (result, newEnv) <- lift $ eval' env sexpr
+      replEnvA .= newEnv
+      return $ Right result
+
+-- | Do 'Print' for a result of 'Read' and 'Eval'
+printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
+              EvalResult -> Eff r ()
+printPhase sexprOrError = do
+  DebugLogs readLogs' evalLogs' <- gets replLogs
+  debugMode'                    <- gets $ debugMode . replOpts
+  lift $ case sexprOrError of
+    Left errorResult -> TIO.putStrLn . T.pack $ Parser.parseErrorPretty errorResult --TODO: Optimize error column and representation
+    Right sexpr      -> TIO.putStrLn $ MT.visualize sexpr
+  lift . when debugMode' $ do
+    forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
+    forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
 
 
 -- |
