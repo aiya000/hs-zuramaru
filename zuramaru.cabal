@@ -31,6 +31,7 @@ library
                      , text-show
                      , throwable-exceptions
                      , transformers
+                     , type-iso
   default-language:    Haskell2010
   ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults -Wno-orphans
   exposed-modules:     Maru.Main
