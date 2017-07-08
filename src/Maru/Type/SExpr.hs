@@ -5,6 +5,8 @@ module Maru.Type.SExpr
   ( SourceCode
   , MaruToken
   , SExpr (..)
+  , symbol
+  , int
   , AST(..)
   , MaruTerm (..)
   , scottEncode
@@ -35,6 +37,14 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
+
+-- | A shortcut of @Atom . TermSymbol@
+symbol :: Text -> SExpr
+symbol = Atom . TermSymbol
+
+-- | A shortcut of @Atom . TermInt@
+int :: Int -> SExpr
+int = Atom . TermInt
 
 
 -- | The abstract syntax tree
