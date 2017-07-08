@@ -32,7 +32,7 @@ library
                      , throwable-exceptions
                      , transformers
   default-language:    Haskell2010
-  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults
+  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults -Wno-orphans
   exposed-modules:     Maru.Main
                      , Maru.Eval
                      , Maru.Parser
