@@ -27,12 +27,13 @@ type SourceCode = Text
 -- | Format of parser token
 type MaruToken = P.Token Text
 
+
 -- | n-ary tree and terms
 data SExpr = Cons SExpr SExpr -- ^ Appending list and list
            | Nil              -- ^ A representation of empty list
            | Quote SExpr      -- ^ For lazy evaluation
            | Atom MaruTerm    -- ^ Some term item
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Same as Show
 instance TextShow SExpr where
@@ -75,7 +76,7 @@ instance AST SExpr where
 -- | A literal, a name of variable, function or macro for zuramaru language
 data MaruTerm = TermInt Int     -- ^ Integer literal
               | TermSymbol Text -- ^ Name of variable, function or macro. (this includes nil)
-  deriving (Show)
+  deriving (Show, Eq)
 
 instance TextShow MaruTerm where
   showb (TermInt x)    = showb x
