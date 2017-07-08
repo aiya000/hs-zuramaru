@@ -15,23 +15,26 @@ module Maru.Main
   ( runRepl
   ) where
 
-import Control.Eff (Eff, Member, SetMember)
+import Control.Eff (Eff, Member, SetMember, (:>))
+import Control.Eff.Exception (throwExc, Fail, runFail, liftMaybe)
 import Control.Eff.Lift (Lift, lift, runLift)
 import Control.Eff.State.Lazy (State, runState)
 import Control.Monad (mapM, when, void, forM_)
+import Control.Monad.Fail (MonadFail(..))
 import Control.Monad.State.Class (MonadState(..), gets)
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.Data (Data)
 import Data.Function ((&))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
+import Data.Types.Injective (Injective(..))
+import Data.Void (Void)
 import Language.Haskell.TH (Name, mkName, nameBase, DecsQ, )
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
 import Maru.Eval (MaruEnv)
-import Maru.Type (SExpr, ParseLog, ParseErrorResult)
+import Maru.Type (SExpr, ParseErrorResult)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -101,14 +104,34 @@ makeLensesFor [ ("replOpts", "replOptsA")
 --makeLensesA ''ReplState
 
 
-type EvalResult = Either ParseErrorResult SExpr
-type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
-
-
 -- | For Lens Accessors
 instance Member (State ReplState) r => MonadState ReplState (Eff r) where
   get = EST.get
   put = EST.put
+
+
+-- |
+-- The locally @MonadFail@ context
+-- (This overrides existed @MonadFail@ instance)
+instance Member Fail r => MonadFail (Eff r) where
+  fail _ = throwExc ()
+
+-- | Why @liftMaybeM@ is not defined in @Control.Eff.Exception@ ?
+liftMaybeM :: ( Typeable m
+              , Member Fail r, SetMember Lift (Lift m) r
+              ) => m (Maybe a) -> Eff r a
+liftMaybeM m = lift m >>= liftMaybe
+
+
+--TODO: Use Lens's Iso instead, if it can be used
+instance Injective (Maybe ()) Bool where
+  to (Just ()) = True
+  to Nothing   = False
+
+
+type EvalResult = Either ParseErrorResult SExpr
+type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
+
 
 
 -- | Run REPL of zuramaru
@@ -118,15 +141,16 @@ runRepl = do
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
   void . runLift $ runState initialState repl
 
+--TODO: Use polymorphic type "(Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()"
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()
+repl :: Eff (State ReplState :> Lift IO :> Void) ()
 repl = do
-  loopIsRequired <- iso <$> rep
+  loopIsRequired <- to <$> runFail (rep :: Eff (Fail :> State ReplState :> Lift IO :> Void) ())
   when loopIsRequired repl
 
 -- |
@@ -134,13 +158,12 @@ repl = do
 -- Return False if Ctrl+d is input.
 -- Return True otherwise.
 --
--- If this result is Nothing, it means what the loop of REP exiting is required.
-rep :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r (Maybe ())
+-- If @rep@ throws a () of the error, it means what the loop of REP exiting is required.
+rep :: (Member Fail r, Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()
 rep = do
-  --TODO: Use a context of MaybeT (for fmap omission)
-  maybeInput      <- lift readPhase
-  maybeEvalResult <- sequence (evalPhase <$> maybeInput)
-  sequence (printPhase <$> maybeEvalResult)
+  input      <- liftMaybeM readPhase
+  evalResult <- evalPhase input
+  printPhase evalResult
 
 
 -- |
@@ -194,17 +217,6 @@ printPhase sexprOrError = do
   lift . when debugMode' $ do
     forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
     forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
-
-
--- |
--- An isomorphism of Maybe () to Bool,
---
--- @Just ()@ is regarted to @True@.
--- @Nothing@ is regarted to @False@.
--- (Just () ~= True, Nothing ~= False.)
-iso :: Maybe () -> Bool
-iso (Just _) = True
-iso Nothing  = False
 
 
 -- |
