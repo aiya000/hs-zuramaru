@@ -1,5 +1,5 @@
 -- Suppress warnings what is happend by TemplateHaskell
-{-# OPTION_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
