@@ -123,7 +123,6 @@ liftMaybeM :: ( Typeable m
 liftMaybeM m = lift m >>= liftMaybe
 
 
---TODO: Use Lens's Iso instead, if it can be used
 instance Injective (Maybe ()) Bool where
   to (Just ()) = True
   to Nothing   = False
