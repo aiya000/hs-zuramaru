@@ -29,7 +29,7 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Types.Injective (Injective(..))
 import Data.Void (Void)
-import Language.Haskell.TH (Name, mkName, nameBase, DecsQ, )
+import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
@@ -198,7 +198,7 @@ evalPhase code = do
       return $ Left parseErrorResult
     (Right sexpr, logs) -> do
       let (messages, item) = Parser.prettyShowLogs logs
-      replLogsA . evalLogsA %= (++ messages ++ item : ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
+      replLogsA . evalLogsA %= (++ messages ++ [item, "parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
       env              <- gets replEnv
       (result, newEnv) <- lift $ eval' env sexpr
       replEnvA .= newEnv
