@@ -1,6 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | @MaruEvaluator@ evaluates @SEexpr@.
@@ -10,20 +12,21 @@ module Maru.Eval
   , eval
   ) where
 
+import Control.Eff (Eff, Member, SetMember)
+import Control.Eff.Exception (Exc, runExc, liftEither)
+import Control.Eff.Lift (Lift, runLift)
+import Control.Eff.State.Lazy (State, runState, get)
 import Control.Exception.Safe (Exception)
 import Control.Exception.Throwable.TH (declareException)
-import Control.Monad (mzero)
-import Control.Monad.Fail (MonadFail(..))
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.State.Class (MonadState)
-import Control.Monad.State.Lazy (StateT, runStateT, get)
-import Control.Monad.Trans.Either (EitherT(..), runEitherT)
+import Data.Either.Extra (maybeToEither)
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>))
 import Data.Text (Text)
+import Data.Tuple (swap)
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), MaruTerm(..))
 import qualified Data.Map.Lazy as M
+import qualified Data.Text as T
 
 -- Define a data type and instances
 declareException "NoSuchSymbolException" ["NoSuchSymbolException"]
@@ -31,33 +34,29 @@ declareException "NoSuchSymbolException" ["NoSuchSymbolException"]
 -- | This is thrown if looking up symbol is failed in @MaruEvaluator@
 type NoSuchSymbolException' = NoSuchSymbolException ()
 
--- | For @(Monoid a, Monad m) => MonadPlus (EitherT a m)@
-instance Monoid a => Monoid (NoSuchSymbolException a) where
-  (NoSuchSymbolException cause clue) `mappend` (NoSuchSymbolException cause' clue')
-    = NoSuchSymbolException (cause ++ " <> " ++ cause') (clue <> clue')
-  mempty = NoSuchSymbolException "This is an empty NoSuchSymbolException" mempty
-
---NOTE: Shall I fix the orphan instance ?
-instance (Monoid a, Monad m) => MonadFail (EitherT a m) where
-  fail _ = mzero
-
 
 -- | A monad for evaluating a program
-newtype MaruEvaluator a = MaruEvaluator
-  { _runMaruEvaluator :: EitherT NoSuchSymbolException' (StateT MaruEnv IO) a
-  } deriving ( Functor, Applicative, Monad
-             , MonadIO
-             , MonadFail
-             , MonadState MaruEnv
-             )
+type MaruEvaluator a = forall r. ( Member (Exc NoSuchSymbolException') r
+                                 , Member (State MaruEnv) r
+                                 , SetMember Lift (Lift IO) r
+                                 ) => Eff r a
 
+--NOTE: Why eff's runState's type sigunature is different with mtl runState ?
 -- | Run an evaluation of @MaruEvaluator@
 runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either NoSuchSymbolException' a, MaruEnv)
-runMaruEvaluator = runStateT . runEitherT . _runMaruEvaluator
+runMaruEvaluator m env = swap <$> (runLift . runState env $ runExc m)
 
--- | Run an evaluation of @MaruEvaluator@ and take only a result
-evalMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either NoSuchSymbolException' a)
-evalMaruEvaluator = (fmap fst .) . runMaruEvaluator
+
+-- |
+-- Take a value from @MaruEnv@ in @State@.
+-- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
+lookupSymbol :: forall r. (Member (Exc NoSuchSymbolException') r, Member (State MaruEnv) r) => Text -> Eff r SomeFunc
+lookupSymbol sym = do
+  env <- (get :: Eff r MaruEnv)
+  liftEither . maybeToEither (symbolNotFound sym) $ M.lookup sym env
+  where
+    symbolNotFound :: Text -> NoSuchSymbolException'
+    symbolNotFound sym = noSuchSymbolException $ "Symbol '" <> T.unpack sym <> "' is not found"
 
 
 type MaruEnv = Map Text SomeFunc
@@ -78,6 +77,7 @@ initialEnv = M.fromList [ ("+", SomeFunc ((+) :: Int -> Int -> Int))
                         , ("/", SomeFunc (div :: Int -> Int -> Int))
                         ]
 
+
 -- |
 -- Evaluate a S expression,
 -- and happen its side effects.
@@ -94,17 +94,12 @@ eval env sexpr = do
     Right a -> return (a, newEnv)
 
 
--- |
--- A naked evaluator of zuramaru.
---
--- The error of pattern matching is delegated as @left@ value to MonadFail in here,
--- because @EitherT NoSuchSymbolException' IO@ is MonadFail.
+-- | A naked evaluator of zuramaru.
 execute :: SExpr -> MaruEvaluator SExpr
 execute Nil       = return Nil
 execute (Quote _) = error "TODO (eval)"
 execute (Cons _ _) = undefined
 execute (Atom (TermInt x)) = undefined --return x
 execute (Atom (TermSymbol symbol)) = do
-  env <- get
-  let (Just val) = M.lookup symbol env
+  lookupSymbol symbol
   undefined
