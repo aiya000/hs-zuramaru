@@ -18,6 +18,7 @@ library
                      , containers
                      , either
                      , extensible-effects
+                     , extra
                      , megaparsec
                      , microlens
                      , microlens-mtl
