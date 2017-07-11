@@ -34,7 +34,7 @@ library
                      , transformers
                      , type-iso
   default-language:    Haskell2010
-  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults -Wno-orphans
+  ghc-options:         -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wno-type-defaults -Wno-orphans -fprint-potential-instances
   exposed-modules:     Maru.Main
                      , Maru.Eval
                      , Maru.Parser
