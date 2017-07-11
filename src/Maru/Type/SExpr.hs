@@ -10,6 +10,7 @@ module Maru.Type.SExpr
   , AST(..)
   , MaruTerm (..)
   , scottEncode
+  , scottDecode
   ) where
 
 import Data.List (foldl')
