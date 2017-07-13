@@ -7,6 +7,7 @@ module Maru.Type.SExpr
   , SExpr (..)
   , symbol
   , int
+  , SExprLike (..)
   , AST(..)
   , MaruTerm (..)
   , scottEncode
@@ -47,6 +48,17 @@ symbol = Atom . TermSymbol
 -- | A shortcut of @Atom . TermInt@
 int :: Int -> SExpr
 int = Atom . TermInt
+-- | @a@ can be represented as @SExpr@
+class SExprLike a where
+  -- | @a@ can be converted as @SExpr@.
+  wrap :: a -> SExpr
+
+instance SExprLike Int where
+  wrap = Atom . TermInt
+
+-- | As a symbol
+instance SExprLike Text where
+  wrap = Atom . TermSymbol
 
 
 -- | The abstract syntax tree
