@@ -39,6 +39,8 @@ library
                      , Maru.Eval
                      , Maru.Parser
                      , Maru.Type
+                     , Maru.Type.Eff
+                     , Maru.Type.Eval
                      , Maru.Type.Parser
                      , Maru.Type.SExpr
 

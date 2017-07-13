@@ -18,13 +18,16 @@ import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
 import Control.Exception.Safe (Exception)
 import Control.Exception.Throwable.TH (declareException)
+import Control.Monad (foldM)
 import Data.Either.Extra (maybeToEither)
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), MaruTerm(..))
+import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
@@ -103,3 +106,8 @@ execute (Atom (TermInt x)) = undefined --return x
 execute (Atom (TermSymbol symbol)) = do
   lookupSymbol symbol
   undefined
+
+
+-- | Simular to @foldM@ but for @NonEmpty@
+foldM1 :: Monad m => (a -> a -> m a) -> NonEmpty a -> m a
+foldM1 f (x :| xs) = foldM f x xs
