@@ -2,7 +2,8 @@
 
 module Steps.Step2Test where
 
-import Maru.Type (SExpr(..), symbol, int)
+import Data.Text (Text)
+import Maru.Type (SExpr(..), SExprLike(..))
 import System.IO.Silently (silence)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), Assertion)
@@ -13,16 +14,28 @@ import qualified Maru.Eval as Eval
 test_evaluator_evaluates :: [TestTree]
 test_evaluator_evaluates =
   [ testCase "(+ 2 3) to 5" $
-      Cons (symbol "+") (Cons (int 2) (Cons (int 3) Nil)) !?= int 5
+      Cons (AtomSymbol "+") (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
+      !?= AtomInt 5
   , testCase "(+ 2 (* 3 4)) to 14" $
-      Cons (symbol "+") (Cons (int 2)
-                        (Cons (symbol "*") (Cons (int 3)
-                                           (Cons (int 4) Nil)
-                        )))
-                        !?= int 14
-  ]
+      Cons (AtomSymbol "+") (Cons (AtomInt 2)
+                            (Cons (AtomSymbol "*") (Cons (AtomInt 3)
+                                                   (Cons (AtomInt 4)
+                                                   Nil))))
+      !?= AtomInt 14
+  ] ++ myAddtionalCases
   where
-    (!?=) :: SExpr -> SExpr -> Assertion
-    origin !?= expected = do
-      (actual, _) <- silence $ Eval.eval Eval.initialEnv origin
-      actual @?= expected
+    myAddtionalCases :: [TestTree]
+    myAddtionalCases =
+      [ testCase "(+ 1 2 3) to 6" $
+          Cons (AtomSymbol "+") (Cons (AtomInt 1)
+                                (Cons (AtomInt 2)
+                                (Cons (AtomInt 3)
+                                Nil)))
+          !?= AtomInt 6
+      ]
+
+
+(!?=) :: SExpr -> SExpr -> Assertion
+origin !?= expected = do
+  (actual, _) <- silence $ Eval.eval Eval.initialEnv origin
+  actual @?= expected
