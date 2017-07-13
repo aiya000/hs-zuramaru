@@ -1,70 +1,23 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeOperators #-}
 
 -- | @MaruEvaluator@ evaluates @SEexpr@.
 module Maru.Eval
-  ( MaruEnv
-  , initialEnv
+  ( initialEnv
   , eval
   ) where
 
-import Control.Eff (Eff, Member, SetMember)
-import Control.Eff.Exception (Exc, runExc, liftEither)
-import Control.Eff.Lift (Lift, runLift)
-import Control.Eff.State.Lazy (State, runState, get)
-import Control.Exception.Safe (Exception)
-import Control.Exception.Throwable.TH (declareException)
+import Control.Eff.Exception (throwExc)
 import Control.Monad (foldM)
-import Data.Either.Extra (maybeToEither)
 import Data.List.NonEmpty (NonEmpty(..))
-import Data.Map.Lazy (Map)
 import Data.Monoid ((<>))
 import Data.Text (Text)
-import Data.Tuple (swap)
-import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), MaruTerm(..))
+import Maru.Type (SExpr(..), scottDecode, nonEmpty')
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
-import qualified Data.Text as T
-
--- Define a data type and instances
-declareException "NoSuchSymbolException" ["NoSuchSymbolException"]
-
--- | This is thrown if looking up symbol is failed in @MaruEvaluator@
-type NoSuchSymbolException' = NoSuchSymbolException ()
-
-
--- | A monad for evaluating a program
-type MaruEvaluator a = forall r. ( Member (Exc NoSuchSymbolException') r
-                                 , Member (State MaruEnv) r
-                                 , SetMember Lift (Lift IO) r
-                                 ) => Eff r a
-
---NOTE: Why eff's runState's type sigunature is different with mtl runState ?
--- | Run an evaluation of @MaruEvaluator@
-runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either NoSuchSymbolException' a, MaruEnv)
-runMaruEvaluator m env = swap <$> (runLift . runState env $ runExc m)
-
-
--- |
--- Take a value from @MaruEnv@ in @State@.
--- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
-lookupSymbol :: forall r. (Member (Exc NoSuchSymbolException') r, Member (State MaruEnv) r) => Text -> Eff r SomeFunc
-lookupSymbol sym = do
-  env <- (get :: Eff r MaruEnv)
-  liftEither . maybeToEither (symbolNotFound sym) $ M.lookup sym env
-  where
-    symbolNotFound :: Text -> NoSuchSymbolException'
-    symbolNotFound sym = noSuchSymbolException $ "Symbol '" <> T.unpack sym <> "' is not found"
-
-
-type MaruEnv = Map Text SomeFunc
-
-data SomeFunc = forall a b. SomeFunc (a -> b)
 
 
 -- |
@@ -74,10 +27,10 @@ data SomeFunc = forall a b. SomeFunc (a -> b)
 --
 -- This maybe passed to @eval@
 initialEnv :: MaruEnv
-initialEnv = M.fromList [ ("+", SomeFunc ((+) :: Int -> Int -> Int))
-                        , ("-", SomeFunc ((-) :: Int -> Int -> Int))
-                        , ("*", SomeFunc ((*) :: Int -> Int -> Int))
-                        , ("/", SomeFunc (div :: Int -> Int -> Int))
+initialEnv = M.fromList [ ("+", (SomeMaruPrimitive DiscrIntXIntToInt (+)))
+                        , ("-", (SomeMaruPrimitive DiscrIntXIntToInt (-)))
+                        , ("*", (SomeMaruPrimitive DiscrIntXIntToInt (*)))
+                        , ("/", (SomeMaruPrimitive DiscrIntXIntToInt div))
                         ]
 
 
@@ -97,15 +50,45 @@ eval env sexpr = do
     Right a -> return (a, newEnv)
 
 
--- | A naked evaluator of zuramaru.
+-- | A naked evaluator of zuramaru
 execute :: SExpr -> MaruEvaluator SExpr
-execute Nil       = return Nil
-execute (Quote _) = error "TODO (eval)"
-execute (Cons _ _) = undefined
-execute (Atom (TermInt x)) = undefined --return x
-execute (Atom (TermSymbol symbol)) = do
-  lookupSymbol symbol
-  undefined
+execute (Cons (AtomSymbol x) xs) = do
+  SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol' x
+  -- Evaluate recursively
+  xs' <- (nonEmpty'' =<<) . mapM execute $ flatten xs
+  foldM1 (liftBinaryFunc f) xs'
+  where
+    lookupSymbol' :: Text -> MaruEvaluator SomeMaruPrimitive
+    lookupSymbol' = lookupSymbol
+    nonEmpty'' :: [SExpr] -> MaruEvaluator (NonEmpty SExpr)
+    nonEmpty'' = nonEmpty'
+
+execute (Cons (AtomInt x) Nil) = return $ AtomInt x
+execute (Cons x y)             = return $ Cons x y
+execute (AtomSymbol symbol)    = throwExc ("An operator (" <> symbol <> ") is specified without any argument" :: ExceptionCause)
+execute (AtomInt x)            = return $ AtomInt x
+execute Nil                    = return Nil
+execute (Quote _)              = error "TODO (eval)"
+
+
+-- |
+-- >>> let x = Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) -- (1 2 3)
+-- >>> flatten x
+-- [AtomInt 1, AtomInt 2, AtomInt 3]
+-- >>> let y = Cons (AtomInt 2) (Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))) -- (2 (* 3 4))
+-- >>> flatten y
+-- [AtomInt 2, Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
+-- >> let z = Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil)) -- (* 3 4)
+-- >> flatten z
+-- [Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
+flatten :: SExpr -> [SExpr]
+flatten (Cons (AtomInt x) y)      = AtomInt x : flatten y
+flatten s@(Cons (AtomSymbol _) _) = [s]
+flatten (Cons _ _) = error "an unexpected case is detected (flatten)"
+flatten Nil        = []
+flatten s@(AtomInt _)    = [s]
+flatten s@(AtomSymbol _) = [s]
+flatten (Quote _)        = error "TODO (flatten)"
 
 
 -- | Simular to @foldM@ but for @NonEmpty@

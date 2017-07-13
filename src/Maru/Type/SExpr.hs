@@ -1,13 +1,12 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | Common types for zuramaru
 module Maru.Type.SExpr
   ( SourceCode
   , MaruToken
   , SExpr (..)
-  , symbol
-  , int
   , SExprLike (..)
   , AST(..)
   , scottEncode
@@ -43,13 +42,7 @@ data SExpr where
 instance TextShow SExpr where
   showb = TS.fromString . show
 
--- | A shortcut of @Atom . TermSymbol@
-symbol :: Text -> SExpr
-symbol = Atom . TermSymbol
 
--- | A shortcut of @Atom . TermInt@
-int :: Int -> SExpr
-int = Atom . TermInt
 -- | @a@ can be represented as @SExpr@
 class SExprLike a where
   -- | @a@ can be converted as @SExpr@.

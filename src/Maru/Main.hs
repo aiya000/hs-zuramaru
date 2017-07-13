@@ -33,8 +33,7 @@ import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
-import Maru.Eval (MaruEnv)
-import Maru.Type (SExpr, ParseErrorResult)
+import Maru.Type (SExpr, ParseErrorResult, MaruEnv)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -116,6 +115,7 @@ instance Member (State ReplState) r => MonadState ReplState (Eff r) where
 instance Member Fail r => MonadFail (Eff r) where
   fail _ = throwExc ()
 
+--TODO: Remove this after @liftMaybeM@ is added to extensible-effects by my contribute !
 -- | Why @liftMaybeM@ is not defined in @Control.Eff.Exception@ ?
 liftMaybeM :: ( Typeable m
               , Member Fail r, SetMember Lift (Lift m) r
