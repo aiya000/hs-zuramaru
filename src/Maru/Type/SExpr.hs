@@ -113,6 +113,14 @@ scottEncode (x:xs) = Cons x $ scottEncode xs
 
 --TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
 -- | The inverse function of @scottEncode@
+--
+-- >>> let xs = Cons (Atom (TermInt 1)) (Cons (Atom (TermInt 2)) Nil)
+-- >>> scottDecode xs
+-- [Atom (TermInt 1),Atom (TermInt 2)]
+-- >>> scottDecode $ Cons (Atom (TermInt 10)) Nil
+-- [Atom (TermInt 10)]
+-- >>> scottDecode $ Cons Nil Nil
+-- [Nil]
 scottDecode :: SExpr -> [SExpr]
 scottDecode (Cons x y) = x : scottDecode y
 scottDecode Nil = []
