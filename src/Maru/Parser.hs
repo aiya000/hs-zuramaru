@@ -75,7 +75,7 @@ sexprParser = do
   atomParser <|> listParser
   where
     atomParser :: MaruParser SExpr
-    atomParser = Atom <$> (numberParser <|> symbolParser) <* P.space
+    atomParser = (numberParser <|> symbolParser) <* P.space
 
     listParser :: MaruParser SExpr
     listParser = do
@@ -87,11 +87,11 @@ sexprParser = do
       P.space
       return $ scottEncode xs
 
-    numberParser :: MaruParser MaruTerm
+    numberParser :: MaruParser SExpr
     numberParser = intParser
 
-    symbolParser :: MaruParser MaruTerm
-    symbolParser = TermSymbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
+    symbolParser :: MaruParser SExpr
+    symbolParser = AtomSymbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
 
-    intParser :: MaruParser MaruTerm
-    intParser = TermInt . read <$> P.some P.digitChar
+    intParser :: MaruParser SExpr
+    intParser = AtomInt . read <$> P.some P.digitChar

@@ -32,7 +32,7 @@ import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe')
-import Maru.Type.SExpr (SExpr(..), SExprLike(..), MaruTerm(..))
+import Maru.Type.SExpr (SExpr(..), SExprLike(..))
 import qualified Data.Map.Lazy as M
 
 
@@ -75,16 +75,16 @@ class MaruPrimitive a where
   fromSExpr :: (Member Fail' r, Member (State MaruEnv) r) => SExpr -> Eff r a
 
 instance MaruPrimitive Int where
-  fromSExpr (Atom (TermInt x)) = return x
+  fromSExpr (AtomInt x) = return x
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive Int"
 
 -- | As a symbol
 instance MaruPrimitive Text where
-  fromSExpr (Atom (TermSymbol x)) = return x
+  fromSExpr (AtomSymbol x) = return x
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive Text"
 
 instance MaruPrimitive (Int -> Int -> Int) where
-  fromSExpr (Atom (TermSymbol x)) = do
+  fromSExpr (AtomSymbol x) = do
     SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol x
     return f
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive (Int -> Int -> Int)"
@@ -113,5 +113,5 @@ liftBinaryFunc f x y = do
 --TODO: Can I use Prism instead ?
 -- | Pull internal @Text@. If an argument is not @Atom (TermSymbol _)@, return an invalid value of @Fail'@
 unsymbol :: Member Fail' r => SExpr -> Eff r Text
-unsymbol (Atom (TermSymbol x)) = return x
+unsymbol (AtomSymbol x) = return x
 unsymbol _ = throwExc ("An invalid value is taken, it is not the symbol" :: ExceptionCause)

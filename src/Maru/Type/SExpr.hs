@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Common types for zuramaru
@@ -9,7 +10,6 @@ module Maru.Type.SExpr
   , int
   , SExprLike (..)
   , AST(..)
-  , MaruTerm (..)
   , scottEncode
   , scottDecode
   ) where
@@ -31,10 +31,12 @@ type MaruToken = P.Token Text
 
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr -- ^ Appending list and list
-           | Nil              -- ^ A representation of empty list
-           | Quote SExpr      -- ^ For lazy evaluation
-           | Atom MaruTerm    -- ^ Some term item
+data SExpr where
+  Cons       :: SExpr -> SExpr -> SExpr -- ^ Appending list and list
+  Nil        :: SExpr                   -- ^ A representation of empty list
+  Quote      :: SExpr -> SExpr          -- ^ For lazy evaluation
+  AtomInt    :: Int -> SExpr            -- A pattern of the atom for @Int@ (primitive)
+  AtomSymbol :: Text -> SExpr           -- A pattern of the atom for @Text@ (primitive)
   deriving (Show, Eq)
 
 -- | Same as Show
@@ -54,11 +56,11 @@ class SExprLike a where
   wrap :: a -> SExpr
 
 instance SExprLike Int where
-  wrap = Atom . TermInt
+  wrap = AtomInt
 
 -- | As a symbol
 instance SExprLike Text where
-  wrap = Atom . TermSymbol
+  wrap = AtomSymbol
 
 
 -- | The abstract syntax tree
@@ -81,19 +83,10 @@ instance AST SExpr where
       a  <<>> "" = a
       "" <<>> b  = b
       a  <<>> b  = a <> " " <> b
-  visualize (Atom x) = showt x
+  visualize (AtomSymbol x) = showt x
+  visualize (AtomInt x)    = showt x
   visualize Nil = "()"
   visualize (Quote _) = error "TODO for Quote"
-
-
--- | A literal, a name of variable, function or macro for zuramaru language
-data MaruTerm = TermInt Int     -- ^ Integer literal
-              | TermSymbol Text -- ^ Name of variable, function or macro. (this includes nil)
-  deriving (Show, Eq)
-
-instance TextShow MaruTerm where
-  showb (TermInt x)    = showb x
-  showb (TermSymbol x) = TS.fromText x
 
 
 -- | Concatenate SExpr by Cons
@@ -124,5 +117,6 @@ scottEncode (x:xs) = Cons x $ scottEncode xs
 scottDecode :: SExpr -> [SExpr]
 scottDecode (Cons x y) = x : scottDecode y
 scottDecode Nil = []
-scottDecode (Atom x) = [Atom x]
-scottDecode (Quote _) = error "TODO for Quote"
+scottDecode (AtomSymbol x) = [AtomSymbol x]
+scottDecode (AtomInt x)    = [AtomInt x]
+scottDecode (Quote _)      = error "TODO for Quote"
