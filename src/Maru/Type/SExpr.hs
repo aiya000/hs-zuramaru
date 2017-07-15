@@ -29,14 +29,20 @@ type SourceCode = Text
 type MaruToken = P.Token Text
 
 
+--NOTE: Hey doctest, why do you ragard '-- ^' comment as a parse error ?
 -- | n-ary tree and terms
 data SExpr where
-  Cons       :: SExpr -> SExpr -> SExpr -- ^ Appending list and list
-  Nil        :: SExpr                   -- ^ A representation of empty list
-  Quote      :: SExpr -> SExpr          -- ^ For lazy evaluation
-  AtomInt    :: Int -> SExpr            -- A pattern of the atom for @Int@ (primitive)
-  AtomSymbol :: Text -> SExpr           -- A pattern of the atom for @Text@ (primitive)
-  deriving (Show, Eq)
+  -- | Appending list and list
+  Cons :: SExpr -> SExpr -> SExpr
+  -- | A representation of empty list
+  Nil :: SExpr
+  -- | For lazy evaluation
+  Quote :: SExpr -> SExpr
+  -- | A pattern of the atom for @Int@ (primitive)
+  AtomInt :: Int -> SExpr
+  -- | A pattern of the atom for @Text@ (primitive)
+  AtomSymbol :: Text -> SExpr
+    deriving (Show, Eq)
 
 -- | Same as Show
 instance TextShow SExpr where
@@ -76,7 +82,7 @@ instance AST SExpr where
       a  <<>> "" = a
       "" <<>> b  = b
       a  <<>> b  = a <> " " <> b
-  visualize (AtomSymbol x) = showt x
+  visualize (AtomSymbol x) = x
   visualize (AtomInt x)    = showt x
   visualize Nil = "()"
   visualize (Quote _) = error "TODO for Quote"
@@ -84,15 +90,15 @@ instance AST SExpr where
 
 -- | Concatenate SExpr by Cons
 --
--- >>> let xs = [(Atom (TermInt 1)), (Cons (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil)) Nil)] -- [1, (2 3)]
+-- >>> let xs = [(AtomInt 1), (Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil)] -- [1, (2 3)]
 -- >>> scottEncode xs
--- Cons (Atom (TermInt 1)) (Cons (Cons (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil)) Nil) Nil)
--- >>> let ys = [Atom (TermInt 1), Atom (TermInt 2), Atom (TermInt 3)] -- [1, 2, 3]
+-- Cons (AtomInt 1) (Cons (Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil) Nil)
+-- >>> let ys = [AtomInt 1, AtomInt 2, AtomInt 3] -- [1, 2, 3]
 -- >>> scottEncode ys
--- Cons (Atom (TermInt 1)) (Cons (Atom (TermInt 2)) (Cons (Atom (TermInt 3)) Nil))
--- >>> let zs = [Atom (TermInt 1), Nil] -- [1, ()]
+-- Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
+-- >>> let zs = [AtomInt 1, Nil] -- [1, ()]
 -- >>> scottEncode zs
--- Cons (Atom (TermInt 1)) (Cons Nil Nil)
+-- Cons (AtomInt 1) (Cons Nil Nil)
 scottEncode :: [SExpr] -> SExpr
 scottEncode [] = Nil
 scottEncode (x:xs) = Cons x $ scottEncode xs
@@ -100,11 +106,11 @@ scottEncode (x:xs) = Cons x $ scottEncode xs
 --TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
 -- | The inverse function of @scottEncode@
 --
--- >>> let xs = Cons (Atom (TermInt 1)) (Cons (Atom (TermInt 2)) Nil)
+-- >>> let xs = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
 -- >>> scottDecode xs
--- [Atom (TermInt 1),Atom (TermInt 2)]
--- >>> scottDecode $ Cons (Atom (TermInt 10)) Nil
--- [Atom (TermInt 10)]
+-- [AtomInt 1,AtomInt 2]
+-- >>> scottDecode $ Cons (AtomInt 10) Nil
+-- [AtomInt 10]
 -- >>> scottDecode $ Cons Nil Nil
 -- [Nil]
 scottDecode :: SExpr -> [SExpr]
