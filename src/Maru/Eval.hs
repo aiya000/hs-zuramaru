@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
 -- | @MaruEvaluator@ evaluates @SEexpr@.
@@ -11,13 +12,19 @@ module Maru.Eval
   ) where
 
 import Control.Eff.Exception (throwExc)
+import Control.Exception.Safe (Exception, SomeException, toException)
+import Control.Exception.Throwable.TH (declareException)
 import Control.Monad (foldM)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Text (Text)
+import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), scottDecode, nonEmpty')
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
+import qualified Data.Text as T
+
+declareException "EvalException" ["EvalException"]
 
 
 -- |
@@ -27,10 +34,10 @@ import qualified Data.Map.Lazy as M
 --
 -- This maybe passed to @eval@
 initialEnv :: MaruEnv
-initialEnv = M.fromList [ ("+", (SomeMaruPrimitive DiscrIntXIntToInt (+)))
-                        , ("-", (SomeMaruPrimitive DiscrIntXIntToInt (-)))
-                        , ("*", (SomeMaruPrimitive DiscrIntXIntToInt (*)))
-                        , ("/", (SomeMaruPrimitive DiscrIntXIntToInt div))
+initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrIntXIntToInt (+))
+                        , ("-", SomeMaruPrimitive DiscrIntXIntToInt (-))
+                        , ("*", SomeMaruPrimitive DiscrIntXIntToInt (*))
+                        , ("/", SomeMaruPrimitive DiscrIntXIntToInt div)
                         ]
 
 
@@ -42,12 +49,12 @@ initialEnv = M.fromList [ ("+", (SomeMaruPrimitive DiscrIntXIntToInt (+)))
 --
 -- Return an evaluated result, with new @MaruEnv@
 -- (@env@ is changed if the evaluation of @SExpr@ changes @MaruEnv@).
-eval :: MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
+eval :: MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv))
 eval env sexpr = do
   (result, newEnv) <- runMaruEvaluator (execute sexpr) env
   case result of
-    Left  e -> print e >> return (Nil, newEnv)
-    Right a -> return (a, newEnv)
+    Left cause  -> return . Left . toException $ EvalException (T.unpack cause) sexpr
+    Right sexpr -> return $ Right (sexpr, newEnv)
 
 
 -- | A naked evaluator of zuramaru

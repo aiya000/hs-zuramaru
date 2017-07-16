@@ -19,6 +19,7 @@ import Control.Eff (Eff, Member, SetMember, (:>))
 import Control.Eff.Exception (throwExc, Fail, runFail, liftMaybe)
 import Control.Eff.Lift (Lift, lift, runLift)
 import Control.Eff.State.Lazy (State, runState)
+import Control.Exception.Safe (SomeException)
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.Fail (MonadFail(..))
 import Control.Monad.State.Class (MonadState(..), gets)
@@ -128,7 +129,14 @@ instance Injective (Maybe ()) Bool where
   to Nothing   = False
 
 
-type EvalResult = Either ParseErrorResult SExpr
+
+-- |
+-- The eval phase do parse and evaluation,
+-- take its error or a rightly result
+data EvalPhaseResult = ParseError ParseErrorResult -- ^ An error is happened in the parse
+                     | EvalError SomeException     -- ^ An error is happend in the evaluation
+                     | RightResult SExpr           -- ^ A result is made by the parse and the evaulation without errors
+
 type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
 
 
@@ -176,43 +184,49 @@ readPhase = do
   return (T.pack <$> maybeInput)
 
 -- |
--- Do parse and evaluate a Text to a SExpr, and return its result.
--- The result is SEpxr (maru's AST) if a parse is succeed,
--- it is ParseErrorResult if the parse is failed.
---
--- Logs with @ParseResult@ if @Bool@ is True.
+-- Do parse and evaluate a Text to a SExpr.
+-- Return @SExpr@ (maru's AST) if both parse and evaluation is succeed.
+-- Otherwise, return a error result.
 --
 -- Execute the evaluation.
 -- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
 -- A state of @MaruEnv@ is updated by new environment of the result.
 evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-             Text -> Eff r EvalResult
+             Text -> Eff r EvalPhaseResult
 evalPhase code = do
   evalIsNeeded <- gets $ doEval . replOpts
   -- Get a real evaluator or an empty evaluator.
   -- The empty evaluator doesn't touch any arguments.
   let eval' = if evalIsNeeded then Eval.eval
-                              else (return .) . flip (,)
+                              else fakeEval
   case Parser.debugParse code of
     (Left parseErrorResult, _) ->
-      return $ Left parseErrorResult
+      return $ ParseError parseErrorResult
     (Right sexpr, logs) -> do
       let (messages, item) = Parser.prettyShowLogs logs
       replLogsA . evalLogsA %= (++ messages ++ [item, "parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
-      env              <- gets replEnv
-      (result, newEnv) <- lift $ eval' env sexpr
-      replEnvA .= newEnv
-      return $ Right result
+      env        <- gets replEnv
+      evalResult <- lift $ eval' env sexpr
+      case evalResult of
+        Left evalErrorResult -> return $ EvalError evalErrorResult
+        Right (result, newEnv) -> do
+          replEnvA .= newEnv
+          return $ RightResult result
+  where
+    -- Do nothing
+    fakeEval :: MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv))
+    fakeEval = (return .) . (Right .) . flip (,)
 
 -- | Do 'Print' for a result of 'Read' and 'Eval'
 printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-              EvalResult -> Eff r ()
-printPhase sexprOrError = do
+              EvalPhaseResult -> Eff r ()
+printPhase result = do
   DebugLogs readLogs' evalLogs' <- gets replLogs
   debugMode'                    <- gets $ debugMode . replOpts
-  lift $ case sexprOrError of
-    Left errorResult -> TIO.putStrLn . T.pack $ Parser.parseErrorPretty errorResult --TODO: Optimize error column and representation
-    Right sexpr      -> TIO.putStrLn $ MT.visualize sexpr
+  lift $ case result of
+    ParseError e      -> TIO.putStrLn . T.pack $ Parser.parseErrorPretty e --TODO: Optimize error column and representation
+    EvalError  e      -> TIO.putStrLn . T.pack $ show e
+    RightResult sexpr -> TIO.putStrLn $ MT.visualize sexpr
   lift . when debugMode' $ do
     forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
     forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
