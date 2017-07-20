@@ -2,8 +2,8 @@
 
 module Steps.Step2Test where
 
-import Data.Text (Text)
-import Maru.Type (SExpr(..), SExprLike(..))
+import Control.Exception.Safe (SomeException)
+import Maru.Type (SExpr(..), MaruEnv)
 import System.IO.Silently (silence)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), Assertion, assertFailure)
@@ -35,8 +35,13 @@ test_evaluator_evaluates =
       , testCase "(1 2) (naked expression) to an error" $ do
           result <- evalInitSilently $ Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
           case result of
-            Left e -> return () -- The naked expression should be the error
-            Right a -> assertFailure $ "A right result is detected, but a naked expression should be an error: " ++ show a
+            Left _ -> return () -- The naked expression should be the error
+            Right (sexpr, env) -> do
+              putStrLn "..."
+              putStrLn "A right result is detected, but a naked expression should be an error: "
+              putStrLn $ "\tresult:     " ++ show sexpr
+              putStrLn $ "\tenviroment: " ++ show env
+              assertFailure ""
       ]
 
 

@@ -19,7 +19,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), scottDecode, nonEmpty')
+import Maru.Type (SExpr(..), nonEmpty')
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T

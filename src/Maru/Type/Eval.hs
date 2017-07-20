@@ -34,6 +34,7 @@ import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe')
 import Maru.Type.SExpr (SExpr(..), SExprLike(..))
 import qualified Data.Map.Lazy as M
+import qualified Data.Text as T
 
 
 -- | A total effect of @MaruEvaluator@
@@ -59,6 +60,12 @@ type MaruEnv = Map Text SomeMaruPrimitive
 
 -- | A reversible monomorphic type for @MaruPrimitive@
 data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discriminating a) a
+
+instance Show SomeMaruPrimitive where
+  show x = "SomeMaruPrimitive " ++ case x of
+    SomeMaruPrimitive DiscrInt  a -> show a
+    SomeMaruPrimitive DiscrText a -> T.unpack a
+    SomeMaruPrimitive DiscrIntXIntToInt _ -> "#(Int -> Int -> Int)"
 
 
 -- |
