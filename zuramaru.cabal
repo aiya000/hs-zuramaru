@@ -63,6 +63,7 @@ test-suite maru-test
                      , Steps.Step2Test
   build-depends:       base
                      , doctest
+                     , safe-exceptions
                      , silently
                      , tasty
                      , tasty-discover
