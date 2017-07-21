@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -34,7 +35,7 @@ import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
-import Maru.Type (SExpr, ParseErrorResult, MaruEnv)
+import Maru.Type (SExpr, ParseErrorResult, MaruEnv, SimplificationSteps, AST(..), reportSteps)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -137,8 +138,7 @@ data EvalPhaseResult = ParseError ParseErrorResult -- ^ An error is happened in 
                      | EvalError SomeException     -- ^ An error is happend in the evaluation
                      | RightResult SExpr           -- ^ A result is made by the parse and the evaulation without errors
 
-type Evaluator = MaruEnv -> SExpr -> IO (SExpr, MaruEnv)
-
+type Evaluator = MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv, SimplificationSteps))
 
 
 -- | Run REPL of zuramaru
@@ -201,8 +201,7 @@ evalPhase code = do
   let eval' = if evalIsNeeded then Eval.eval
                               else fakeEval
   case Parser.debugParse code of
-    (Left parseErrorResult, _) ->
-      return $ ParseError parseErrorResult
+    (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
     (Right sexpr, logs) -> do
       let (messages, item) = Parser.prettyShowLogs logs
       replLogsA . evalLogsA %= (++ messages ++ [item, "parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
@@ -210,13 +209,15 @@ evalPhase code = do
       evalResult <- lift $ eval' env sexpr
       case evalResult of
         Left evalErrorResult -> return $ EvalError evalErrorResult
-        Right (result, newEnv) -> do
+        Right (result, newEnv, steps) -> do
           replEnvA .= newEnv
+          replLogsA . evalLogsA %= (++ reportSteps steps)
           return $ RightResult result
   where
     -- Do nothing
-    fakeEval :: MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv))
-    fakeEval = (return .) . (Right .) . flip (,)
+    fakeEval :: Evaluator
+    fakeEval = (return .) . (Right .) . flip (,,[])
+
 
 -- | Do 'Print' for a result of 'Read' and 'Eval'
 printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r)

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
@@ -26,27 +27,32 @@ import Control.Eff (Eff, Member, (:>))
 import Control.Eff.Exception (runExc, throwExc)
 import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
+import Control.Eff.Writer.Lazy (runMonoidWriter)
+import Data.Bifunctor (first)
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
-import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe')
+import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
 import Maru.Type.SExpr (SExpr(..), SExprLike(..))
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
-
 -- | A total effect of @MaruEvaluator@
-type Eval = Fail' :> State MaruEnv :> Lift IO :> Void
+type Eval = Fail' :> State MaruEnv :> WriterSimplifSteps :> Lift IO :> Void
 
 -- | A monad for evaluating a program
 type MaruEvaluator a = Eff Eval a
 
+--TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
 --NOTE: Why eff's runState's type sigunature is different with mtl runState ?
 -- | Run an evaluation of @MaruEvaluator a@
-runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv)
-runMaruEvaluator m env = swap <$> (runLift . runState env $ runExc m)
+runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
+runMaruEvaluator m env = fmap (flatten . first swap . swap) . runLift . runMonoidWriter . runState env $ runExc m
+  where
+    flatten :: ((a, b), c) -> (a, b, c)
+    flatten ((x, y), z) = (x, y, z)
 
 
 -- | A modifier for dicriminate a type of @SomeMaruPrimitive@

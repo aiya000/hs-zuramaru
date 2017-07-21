@@ -6,7 +6,12 @@ import Test.Tasty.HUnit (testCase)
 
 test_doctest :: [TestTree]
 test_doctest =
-  [ testCase "Maru.Type.SExpr" $ do
-      putStrLn ""
-      doctest ["src/Maru/Type/SExpr.hs"]
+  [ doctestCase "src/Maru/Type/SExpr.hs"
+  , doctestCase "src/Maru/Type/Eff.hs"
   ]
+
+doctestCase :: FilePath -> TestTree
+doctestCase path =
+  testCase path $ do
+    putStrLn ""
+    doctest [path]

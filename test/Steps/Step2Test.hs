@@ -3,10 +3,11 @@
 module Steps.Step2Test where
 
 import Control.Exception.Safe (SomeException)
-import Maru.Type (SExpr(..), MaruEnv)
+import Maru.Type (SExpr(..), MaruEnv, SimplificationSteps, reportSteps)
 import System.IO.Silently (silence)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), Assertion, assertFailure)
+import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as Eval
 
 
@@ -36,16 +37,18 @@ test_evaluator_evaluates =
           result <- evalInitSilently $ Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
           case result of
             Left _ -> return () -- The naked expression should be the error
-            Right (sexpr, env) -> do
+            Right (sexpr, env, steps) -> do
               putStrLn "..."
-              putStrLn "A right result is detected, but a naked expression should be an error: "
+              putStrLn "A right result is detected, but a naked expression should be an error:"
               putStrLn $ "\tresult:     " ++ show sexpr
               putStrLn $ "\tenviroment: " ++ show env
+              putStrLn "Simplification steps:"
+              mapM_ TIO.putStrLn $ reportSteps steps
               assertFailure ""
       ]
 
 
-evalInitSilently :: SExpr -> IO (Either SomeException (SExpr, MaruEnv))
+evalInitSilently :: SExpr -> IO (Either SomeException (SExpr, MaruEnv, SimplificationSteps))
 evalInitSilently = silence . Eval.eval Eval.initialEnv
 
 
@@ -54,4 +57,4 @@ origin !?= expected = do
   result <- evalInitSilently origin
   case result of
     Left e -> assertFailure $ "An error is caught: " ++ show e
-    Right (actual, _) -> actual @?= expected
+    Right (actual, _, _) -> actual @?= expected
