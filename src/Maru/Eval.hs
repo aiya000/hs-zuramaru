@@ -11,6 +11,7 @@ module Maru.Eval
   , eval
   ) where
 
+import Control.Eff (Eff, Member)
 import Control.Eff.Exception (throwExc)
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
@@ -19,7 +20,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty')
+import Maru.Type (SExpr(..), nonEmpty', Fail')
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -62,7 +63,7 @@ execute :: SExpr -> MaruEvaluator SExpr
 execute (Cons (AtomSymbol x) xs) = do
   SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol' x
   -- Evaluate recursively
-  xs' <- (nonEmpty'' =<<) . mapM execute $ flatten xs
+  xs' <- flatten xs >>= mapM execute >>= nonEmpty''
   foldM1 (liftBinaryFunc f) xs'
   where
     lookupSymbol' :: Text -> MaruEvaluator SomeMaruPrimitive
@@ -79,6 +80,9 @@ execute (Quote _)              = error "TODO (eval)"
 
 
 -- |
+-- Extact a first layer.
+-- Also don't touch a second layer and more.
+--
 -- >>> let x = Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) -- (1 2 3)
 -- >>> flatten x
 -- [AtomInt 1, AtomInt 2, AtomInt 3]
@@ -88,14 +92,18 @@ execute (Quote _)              = error "TODO (eval)"
 -- >> let z = Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil)) -- (* 3 4)
 -- >> flatten z
 -- [Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
-flatten :: SExpr -> [SExpr]
-flatten (Cons (AtomInt x) y)      = AtomInt x : flatten y
-flatten s@(Cons (AtomSymbol _) _) = [s]
-flatten (Cons _ _) = error "an unexpected case is detected (flatten)"
-flatten Nil        = []
-flatten s@(AtomInt _)    = [s]
-flatten s@(AtomSymbol _) = [s]
-flatten (Quote _)        = error "TODO (flatten)"
+--
+-- >>> let a = Cons (AtomSymbol "+") (Cons (AtomSymbol "*") (Cons (AtomSymbol "+") Nil)) -- (+ (* +))
+flatten :: Member Fail' r => SExpr -> Eff r [SExpr]
+flatten (Cons (AtomInt x) y) = (:) <$> pure (AtomInt x) <*> flatten y
+
+flatten (Cons _ _) = throwExc ("an unexpected case is detected (flatten)" :: ExceptionCause)
+flatten (Quote _)  = error "TODO (flatten)"
+
+flatten s@(Cons (AtomSymbol _) _) = return [s]
+flatten s@(AtomInt _)             = return [s]
+flatten s@(AtomSymbol _)          = return [s]
+flatten Nil                       = return []
 
 
 -- | Simular to @foldM@ but for @NonEmpty@
