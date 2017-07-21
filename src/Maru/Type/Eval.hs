@@ -100,7 +100,8 @@ instance MaruPrimitive (Int -> Int -> Int) where
 -- |
 -- Take a value from @MaruEnv@ in @State@.
 -- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
-lookupSymbol :: forall r. (Member Fail' r, Member (State MaruEnv) r) => Text -> Eff r SomeMaruPrimitive
+lookupSymbol :: forall r. (Member Fail' r, Member (State MaruEnv) r)
+             => Text -> Eff r SomeMaruPrimitive
 lookupSymbol sym = do
   env <- get
   liftMaybe' ("Symbol '" <> sym <> "' is not found") $ M.lookup sym (env :: MaruEnv)

@@ -166,7 +166,8 @@ repl = do
 -- Return True otherwise.
 --
 -- If @rep@ throws a () of the error, it means what the loop of REP exiting is required.
-rep :: (Member Fail r, Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()
+rep :: (Member Fail r, Member (State ReplState) r, SetMember Lift (Lift IO) r)
+    => Eff r ()
 rep = do
   input      <- liftMaybeM readPhase
   evalResult <- evalPhase input
@@ -191,8 +192,8 @@ readPhase = do
 -- Execute the evaluation.
 -- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
 -- A state of @MaruEnv@ is updated by new environment of the result.
-evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-             Text -> Eff r EvalPhaseResult
+evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r)
+          => Text -> Eff r EvalPhaseResult
 evalPhase code = do
   evalIsNeeded <- gets $ doEval . replOpts
   -- Get a real evaluator or an empty evaluator.
@@ -218,8 +219,8 @@ evalPhase code = do
     fakeEval = (return .) . (Right .) . flip (,)
 
 -- | Do 'Print' for a result of 'Read' and 'Eval'
-printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r) =>
-              EvalPhaseResult -> Eff r ()
+printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r)
+           => EvalPhaseResult -> Eff r ()
 printPhase result = do
   DebugLogs readLogs' evalLogs' <- gets replLogs
   debugMode'                    <- gets $ debugMode . replOpts
