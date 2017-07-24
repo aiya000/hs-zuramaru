@@ -33,18 +33,19 @@ test_evaluator_evaluates =
                                 (Cons (AtomInt 3)
                                 Nil)))
           !?= AtomInt 6
-      , testCase "(1 2) (naked expression) to an error" $ do
-          result <- evalInitSilently $ Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
-          case result of
-            Left _ -> return () -- The naked expression should be the error
-            Right (sexpr, env, steps) -> do
-              putStrLn "..."
-              putStrLn "A right result is detected, but a naked expression should be an error:"
-              putStrLn $ "\tresult:     " ++ show sexpr
-              putStrLn $ "\tenviroment: " ++ show env
-              putStrLn "Simplification steps:"
-              mapM_ TIO.putStrLn $ reportSteps steps
-              assertFailure ""
+      --TODO: Move this to somewhere in the future
+      --, testCase "(1 2) (naked expression) to an error" $ do
+      --    result <- evalInitSilently $ Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
+      --    case result of
+      --      Left _ -> return () -- The naked expression should be the error
+      --      Right (sexpr, env, steps) -> do
+      --        putStrLn "..."
+      --        putStrLn "A right result is detected, but a naked expression should be an error:"
+      --        putStrLn $ "\tresult:     " ++ show sexpr
+      --        putStrLn $ "\tenviroment: " ++ show env
+      --        putStrLn "Simplification steps:"
+      --        mapM_ TIO.putStrLn $ reportSteps steps
+      --        assertFailure ""
       ]
 
 
