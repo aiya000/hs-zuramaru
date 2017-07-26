@@ -29,20 +29,13 @@ type SourceCode = Text
 type MaruToken = P.Token Text
 
 
---NOTE: Hey doctest, why do you ragard '-- ^' comment as a parse error ?
 -- | n-ary tree and terms
-data SExpr where
-  -- | Appending list and list
-  Cons :: SExpr -> SExpr -> SExpr
-  -- | A representation of empty list
-  Nil :: SExpr
-  -- | For lazy evaluation
-  Quote :: SExpr -> SExpr
-  -- | A pattern of the atom for @Int@ (primitive)
-  AtomInt :: Int -> SExpr
-  -- | A pattern of the atom for @Text@ (primitive)
-  AtomSymbol :: Text -> SExpr
-    deriving (Show, Eq)
+data SExpr = Cons SExpr SExpr -- ^ Appending list and list
+           | Nil              -- ^ A representation of empty list
+           | Quote SExpr      -- ^ For lazy evaluation
+           | AtomInt Int      -- ^ A pattern of the atom for @Int@ (primitive)
+           | AtomSymbol Text  -- ^ A pattern of the atom for @Text@ (primitive)
+  deriving (Show, Eq)
 
 -- | Same as Show
 instance TextShow SExpr where
