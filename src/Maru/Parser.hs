@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | The parsers
 module Maru.Parser
@@ -18,6 +19,7 @@ import Data.Monoid ((<>))
 import Data.Text (Text)
 import Maru.Type.Parser (ParseLog(..), ParseErrorResult, MaruParser, runMaruParser)
 import Maru.Type.SExpr
+import Maru.Type.SExpr (pattern AtomSymbol)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.Megaparsec as P

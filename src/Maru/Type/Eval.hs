@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
@@ -35,7 +35,7 @@ import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
-import Maru.Type.SExpr (SExpr(..), SExprLike(..))
+import Maru.Type.SExpr (SExpr(..), SExprLike(..), pattern AtomSymbol)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 

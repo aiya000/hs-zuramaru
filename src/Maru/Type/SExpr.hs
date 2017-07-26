@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 
@@ -11,10 +12,12 @@ module Maru.Type.SExpr
   , AST(..)
   , scottEncode
   , scottDecode
+  , pattern AtomSymbol
   ) where
 
 import Data.List (foldl')
 import Data.Monoid ((<>))
+import Data.String (IsString)
 import Data.Text (Text)
 import TextShow (TextShow, showb, showt)
 import qualified Text.Megaparsec as P
@@ -30,16 +33,24 @@ type MaruToken = P.Token Text
 
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr -- ^ Appending list and list
-           | Nil              -- ^ A representation of empty list
-           | Quote SExpr      -- ^ For lazy evaluation
-           | AtomInt Int      -- ^ A pattern of the atom for @Int@ (primitive)
-           | AtomSymbol Text  -- ^ A pattern of the atom for @Text@ (primitive)
+data SExpr = Cons SExpr SExpr   -- ^ Appending list and list
+           | Nil                -- ^ A representation of empty list
+           | Quote SExpr        -- ^ For lazy evaluation
+           | AtomInt Int        -- ^ A pattern of the atom for @Int@ (primitive)
+           | AtomSymbol' Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
   deriving (Show, Eq)
 
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
+
+-- | A symbol of `MaruEnv`
+newtype Symbol = Symbol { unSymbol :: Text }
+  deriving (IsString, Show, Eq)
+
+-- | A shortcut for `AtomSymbol' . Symbol
+pattern AtomSymbol :: Text -> SExpr
+pattern AtomSymbol x = AtomSymbol' (Symbol x)
 
 
 -- | @a@ can be represented as @SExpr@

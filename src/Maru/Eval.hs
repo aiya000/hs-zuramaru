@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
@@ -20,7 +21,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps)
+import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, pattern AtomSymbol)
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
