@@ -59,6 +59,7 @@ test-suite maru-test
   default-language:    Haskell2010
   ghc-options:         -Wall -Wno-type-defaults
   other-modules:       DocTest
+                     , Maru.Type.EvalTest
                      , Steps.Step1Test
                      , Steps.Step2Test
   build-depends:       base
