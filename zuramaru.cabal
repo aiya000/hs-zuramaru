@@ -11,6 +11,8 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
 
+--TODO: Can I alternate type-iso by lens ?
+--TODO: Use only lens (alternate microlens by lens)
 library
   hs-source-dirs:      src
   build-depends:       base >= 4.7 && < 5
@@ -19,6 +21,7 @@ library
                      , either
                      , extensible-effects
                      , extra
+                     , lens
                      , megaparsec
                      , microlens
                      , microlens-mtl
@@ -41,6 +44,7 @@ library
                      , Maru.Type
                      , Maru.Type.Eff
                      , Maru.Type.Eval
+                     , Maru.Type.Lens
                      , Maru.Type.Parser
                      , Maru.Type.SExpr
 
