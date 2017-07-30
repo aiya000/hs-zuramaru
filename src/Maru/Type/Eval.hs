@@ -3,9 +3,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -29,11 +30,11 @@ import Control.Eff.Exception (runExc, throwExc)
 import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
 import Control.Eff.Writer.Lazy (runMonoidWriter)
-import Control.Lens (Getting, makeLenses)
+import Control.Lens (Prism', prism')
 import Control.Monad.Fail (MonadFail(..))
 import Data.Bifunctor (first)
 import Data.Map.Lazy (Map)
-import Data.Monoid ((<>), First)
+import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
@@ -92,12 +93,20 @@ type MaruEnv = Map Symbol SomeMaruPrimitive
 -- | A reversible monomorphic type for @MaruPrimitive@
 data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discriminating a) a
 
--- | A `Getting` for `SomeMaruPrimitive` (A `Prism`)
-_SomeMaruPrimitive :: MaruPrimitive a => Discriminating a -> Getting (First a) SomeMaruPrimitive a
-_SomeMaruPrimitive DiscrInt          = undefined
-_SomeMaruPrimitive DiscrText         = undefined
-_SomeMaruPrimitive DiscrIntXIntToInt = undefined
-_SomeMaruPrimitive DiscrMacro        = undefined
+-- | A `Prism` for `SomeMaruPrimitive`
+_SomeMaruPrimitive :: MaruPrimitive a => Discriminating a -> Prism' SomeMaruPrimitive a
+_SomeMaruPrimitive DiscrInt = prism' (SomeMaruPrimitive DiscrInt) $
+  \case SomeMaruPrimitive DiscrInt x -> Just x
+        _ -> Nothing
+_SomeMaruPrimitive DiscrText = prism' (SomeMaruPrimitive DiscrText) $
+  \case SomeMaruPrimitive DiscrText x -> Just x
+        _ -> Nothing
+_SomeMaruPrimitive DiscrIntXIntToInt = prism' (SomeMaruPrimitive DiscrIntXIntToInt) $
+  \case SomeMaruPrimitive DiscrIntXIntToInt f -> Just f
+        _ -> Nothing
+_SomeMaruPrimitive DiscrMacro = prism' (SomeMaruPrimitive DiscrMacro) $
+  \case SomeMaruPrimitive DiscrMacro f -> Just f
+        _ -> Nothing
 
 
 instance Show SomeMaruPrimitive where
