@@ -34,7 +34,6 @@ type MaruToken = P.Token Text
 -- | n-ary tree and terms
 data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
            | Nil               -- ^ A representation of empty list
-           | Quote SExpr       -- ^ For lazy evaluation
            | AtomInt Int       -- ^ A pattern of the atom for @Int@ (primitive)
            | AtomSymbol Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
   deriving (Show, Eq)
@@ -70,7 +69,6 @@ class AST a where
   visualize :: a -> Text
 
 instance AST SExpr where
-  --TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
   -- |
   -- Convert AST to human readable syntax.
   -- This maybe the inverse function of the parser.
@@ -81,8 +79,7 @@ instance AST SExpr where
       a  <<>> "" = a
       "" <<>> b  = b
       a  <<>> b  = a <> " " <> b
-  visualize Nil         = "()"
-  visualize (Quote _)   = error "TODO for Quote"
+  visualize Nil                     = "()"
   visualize (AtomSymbol (Symbol x)) = x
   visualize (AtomInt x)             = showt x
 
@@ -102,7 +99,6 @@ scottEncode :: [SExpr] -> SExpr
 scottEncode [] = Nil
 scottEncode (x:xs) = Cons x $ scottEncode xs
 
---TODO: Add (Quote _) pattern after Quote parser and Quote Evaluator is implmenented
 -- | The inverse function of @scottEncode@
 --
 -- >>> let xs = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
@@ -117,4 +113,3 @@ scottDecode (Cons x y) = x : scottDecode y
 scottDecode Nil = []
 scottDecode (AtomSymbol x) = [AtomSymbol x]
 scottDecode (AtomInt x)    = [AtomInt x]
-scottDecode (Quote _)      = error "TODO for Quote"

@@ -97,12 +97,10 @@ execute (Cons (AtomSymbol x) xs) = do
       lookupSymbol' :: Symbol -> MaruEvaluator SomeMaruPrimitive
       lookupSymbol' = lookupSymbol
 
-execute (Cons (AtomInt x) Nil) = return $ AtomInt x
-execute (Cons x y)             = return $ Cons x y
-execute (AtomInt x)            = return $ AtomInt x
-execute Nil                    = return Nil
-execute (Quote _)              = error "TODO (eval)"
-
+execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
+execute (Cons x y)              = return $ Cons x y
+execute (AtomInt x)             = return $ AtomInt x
+execute Nil                     = return Nil
 execute (AtomSymbol (Symbol x)) = throwExc ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
 
 
@@ -128,9 +126,7 @@ flatten s@(Cons (AtomSymbol _) _) = return [s]
 flatten s@(AtomInt _)             = return [s]
 flatten s@(AtomSymbol _)          = return [s]
 flatten Nil                       = return []
-
-flatten (Cons _ _) = throwExc ("an unexpected case is detected (flatten)" :: ExceptionCause)
-flatten (Quote _)  = error "TODO (flatten)"
+flatten (Cons _ _)                = throwExc ("an unexpected case is detected (flatten)" :: ExceptionCause)
 
 
 -- | Simular to @foldM@ but for @NonEmpty@
