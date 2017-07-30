@@ -12,13 +12,16 @@
 module Maru.Type.Eval
   ( ExceptionCause
   , MaruEvaluator
+  , includeFail
   , runMaruEvaluator
   , Discriminating (..)
   , MaruEnv
+  , MaruMacro
   , SomeMaruPrimitive (..)
   , MaruPrimitive (..)
   , lookupSymbol
   , liftBinaryFunc
+  , _SomeMaruPrimitive
   ) where
 
 import Control.Eff (Eff, Member, (:>))
@@ -26,14 +29,18 @@ import Control.Eff.Exception (runExc, throwExc)
 import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
 import Control.Eff.Writer.Lazy (runMonoidWriter)
+import Control.Lens (Getting, makeLenses)
+import Control.Monad.Fail (MonadFail(..))
 import Data.Bifunctor (first)
 import Data.Map.Lazy (Map)
-import Data.Monoid ((<>))
+import Data.Monoid ((<>), First)
 import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
+import Maru.Type.SExpr
 import Maru.Type.SExpr (SExpr(..), SExprLike(..))
+import Prelude hiding (fail)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
@@ -41,7 +48,20 @@ import qualified Data.Text as T
 type Eval = Fail' :> State MaruEnv :> WriterSimplifSteps :> Lift IO :> Void
 
 -- | A monad for evaluating a program
-type MaruEvaluator a = Eff Eval a
+type MaruEvaluator = Eff Eval
+
+instance MonadFail MaruEvaluator where
+  fail = throwExc . T.pack
+
+-- |
+-- Like `liftEitherM`.
+--
+-- Include `Maybe` as `Fail'`.
+-- If it is Nothing, the whole of MaruEvaluator to be failed.
+includeFail :: ExceptionCause -> MaruEvaluator (Maybe a) -> MaruEvaluator a
+includeFail cause mm = do
+  maybeIt <- mm
+  liftMaybe' cause maybeIt
 
 --TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
 --NOTE: Why eff's runState's type sigunature is different with mtl runState ?
@@ -53,23 +73,39 @@ runMaruEvaluator m env = fmap (flatten . first swap . swap) . runLift . runMonoi
     flatten ((x, y), z) = (x, y, z)
 
 
+-- | A maru's macro, it has a side of a function of Haskell
+type MaruMacro = Symbol -> SExpr -> MaruEvaluator SExpr
+
 -- | A modifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
   DiscrInt          :: Discriminating Int
   DiscrText         :: Discriminating Text
+  --TODO: Rename to `DiscrIntToIntToInt`
   DiscrIntXIntToInt :: Discriminating (Int -> Int -> Int)
+  -- | For macros. Update @MaruEnv@.
+  DiscrMacro        :: Discriminating MaruMacro
+
 
 -- | The state of the runtime
-type MaruEnv = Map Text SomeMaruPrimitive
+type MaruEnv = Map Symbol SomeMaruPrimitive
 
 -- | A reversible monomorphic type for @MaruPrimitive@
 data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discriminating a) a
+
+-- | A `Getting` for `SomeMaruPrimitive` (A `Prism`)
+_SomeMaruPrimitive :: MaruPrimitive a => Discriminating a -> Getting (First a) SomeMaruPrimitive a
+_SomeMaruPrimitive DiscrInt          = undefined
+_SomeMaruPrimitive DiscrText         = undefined
+_SomeMaruPrimitive DiscrIntXIntToInt = undefined
+_SomeMaruPrimitive DiscrMacro        = undefined
+
 
 instance Show SomeMaruPrimitive where
   show x = "SomeMaruPrimitive " ++ case x of
     SomeMaruPrimitive DiscrInt  a -> show a
     SomeMaruPrimitive DiscrText a -> T.unpack a
-    SomeMaruPrimitive DiscrIntXIntToInt _ -> "#(Int -> Int -> Int)"
+    SomeMaruPrimitive DiscrIntXIntToInt _ -> "#(Int   -> Int -> Int)"
+    SomeMaruPrimitive DiscrMacro _        -> "#macro"
 
 
 -- |
@@ -83,7 +119,7 @@ class MaruPrimitive a where
   --
   -- There is the possiblity to load a true (Haskell's) value of @a@ from @MaruEnv@.
   -- For example, the function may load its instance from @MaruEnv@ (also it maybe failed).
-  fromSExpr :: (Member Fail' r, Member (State MaruEnv) r) => SExpr -> Eff r a
+  fromSExpr :: SExpr -> MaruEvaluator a
 
 instance MaruPrimitive Int where
   fromSExpr (AtomInt x) = return x
@@ -99,6 +135,12 @@ instance MaruPrimitive (Int -> Int -> Int) where
     SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol x
     return f
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive (Int -> Int -> Int)"
+
+instance MaruPrimitive MaruMacro where
+  fromSExpr (AtomSymbol x) = do
+    SomeMaruPrimitive DiscrMacro f <- lookupSymbol x
+    return f
+  fromSExpr _ = fail "it cannot be converted to MaruPrimitive MaruMacro"
 
 
 -- |

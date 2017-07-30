@@ -21,8 +21,9 @@ import Control.Monad (foldM)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..))
+import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..), includeFail, _SomeMaruPrimitive, (^$?))
 import Maru.Type.Eval
+import qualified Control.Eff.State.Lazy as STL
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
@@ -40,7 +41,24 @@ initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrIntXIntToInt (+))
                         , ("-", SomeMaruPrimitive DiscrIntXIntToInt (-))
                         , ("*", SomeMaruPrimitive DiscrIntXIntToInt (*))
                         , ("/", SomeMaruPrimitive DiscrIntXIntToInt div)
+                        , ("set", SomeMaruPrimitive DiscrMacro set)
+                        , ("find", SomeMaruPrimitive DiscrMacro find)
+                        , ("get", SomeMaruPrimitive DiscrMacro get)
                         ]
+  where
+    set :: MaruMacro
+    set sym (AtomInt x) = do
+      env <- STL.get
+      STL.put $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
+      return $ AtomSymbol sym
+    --TODO: Add patterns if primitives of other than AtomInt is added (MaruPrimitive may help this)
+    set _ _ = error "TODO (Maru.Eval.set)"
+
+    find :: MaruMacro
+    find = undefined
+
+    get :: MaruMacro
+    get = undefined
 
 
 -- |
@@ -59,18 +77,25 @@ eval env sexpr = do
     Right sexpr -> return $ Right (sexpr, newEnv, simplifLogs)
 
 
+--NOTE: This logic maybe not enough (e.g. (set x (set y 10)) should be evaluated to (AtomSymbol "x"))
 -- | A naked evaluator of zuramaru
 execute :: SExpr -> MaruEvaluator SExpr
+
+-- Evaluate a macro
+execute (Cons (AtomSymbol sym) (Cons x xs)) = do
+  SomeMaruPrimitive DiscrMacro g <- lookupSymbol sym
+  g sym x
+
+-- Evaluate a function
 execute (Cons (AtomSymbol x) xs) = do
-  SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol' x
+  let cause = unSymbol x <> "'s entity should be (Int -> Int -> Int)"
+  f <- includeFail cause $ lookupSymbol' x ^$? _SomeMaruPrimitive DiscrIntXIntToInt
   -- Evaluate recursively
-  xs' <- flatten xs >>= mapM execute >>= nonEmpty''
+  xs' <- flatten xs >>= mapM execute >>= nonEmpty'
   foldM1 (liftBinaryFunc f) xs'
-  where
-    lookupSymbol' :: Text -> MaruEvaluator SomeMaruPrimitive
-    lookupSymbol' = lookupSymbol
-    nonEmpty'' :: [SExpr] -> MaruEvaluator (NonEmpty SExpr)
-    nonEmpty'' = nonEmpty'
+    where
+      lookupSymbol' :: Symbol -> MaruEvaluator SomeMaruPrimitive
+      lookupSymbol' = lookupSymbol
 
 execute (Cons (AtomInt x) Nil) = return $ AtomInt x
 execute (Cons x y)             = return $ Cons x y
