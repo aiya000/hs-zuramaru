@@ -15,20 +15,21 @@ module Maru.Type.Eff
   , reportSteps
   , WriterSimplifSteps
   , liftMaybe'
+  , liftMaybeM
   , nonEmpty'
   ) where
 
-import Control.Eff (Eff, Member)
-import Control.Eff.Exception (Exc, liftEither)
+import Control.Eff (Eff, Member, SetMember)
+import Control.Eff.Exception (Exc, liftEither, Fail, liftMaybe)
+import Control.Eff.Lift (Lift, lift)
 import Control.Eff.Writer.Lazy (Writer)
 import Data.Either.Extra (maybeToEither)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid ((<>))
-import Data.String (IsString)
 import Data.Text (Text)
+import Data.Typeable (Typeable)
 import Maru.Type.SExpr (SExpr, AST(..))
 import TextShow (TextShow(..))
-import qualified TextShow as TS
 
 -- | A message of @Fail'@
 type ExceptionCause = Text
@@ -65,6 +66,13 @@ type WriterSimplifSteps = Writer SimplificationSteps
 -- | Simular to @liftEither@ but from @Maybe a@, take an @ExceptionCause@.
 liftMaybe' :: Member Fail' r => ExceptionCause -> Maybe a -> Eff r a
 liftMaybe' = (liftEither .) . maybeToEither
+
+--TODO: Remove this after @liftMaybeM@ is added to extensible-effects by my contribute !
+-- | Why @liftMaybeM@ is not defined in @Control.Eff.Exception@ ?
+liftMaybeM :: ( Typeable m
+              , Member Fail r, SetMember Lift (Lift m) r
+              ) => m (Maybe a) -> Eff r a
+liftMaybeM m = lift m >>= liftMaybe
 
 
 -- | Same as @nonEmpty@ but it is lifted to `Member Fail' r => Eff r` context

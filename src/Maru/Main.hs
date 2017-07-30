@@ -17,7 +17,7 @@ module Maru.Main
   ) where
 
 import Control.Eff (Eff, Member, SetMember, (:>))
-import Control.Eff.Exception (throwExc, Fail, runFail, liftMaybe)
+import Control.Eff.Exception (throwExc, Fail, runFail)
 import Control.Eff.Lift (Lift, lift, runLift)
 import Control.Eff.State.Lazy (State, runState)
 import Control.Exception.Safe (SomeException)
@@ -35,7 +35,7 @@ import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
-import Maru.Type (SExpr, ParseErrorResult, MaruEnv, SimplificationSteps, AST(..), reportSteps)
+import Maru.Type (SExpr, ParseErrorResult, MaruEnv, SimplificationSteps, reportSteps, liftMaybeM)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -116,13 +116,6 @@ instance Member (State ReplState) r => MonadState ReplState (Eff r) where
 -- (This overrides existed @MonadFail@ instance)
 instance Member Fail r => MonadFail (Eff r) where
   fail _ = throwExc ()
-
---TODO: Remove this after @liftMaybeM@ is added to extensible-effects by my contribute !
--- | Why @liftMaybeM@ is not defined in @Control.Eff.Exception@ ?
-liftMaybeM :: ( Typeable m
-              , Member Fail r, SetMember Lift (Lift m) r
-              ) => m (Maybe a) -> Eff r a
-liftMaybeM m = lift m >>= liftMaybe
 
 
 instance Injective (Maybe ()) Bool where
