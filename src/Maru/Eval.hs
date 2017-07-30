@@ -37,10 +37,10 @@ declareException "EvalException" ["EvalException"]
 --
 -- This maybe passed to @eval@
 initialEnv :: MaruEnv
-initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrIntXIntToInt (+))
-                        , ("-", SomeMaruPrimitive DiscrIntXIntToInt (-))
-                        , ("*", SomeMaruPrimitive DiscrIntXIntToInt (*))
-                        , ("/", SomeMaruPrimitive DiscrIntXIntToInt div)
+initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrIntToIntToInt (+))
+                        , ("-", SomeMaruPrimitive DiscrIntToIntToInt (-))
+                        , ("*", SomeMaruPrimitive DiscrIntToIntToInt (*))
+                        , ("/", SomeMaruPrimitive DiscrIntToIntToInt div)
                         , ("set", SomeMaruPrimitive DiscrMacro set)
                         , ("find", SomeMaruPrimitive DiscrMacro find)
                         , ("get", SomeMaruPrimitive DiscrMacro get)
@@ -89,7 +89,7 @@ execute (Cons (AtomSymbol sym) (Cons x xs)) = do
 -- Evaluate a function
 execute (Cons (AtomSymbol x) xs) = do
   let cause = unSymbol x <> "'s entity should be (Int -> Int -> Int)"
-  f <- includeFail cause $ lookupSymbol' x ^$? _SomeMaruPrimitive DiscrIntXIntToInt
+  f <- includeFail cause $ lookupSymbol' x ^$? _SomeMaruPrimitive DiscrIntToIntToInt
   -- Evaluate recursively
   xs' <- flatten xs >>= mapM execute >>= nonEmpty'
   foldM1 (liftBinaryFunc f) xs'

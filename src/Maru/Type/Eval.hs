@@ -81,8 +81,7 @@ type MaruMacro = Symbol -> SExpr -> MaruEvaluator SExpr
 data Discriminating :: * -> * where
   DiscrInt          :: Discriminating Int
   DiscrText         :: Discriminating Text
-  --TODO: Rename to `DiscrIntToIntToInt`
-  DiscrIntXIntToInt :: Discriminating (Int -> Int -> Int)
+  DiscrIntToIntToInt :: Discriminating (Int -> Int -> Int)
   -- | For macros. Update @MaruEnv@.
   DiscrMacro        :: Discriminating MaruMacro
 
@@ -101,8 +100,8 @@ _SomeMaruPrimitive DiscrInt = prism' (SomeMaruPrimitive DiscrInt) $
 _SomeMaruPrimitive DiscrText = prism' (SomeMaruPrimitive DiscrText) $
   \case SomeMaruPrimitive DiscrText x -> Just x
         _ -> Nothing
-_SomeMaruPrimitive DiscrIntXIntToInt = prism' (SomeMaruPrimitive DiscrIntXIntToInt) $
-  \case SomeMaruPrimitive DiscrIntXIntToInt f -> Just f
+_SomeMaruPrimitive DiscrIntToIntToInt = prism' (SomeMaruPrimitive DiscrIntToIntToInt) $
+  \case SomeMaruPrimitive DiscrIntToIntToInt f -> Just f
         _ -> Nothing
 _SomeMaruPrimitive DiscrMacro = prism' (SomeMaruPrimitive DiscrMacro) $
   \case SomeMaruPrimitive DiscrMacro f -> Just f
@@ -113,7 +112,7 @@ instance Show SomeMaruPrimitive where
   show x = "SomeMaruPrimitive " ++ case x of
     SomeMaruPrimitive DiscrInt  a -> show a
     SomeMaruPrimitive DiscrText a -> T.unpack a
-    SomeMaruPrimitive DiscrIntXIntToInt _ -> "#(Int   -> Int -> Int)"
+    SomeMaruPrimitive DiscrIntToIntToInt _ -> "#(Int   -> Int -> Int)"
     SomeMaruPrimitive DiscrMacro _        -> "#macro"
 
 
@@ -141,7 +140,7 @@ instance MaruPrimitive Text where
 
 instance MaruPrimitive (Int -> Int -> Int) where
   fromSExpr (AtomSymbol x) = do
-    SomeMaruPrimitive DiscrIntXIntToInt f <- lookupSymbol x
+    SomeMaruPrimitive DiscrIntToIntToInt f <- lookupSymbol x
     return f
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive (Int -> Int -> Int)"
 
