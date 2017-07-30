@@ -195,7 +195,9 @@ evalPhase code = do
   case Parser.debugParse code of
     (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
     (Right sexpr, logs) -> do
-      replLogsA . evalLogsA %= (++ map unParseLog logs ++ ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
+      let logs'  = map unParseLog logs
+          newLog = "parse result: " <> showt sexpr
+      replLogsA . evalLogsA %= (++ newLog : logs')
       env        <- gets replEnv
       evalResult <- lift $ eval' env sexpr
       case evalResult of
