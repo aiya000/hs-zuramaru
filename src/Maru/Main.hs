@@ -141,7 +141,6 @@ runRepl = do
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
   void . runLift $ runState initialState repl
 
---TODO: Use polymorphic type "(Member (State ReplState) r, SetMember Lift (Lift IO) r) => Eff r ()"
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
@@ -150,7 +149,7 @@ runRepl = do
 -- Debug mode shows the parse and the evaluation's optionally result.
 repl :: Eff (State ReplState :> Lift IO :> Void) ()
 repl = do
-  loopIsRequired <- to <$> runFail (rep :: Eff (Fail :> State ReplState :> Lift IO :> Void) ())
+  loopIsRequired <- to <$> runFail rep
   when loopIsRequired repl
 
 -- |
