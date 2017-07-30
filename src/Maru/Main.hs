@@ -36,6 +36,7 @@ import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
 import Maru.Type
+import Safe (tailMay)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -219,12 +220,20 @@ printPhase result = do
   DebugLogs readLogs' evalLogs' <- gets replLogs
   debugMode'                    <- gets $ debugMode . replOpts
   lift $ case result of
-    ParseError e      -> TIO.putStrLn . T.pack $ Parser.parseErrorPretty e --TODO: Optimize error column and representation
+    ParseError e      -> TIO.putStrLn . T.pack . forgetMatrixAnnotation $ Parser.parseErrorPretty e
     EvalError  e      -> TIO.putStrLn . T.pack $ show e
     RightResult sexpr -> TIO.putStrLn $ MT.visualize sexpr
   lift . when debugMode' $ do
     forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
     forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
+  where
+    --NOTE: A result of Megaparse's `parseErrorPretty` may have about column and row of an error
+    forgetMatrixAnnotation :: String -> String
+    forgetMatrixAnnotation parseErrorInfo =
+      case tailMay $ lines parseErrorInfo of
+        Nothing -> ""
+        Just xs  -> unlines xs
+
 
 
 -- |
