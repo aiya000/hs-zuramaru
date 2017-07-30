@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -40,7 +39,6 @@ type ExceptionCause = Text
 type Fail' = Exc ExceptionCause
 
 
---TODO: Don't define IncoherentInstances, use newtype instead. (1)
 -- A log for 簡約s
 type SimplificationSteps = [SExpr]
 
