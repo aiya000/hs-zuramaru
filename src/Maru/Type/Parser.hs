@@ -11,7 +11,6 @@ module Maru.Type.Parser
   , runMaruParser
   , tell
   , tellMsg
-  , tellItem
   , increaseNestLevel
   , decreaseNestLevel
   , ParseErrorResult
@@ -21,7 +20,8 @@ import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus)
 import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
-import Data.Monoid ((<>))
+import Data.Monoid ((<>), Monoid)
+import Data.String (IsString)
 import Data.Text (Text)
 import Lens.Micro.Mtl ((%=), (+=), (-=))
 import Lens.Micro.TH (makeLenses)
@@ -32,17 +32,15 @@ import qualified Data.Text as T
 
 type ParseErrorResult = ParseError MaruToken Dec
 
-
--- | A log of MaruParser
-data ParseLog = Message Text     -- ^ Simple message
-              | ParsedItem Text  -- ^ Ex: '(', ''', ')' or some symbol
-  deriving (Show)
+-- | A log message of the parsing, for debug
+newtype ParseLog = ParseLog { unParseLog :: Text }
+  deriving (IsString, Monoid)
 
 -- | Current state of MaruParser
 data MaruState = MaruState
   { _parseLogs      :: [ParseLog]
   , _parseNestLevel :: Int
-  } deriving (Show)
+  }
 makeLenses ''MaruState
 
 -- | Parser with parsing logs
@@ -68,18 +66,13 @@ tell :: ParseLog -> MaruParser ()
 tell log = parseLogs %= (log:)
 
 -- |
--- Apply text to `tell` as Message.
--- the parseNestLevel is appended as indent to text automatically
+-- Apply text to `tell`.
+-- The parseNestLevel is appended as indent to text automatically
 tellMsg :: Text -> MaruParser ()
 tellMsg txt = do
   indentLevel <- gets _parseNestLevel
-  let indent = T.pack $ replicate indentLevel '\t'
-      txt'   = indent <> txt
-  tell $ Message txt'
-
--- | Apply text to `tell` as ParsedItem
-tellItem :: Text -> MaruParser ()
-tellItem = tell . ParsedItem
+  let indent = ParseLog . T.pack $ replicate indentLevel '\t'
+  tell $ indent <> ParseLog txt
 
 -- | Add 1 to parseNestLevel of state
 increaseNestLevel :: MaruParser ()

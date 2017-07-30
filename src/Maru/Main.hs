@@ -35,7 +35,7 @@ import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Lens.Micro ((.~))
 import Lens.Micro.Mtl ((.=), (%=))
 import Lens.Micro.TH (DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
-import Maru.Type (SExpr, ParseErrorResult, MaruEnv, SimplificationSteps, reportSteps, liftMaybeM)
+import Maru.Type
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
 import qualified Control.Eff.State.Lazy as EST
@@ -195,8 +195,7 @@ evalPhase code = do
   case Parser.debugParse code of
     (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
     (Right sexpr, logs) -> do
-      let (messages, item) = Parser.prettyShowLogs logs
-      replLogsA . evalLogsA %= (++ messages ++ [item, "parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
+      replLogsA . evalLogsA %= (++ map unParseLog logs ++ ["parse result: " <> showt sexpr]) --TODO: Replace to low order algorithm
       env        <- gets replEnv
       evalResult <- lift $ eval' env sexpr
       case evalResult of

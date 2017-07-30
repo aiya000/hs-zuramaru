@@ -6,16 +6,12 @@ module Maru.Parser
   ( parseTest
   , prettyPrint
   , P.parseErrorPretty
-  , prettyShowLogs
-  , prettyPrintLogs
   , parse
   , debugParse
   ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
-import Data.List (foldl')
-import Data.Monoid ((<>))
 import Data.Text (Text)
 import Maru.Type.Parser (ParseLog(..), ParseErrorResult, MaruParser, runMaruParser)
 import Maru.Type.SExpr
@@ -34,33 +30,11 @@ parseTest = prettyPrint . debugParse
 -- | Pretty print result of debugParse
 prettyPrint :: (ParseResult, [ParseLog]) -> IO ()
 prettyPrint (parseResult, logs) = do
-  prettyPrintLogs logs
+  mapM_ (TIO.putStrLn . unParseLog) logs
   putStrLn ""
   case parseResult of
     Left  e -> putStrLn $ P.parseErrorPretty e
     Right a -> putStrLn $ "Success:\n> " ++ show a
-
--- |
--- Convert @[ParseLog]@ to human readable logs.
--- 
--- @Message@ and @ParsedItem@ are devided.
--- The first element is a result of @Message@.
--- The second element is a result of @ParsedItem@.
-prettyShowLogs :: [ParseLog] -> ([Text], Text)
-prettyShowLogs logs =
-  let (messages, item) = foldl' sourt ([], "") logs
-  in (reverse messages, item)
-  where
-    sourt (messages, itemResult) (Message msg)     = (msg:messages, itemResult)
-    sourt (messages, itemResult) (ParsedItem item) = (messages, itemResult <> item)
-
--- | Pretty print @[ParseLog]@
-prettyPrintLogs :: [ParseLog] -> IO ()
-prettyPrintLogs logs = do
-  let (message, item) = prettyShowLogs logs
-  mapM_ TIO.putStrLn $ message
-  putStrLn ""
-  TIO.putStrLn item
 
 -- | Parse code to AST without logs
 parse :: SourceCode -> ParseResult
