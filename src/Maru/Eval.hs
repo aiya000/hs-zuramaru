@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
@@ -19,9 +20,8 @@ import Control.Exception.Throwable.TH (declareException)
 import Control.Monad (foldM)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
-import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, pattern AtomSymbol)
+import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..))
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -74,10 +74,11 @@ execute (Cons (AtomSymbol x) xs) = do
 
 execute (Cons (AtomInt x) Nil) = return $ AtomInt x
 execute (Cons x y)             = return $ Cons x y
-execute (AtomSymbol symbol)    = throwExc ("An operator (" <> symbol <> ") is specified without any argument" :: ExceptionCause)
 execute (AtomInt x)            = return $ AtomInt x
 execute Nil                    = return Nil
 execute (Quote _)              = error "TODO (eval)"
+
+execute (AtomSymbol (Symbol x)) = throwExc ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
 
 
 -- |

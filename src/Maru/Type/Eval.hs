@@ -4,14 +4,13 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Maru.Type.Eval
   ( ExceptionCause
-  , Fail'
   , MaruEvaluator
   , runMaruEvaluator
   , Discriminating (..)
@@ -20,7 +19,6 @@ module Maru.Type.Eval
   , MaruPrimitive (..)
   , lookupSymbol
   , liftBinaryFunc
-  , unsymbol
   ) where
 
 import Control.Eff (Eff, Member, (:>))
@@ -35,7 +33,7 @@ import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
-import Maru.Type.SExpr (SExpr(..), SExprLike(..), pattern AtomSymbol)
+import Maru.Type.SExpr (SExpr(..), SExprLike(..))
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
@@ -93,7 +91,7 @@ instance MaruPrimitive Int where
 
 -- | As a symbol
 instance MaruPrimitive Text where
-  fromSExpr (AtomSymbol x) = return x
+  fromSExpr (AtomSymbol (Symbol x)) = return x
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive Text"
 
 instance MaruPrimitive (Int -> Int -> Int) where
@@ -107,10 +105,10 @@ instance MaruPrimitive (Int -> Int -> Int) where
 -- Take a value from @MaruEnv@ in @State@.
 -- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
 lookupSymbol :: forall r. (Member Fail' r, Member (State MaruEnv) r)
-             => Text -> Eff r SomeMaruPrimitive
+             => Symbol -> Eff r SomeMaruPrimitive
 lookupSymbol sym = do
   env <- get
-  liftMaybe' ("Symbol '" <> sym <> "' is not found") $ M.lookup sym (env :: MaruEnv)
+  liftMaybe' ("A symbol '" <> unSymbol sym <> "' is not found") $ M.lookup sym (env :: MaruEnv)
 
 
 -- |
@@ -122,10 +120,3 @@ liftBinaryFunc f x y = do
   x' <- fromSExpr x
   y' <- fromSExpr y
   return . wrap $ f x' y'
-
-
---TODO: Can I use Prism instead ?
--- | Pull internal @Text@. If an argument is not @Atom (TermSymbol _)@, return an invalid value of @Fail'@
-unsymbol :: Member Fail' r => SExpr -> Eff r Text
-unsymbol (AtomSymbol x) = return x
-unsymbol _ = throwExc ("An invalid value is taken, it is not the symbol" :: ExceptionCause)

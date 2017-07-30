@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 -- | Common types for zuramaru
 module Maru.Type.SExpr
@@ -10,9 +9,9 @@ module Maru.Type.SExpr
   , SExpr (..)
   , SExprLike (..)
   , AST(..)
+  , Symbol (..)
   , scottEncode
   , scottDecode
-  , pattern AtomSymbol
   ) where
 
 import Data.List (foldl')
@@ -33,24 +32,20 @@ type MaruToken = P.Token Text
 
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr   -- ^ Appending list and list
-           | Nil                -- ^ A representation of empty list
-           | Quote SExpr        -- ^ For lazy evaluation
-           | AtomInt Int        -- ^ A pattern of the atom for @Int@ (primitive)
-           | AtomSymbol' Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
+data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
+           | Nil               -- ^ A representation of empty list
+           | Quote SExpr       -- ^ For lazy evaluation
+           | AtomInt Int       -- ^ A pattern of the atom for @Int@ (primitive)
+           | AtomSymbol Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
   deriving (Show, Eq)
 
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
 
--- | A symbol of `MaruEnv`
+-- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype Symbol = Symbol { unSymbol :: Text }
-  deriving (IsString, Show, Eq)
-
--- | A shortcut for `AtomSymbol' . Symbol
-pattern AtomSymbol :: Text -> SExpr
-pattern AtomSymbol x = AtomSymbol' (Symbol x)
+  deriving (IsString, Show, Eq, Ord)
 
 
 -- | @a@ can be represented as @SExpr@
@@ -63,7 +58,7 @@ instance SExprLike Int where
 
 -- | As a symbol
 instance SExprLike Text where
-  wrap = AtomSymbol
+  wrap = AtomSymbol . Symbol
 
 
 -- | The abstract syntax tree
@@ -86,10 +81,10 @@ instance AST SExpr where
       a  <<>> "" = a
       "" <<>> b  = b
       a  <<>> b  = a <> " " <> b
-  visualize (AtomSymbol x) = x
-  visualize (AtomInt x)    = showt x
-  visualize Nil = "()"
-  visualize (Quote _) = error "TODO for Quote"
+  visualize Nil         = "()"
+  visualize (Quote _)   = error "TODO for Quote"
+  visualize (AtomSymbol (Symbol x)) = x
+  visualize (AtomInt x)             = showt x
 
 
 -- | Concatenate SExpr by Cons

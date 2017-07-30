@@ -1,14 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 module Steps.Step2Test where
 
 import Control.Exception.Safe (SomeException)
-import Maru.Type (SExpr(..), MaruEnv, SimplificationSteps, reportSteps, pattern AtomSymbol)
+import Maru.Type (SExpr(..), MaruEnv, SimplificationSteps)
 import System.IO.Silently (silence)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), Assertion, assertFailure)
-import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as Eval
 
 
