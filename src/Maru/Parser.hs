@@ -12,7 +12,6 @@ module Maru.Parser
 
 import Control.Applicative ((<|>))
 import Control.Monad (mapM_)
-import Data.Text (Text)
 import Maru.Type.Parser (ParseLog(..), ParseErrorResult, MaruParser, runMaruParser)
 import Maru.Type.SExpr
 import Maru.Type.SExpr (pattern AtomSymbol)

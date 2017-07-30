@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | The type for Maru.Parser
@@ -21,6 +22,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
 import Data.Monoid ((<>), Monoid)
+import Data.Sequence (Seq, (|>))
 import Data.String (IsString)
 import Data.Text (Text)
 import Lens.Micro.Mtl ((%=), (+=), (-=))
@@ -29,6 +31,7 @@ import Maru.Type.SExpr
 import Text.Megaparsec (ParsecT, ParseError, Dec, runParserT)
 import Text.Megaparsec.Prim (MonadParsec)
 import qualified Data.Text as T
+import qualified GHC.Exts as L
 
 type ParseErrorResult = ParseError MaruToken Dec
 
@@ -38,32 +41,32 @@ newtype ParseLog = ParseLog { unParseLog :: Text }
 
 -- | Current state of MaruParser
 data MaruState = MaruState
-  { _parseLogs      :: [ParseLog]
+  { _parseLogs      :: Seq ParseLog
   , _parseNestLevel :: Int
   }
 makeLenses ''MaruState
 
 -- | Parser with parsing logs
-newtype MaruParser a = MaruParser { _runMaruParser :: ParsecT Dec Text (State MaruState) a }
+newtype MaruParser a = MaruParser { unMaruParser :: ParsecT Dec Text (State MaruState) a }
   deriving ( Functor, Applicative, Monad
            , Alternative, MonadPlus
            , MonadState MaruState, MonadParsec Dec Text
            )
 
--- | Run parser and extract result and logs
+-- |
+-- Run parser and extract result and logs.
+--
+-- `MaruState`'s _parseLogs is converted to a list.
 runMaruParser :: MaruParser a -> Text -> (Either (ParseError MaruToken Dec) a, [ParseLog])
 runMaruParser parser source =
   let initialState = MaruState [] 0
-      bareness     = _runMaruParser parser
+      bareness     = unMaruParser parser
       (result, MaruState logs _) = flip runState initialState $ runParserT bareness "" source
-  in (result, reverse logs)  --NOTE: `reverse` fixes reversed [ParseLog] order
+  in (result, L.toList logs)
 
--- |
--- Append a log to head of _parseLogs in the parsing.
---
--- Attention: The new log is put to top, not bottom !
+-- | Append a log to head of _parseLogs in the parsing
 tell :: ParseLog -> MaruParser ()
-tell log = parseLogs %= (log:)
+tell log = parseLogs %= (|> log)
 
 -- |
 -- Apply text to `tell`.
