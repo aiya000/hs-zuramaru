@@ -82,14 +82,13 @@ eval env sexpr = do
 execute :: SExpr -> MaruEvaluator SExpr
 
 -- Evaluate a macro
-execute (Cons (AtomSymbol sym) (Cons x xs)) = do
-  SomeMaruPrimitive DiscrMacro g <- lookupSymbol sym
+execute (Cons (AtomSymbol sym) (Cons x _)) = do
+  g <- lookupSymbol sym ^$ _SomeMaruPrimitive DiscrMacro
   g sym x
 
 -- Evaluate a function
 execute (Cons (AtomSymbol x) xs) = do
-  let cause = unSymbol x <> "'s entity should be (Int -> Int -> Int)"
-  f <- includeFail cause $ lookupSymbol' x ^$? _SomeMaruPrimitive DiscrIntToIntToInt
+  f <- lookupSymbol' x ^$ _SomeMaruPrimitive DiscrIntToIntToInt
   -- Evaluate recursively
   xs' <- flatten xs >>= mapM execute >>= nonEmpty'
   foldM1 (liftBinaryFunc f) xs'

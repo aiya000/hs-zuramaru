@@ -23,6 +23,7 @@ module Maru.Type.Eval
   , lookupSymbol
   , liftBinaryFunc
   , _SomeMaruPrimitive
+  , (^$)
   ) where
 
 import Control.Eff (Eff, Member, (:>))
@@ -30,17 +31,17 @@ import Control.Eff.Exception (runExc, throwExc)
 import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
 import Control.Eff.Writer.Lazy (runMonoidWriter)
-import Control.Lens (Prism', prism')
+import Control.Lens (Prism', prism', Getting)
 import Control.Monad.Fail (MonadFail(..))
 import Data.Bifunctor (first)
 import Data.Map.Lazy (Map)
-import Data.Monoid ((<>))
+import Data.Monoid ((<>), First)
 import Data.Text (Text)
 import Data.Tuple (swap)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
+import Maru.Type.Lens ((^$?))
 import Maru.Type.SExpr
-import Maru.Type.SExpr (SExpr(..), SExprLike(..))
 import Prelude hiding (fail)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -54,6 +55,16 @@ type MaruEvaluator = Eff Eval
 instance MonadFail MaruEvaluator where
   fail = throwExc . T.pack
 
+--TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
+--NOTE: Why eff's runState's type sigunature is different with mtl runState ?
+-- | Run an evaluation of @MaruEvaluator a@
+runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
+runMaruEvaluator m env = fmap (flatten . first swap . swap) . runLift . runMonoidWriter . runState env $ runExc m
+  where
+    flatten :: ((a, b), c) -> (a, b, c)
+    flatten ((x, y), z) = (x, y, z)
+
+
 -- |
 -- Like `liftEitherM`.
 --
@@ -64,14 +75,14 @@ includeFail cause mm = do
   maybeIt <- mm
   liftMaybe' cause maybeIt
 
---TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
---NOTE: Why eff's runState's type sigunature is different with mtl runState ?
--- | Run an evaluation of @MaruEvaluator a@
-runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
-runMaruEvaluator m env = fmap (flatten . first swap . swap) . runLift . runMonoidWriter . runState env $ runExc m
-  where
-    flatten :: ((a, b), c) -> (a, b, c)
-    flatten ((x, y), z) = (x, y, z)
+--NOTE: Can this is alternated by some lens's function ?
+-- |
+-- This is like `Prism`'s accessor,
+-- but don't return result as `Maybe`.
+--
+-- Simular to (^$?) but Nothing is included as a failure of the whole of `MaruEvaluator`.
+(^$) :: MaruEvaluator s -> Getting (First a) s a -> MaruEvaluator a
+m ^$ acs = includeFail "(^$): An accessing is failed" $ m ^$? acs
 
 
 -- | A maru's macro, it has a side of a function of Haskell
