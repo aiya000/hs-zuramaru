@@ -6,6 +6,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -36,8 +37,10 @@ import Control.Monad.Fail (MonadFail(..))
 import Data.Bifunctor (first)
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>), First)
+import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import Data.Tuple (swap)
+import Data.Typeable (Typeable, typeRep)
 import Data.Void (Void)
 import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
 import Maru.Type.Lens ((^$?))
@@ -81,8 +84,14 @@ includeFail cause mm = do
 -- but don't return result as `Maybe`.
 --
 -- Simular to (^$?) but Nothing is included as a failure of the whole of `MaruEvaluator`.
-(^$) :: MaruEvaluator s -> Getting (First a) s a -> MaruEvaluator a
-m ^$ acs = includeFail "(^$): An accessing is failed" $ m ^$? acs
+--
+-- `Typeable` for the error message.
+(^$) :: (Typeable s, Typeable a) => MaruEvaluator s -> Getting (First a) s a -> MaruEvaluator a
+(m :: MaruEvaluator s) ^$ (acs :: Getting (First a) s a) = do
+  let typeNameOfS = T.pack . show $ typeRep (Proxy :: Proxy s)
+      typeNameOfA = T.pack . show $ typeRep (Proxy :: Proxy a)
+      cause = "(^$): `" <> typeNameOfA <> "` couldn't be getten from `" <> typeNameOfS <> "`"
+  includeFail cause $ m ^$? acs
 
 
 -- | A maru's macro, it has a side of a function of Haskell
