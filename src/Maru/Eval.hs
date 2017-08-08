@@ -21,7 +21,7 @@ import Control.Monad (foldM)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..), includeFail, _SomeMaruPrimitive, (^$?))
+import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive)
 import Maru.Type.Eval
 import qualified Control.Eff.State.Lazy as STL
 import qualified Data.Map.Lazy as M
