@@ -88,13 +88,10 @@ execute (Cons (AtomSymbol sym) (Cons x _)) = do
 
 -- Evaluate a function
 execute (Cons (AtomSymbol x) xs) = do
-  f <- lookupSymbol' x ^$ _SomeMaruPrimitive DiscrIntToIntToInt
+  f <- lookupSymbol x ^$ _SomeMaruPrimitive DiscrIntToIntToInt
   -- Evaluate recursively
   xs' <- flatten xs >>= mapM execute >>= nonEmpty'
   foldM1 (liftBinaryFunc f) xs'
-    where
-      lookupSymbol' :: Symbol -> MaruEvaluator SomeMaruPrimitive
-      lookupSymbol' = lookupSymbol
 
 execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
 execute (Cons x y)              = return $ Cons x y
