@@ -26,6 +26,7 @@ dependencies:
     - microlens-mtl
     - microlens-th
     - mtl
+    - profunctors
     - readline
     - safe
     - safe-exceptions
