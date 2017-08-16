@@ -25,6 +25,7 @@ dependencies:
     - microlens
     - microlens-mtl
     - microlens-th
+    - mono-traversable
     - mtl
     - profunctors
     - readline
