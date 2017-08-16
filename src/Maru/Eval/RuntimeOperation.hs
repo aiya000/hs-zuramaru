@@ -78,14 +78,16 @@ div :: MaruFunc
 div = undefined
 
 
+--NOTE: CLisp's defparameter returns the symbol, it is a defined symbol. This is respecting it.
+--TODO: Correspond for the type of other than Int after the type is added to SExpr and somewhere
 set :: MaruMacro
-set sym (AtomInt x) = do
+set [] = fail "set: requires non empty arguments"
+set (AtomSymbol sym:AtomInt x:xs) = do
   env <- STL.get
   STL.put $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
   return $ AtomSymbol sym
-
---TODO: Add patterns if primitives of other than AtomInt is added (MaruPrimitive may help this)
-set _ _ = error "TODO (Maru.Eval.set)"
+set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
+--set xs = fail $ "set: requires a symbol as a head element but a form of `" ++ show x "` is detected"
 
 
 find :: MaruMacro

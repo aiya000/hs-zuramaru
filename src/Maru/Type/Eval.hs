@@ -118,9 +118,9 @@ instance MonadFail Result where
 type MaruFunc = [SExpr] -> Result SExpr
 
 -- |
--- A macro of maru.
--- It is possibility to update states of the environment
-type MaruMacro = Symbol -> SExpr -> MaruEvaluator SExpr
+-- A macro of maru, This is simular to `MaruFunc`.
+-- This is possibility to update the state of the environment.
+type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
 -- | An identifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
