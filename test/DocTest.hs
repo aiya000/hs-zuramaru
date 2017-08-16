@@ -8,6 +8,7 @@ test_doctest :: [TestTree]
 test_doctest =
   [ doctestCase "src/Maru/Type/SExpr.hs"
   , doctestCase "src/Maru/Type/Eff.hs"
+  , doctestCase "src/Maru/Eval/RuntimeOperation.hs"
   ]
 
 doctestCase :: FilePath -> TestTree
