@@ -17,6 +17,7 @@ dependencies:
     - base >= 4.7 && < 5
     - cmdargs
     - containers
+    - distributive
     - either
     - extensible-effects
     - extra
