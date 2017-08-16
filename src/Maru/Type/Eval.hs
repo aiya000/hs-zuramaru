@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -18,6 +19,7 @@ module Maru.Type.Eval
   , runMaruEvaluator
   , Discriminating (..)
   , MaruEnv
+  , MaruFunc
   , MaruMacro
   , SomeMaruPrimitive (..)
   , MaruPrimitive (..)
@@ -25,6 +27,7 @@ module Maru.Type.Eval
   , liftBinaryFunc
   , _SomeMaruPrimitive
   , (^$)
+  , Result (..)
   ) where
 
 import Control.Eff (Eff, Member, (:>))
@@ -94,16 +97,39 @@ includeFail cause mm = do
   includeFail cause $ m ^$? acs
 
 
--- | A maru's macro, it has a side of a function of Haskell
+-- |
+-- A part of newtype for `Either`.
+-- Avoid orphan instance's declaration.
+-- Also this is a concrete type.
+newtype Result a = Result
+  { unResult :: Either ExceptionCause a
+  } deriving (Show, Eq, Functor, Applicative, Monad)
+
+instance MonadFail Result where
+  fail = Result . Left . T.pack
+
+
+-- |
+-- A function of maru.
+-- It keeps the purity, no effects.
+--
+-- Take `[SExpr]` as arguments, its length is checked by each function.
+-- If it is not the expected length, `Nothing` maybe given.
+type MaruFunc = [SExpr] -> Result SExpr
+
+-- |
+-- A macro of maru.
+-- It is possibility to update states of the environment
 type MaruMacro = Symbol -> SExpr -> MaruEvaluator SExpr
 
--- | A modifier for dicriminate a type of @SomeMaruPrimitive@
+-- | An identifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
-  DiscrInt          :: Discriminating Int
-  DiscrText         :: Discriminating Text
-  DiscrIntToIntToInt :: Discriminating (Int -> Int -> Int)
-  -- | For macros. Update @MaruEnv@.
-  DiscrMacro        :: Discriminating MaruMacro
+  DiscrInt  :: Discriminating Int
+  DiscrText :: Discriminating Text
+  -- | The identifier for a function
+  DiscrFunc :: Discriminating MaruFunc
+  -- | The identifier for a macro
+  DiscrMacro :: Discriminating MaruMacro
 
 
 -- | The state of the runtime
@@ -120,8 +146,8 @@ _SomeMaruPrimitive DiscrInt = prism' (SomeMaruPrimitive DiscrInt) $
 _SomeMaruPrimitive DiscrText = prism' (SomeMaruPrimitive DiscrText) $
   \case SomeMaruPrimitive DiscrText x -> Just x
         _ -> Nothing
-_SomeMaruPrimitive DiscrIntToIntToInt = prism' (SomeMaruPrimitive DiscrIntToIntToInt) $
-  \case SomeMaruPrimitive DiscrIntToIntToInt f -> Just f
+_SomeMaruPrimitive DiscrFunc = prism' (SomeMaruPrimitive DiscrFunc) $
+  \case SomeMaruPrimitive DiscrFunc f -> Just f
         _ -> Nothing
 _SomeMaruPrimitive DiscrMacro = prism' (SomeMaruPrimitive DiscrMacro) $
   \case SomeMaruPrimitive DiscrMacro f -> Just f
@@ -132,8 +158,8 @@ instance Show SomeMaruPrimitive where
   show x = "SomeMaruPrimitive " ++ case x of
     SomeMaruPrimitive DiscrInt  a -> show a
     SomeMaruPrimitive DiscrText a -> T.unpack a
-    SomeMaruPrimitive DiscrIntToIntToInt _ -> "#(Int   -> Int -> Int)"
-    SomeMaruPrimitive DiscrMacro _        -> "#macro"
+    SomeMaruPrimitive DiscrFunc  _ -> "#func"
+    SomeMaruPrimitive DiscrMacro _ -> "#macro"
 
 
 -- |
@@ -158,16 +184,12 @@ instance MaruPrimitive Text where
   fromSExpr (AtomSymbol (Symbol x)) = return x
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive Text"
 
-instance MaruPrimitive (Int -> Int -> Int) where
-  fromSExpr (AtomSymbol x) = do
-    SomeMaruPrimitive DiscrIntToIntToInt f <- lookupSymbol x
-    return f
+instance MaruPrimitive MaruFunc where
+  fromSExpr (AtomSymbol x) = lookupSymbol x ^$ _SomeMaruPrimitive DiscrFunc
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive (Int -> Int -> Int)"
 
 instance MaruPrimitive MaruMacro where
-  fromSExpr (AtomSymbol x) = do
-    SomeMaruPrimitive DiscrMacro f <- lookupSymbol x
-    return f
+  fromSExpr (AtomSymbol x) = lookupSymbol x ^$ _SomeMaruPrimitive DiscrMacro
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive MaruMacro"
 
 

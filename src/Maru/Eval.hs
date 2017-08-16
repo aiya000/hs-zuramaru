@@ -23,9 +23,9 @@ import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive)
 import Maru.Type.Eval
-import qualified Control.Eff.State.Lazy as STL
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
+import qualified Maru.Eval.RuntimeOperation as OP
 
 declareException "EvalException" ["EvalException"]
 
@@ -37,28 +37,14 @@ declareException "EvalException" ["EvalException"]
 --
 -- This maybe passed to @eval@
 initialEnv :: MaruEnv
-initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrIntToIntToInt (+))
-                        , ("-", SomeMaruPrimitive DiscrIntToIntToInt (-))
-                        , ("*", SomeMaruPrimitive DiscrIntToIntToInt (*))
-                        , ("/", SomeMaruPrimitive DiscrIntToIntToInt div)
-                        , ("set", SomeMaruPrimitive DiscrMacro set)
-                        , ("find", SomeMaruPrimitive DiscrMacro find)
-                        , ("get", SomeMaruPrimitive DiscrMacro get)
+initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrFunc OP.add)
+                        , ("-", SomeMaruPrimitive DiscrFunc OP.sub)
+                        , ("*", SomeMaruPrimitive DiscrFunc OP.times)
+                        , ("/", SomeMaruPrimitive DiscrFunc OP.div)
+                        , ("set", SomeMaruPrimitive DiscrMacro OP.set)
+                        , ("find", SomeMaruPrimitive DiscrMacro OP.find)
+                        , ("get", SomeMaruPrimitive DiscrMacro OP.get)
                         ]
-  where
-    set :: MaruMacro
-    set sym (AtomInt x) = do
-      env <- STL.get
-      STL.put $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
-      return $ AtomSymbol sym
-    --TODO: Add patterns if primitives of other than AtomInt is added (MaruPrimitive may help this)
-    set _ _ = error "TODO (Maru.Eval.set)"
-
-    find :: MaruMacro
-    find = undefined
-
-    get :: MaruMacro
-    get = undefined
 
 
 -- |
@@ -86,12 +72,13 @@ execute (Cons (AtomSymbol sym) (Cons x _)) = do
   g <- lookupSymbol sym ^$ _SomeMaruPrimitive DiscrMacro
   g sym x
 
--- Evaluate a function
-execute (Cons (AtomSymbol x) xs) = do
-  f <- lookupSymbol x ^$ _SomeMaruPrimitive DiscrIntToIntToInt
-  -- Evaluate recursively
-  xs' <- flatten xs >>= mapM execute >>= nonEmpty'
-  foldM1 (liftBinaryFunc f) xs'
+--TODO
+---- Evaluate a function
+--execute (Cons (AtomSymbol x) xs) = do
+--  f <- lookupSymbol x ^$ _SomeMaruPrimitive DiscrFunc
+--  -- Evaluate recursively
+--  xs' <- flatten xs >>= mapM execute >>= nonEmpty'
+--  foldM1 (liftBinaryFunc f) xs'
 
 execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
 execute (Cons x y)              = return $ Cons x y

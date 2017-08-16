@@ -1,21 +1,34 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+
 
 -- | Common types for zuramaru
 module Maru.Type.SExpr
   ( SourceCode
   , MaruToken
-  , SExpr (..)
-  , SExprLike (..)
+  , SExpr(..)
+  , isAtomInt
+  , SExprLike(..)
   , AST(..)
-  , Symbol (..)
+  , Symbol(..)
   , scottEncode
   , scottDecode
+  , _Cons
+  , _Nil
+  , _AtomInt
+  , _AtomSymbol
+  , SExprIntBullet(..)
+  , intBullet
   ) where
 
+import Control.Lens (makePrisms)
 import Data.List (foldl')
+import Data.MonoTraversable (MonoFunctor(..), Element)
 import Data.Monoid ((<>))
+import Data.Profunctor (dimap)
 import Data.String (IsString)
 import Data.Text (Text)
 import TextShow (TextShow, showb, showt)
@@ -38,9 +51,37 @@ data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
            | AtomSymbol Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
   deriving (Show, Eq)
 
+-- |
+-- >>> :set -XOverloadedStrings
+-- >>> isAtomInt $ AtomInt 10
+-- True
+-- >>> isAtomInt Nil
+-- False
+-- >>> isAtomInt $ AtomSymbol ""
+-- False
+isAtomInt :: SExpr -> Bool
+isAtomInt (AtomInt _) = True
+isAtomInt _ = False
+
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
+
+-- | Shot only the `AtomInt`s by `omap`
+newtype SExprIntBullet = SExprIntBullet
+  { unSExprIntBullet :: SExpr
+  }
+
+type instance Element SExprIntBullet = Int
+
+instance MonoFunctor SExprIntBullet where
+  omap f (SExprIntBullet (AtomInt x)) = SExprIntBullet . AtomInt $ f x
+  omap _ x = x
+
+-- | Apply by omap a function to a SExprIntBullet with wrapping and unwrapping
+intBullet :: (Int -> Int) -> SExpr -> SExpr
+intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
+
 
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype Symbol = Symbol { unSymbol :: Text }
@@ -113,3 +154,6 @@ scottDecode (Cons x y) = x : scottDecode y
 scottDecode Nil = []
 scottDecode (AtomSymbol x) = [AtomSymbol x]
 scottDecode (AtomInt x)    = [AtomInt x]
+
+
+makePrisms ''SExpr
