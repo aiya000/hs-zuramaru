@@ -1,7 +1,8 @@
 module Maru.Type.EvalTest where
 
+import Control.Eff.Exception (throwExc)
 import Control.Monad.Fail (fail)
-import Maru.Type.Eval (Result(..))
+import Maru.Type.Eval (MaruCalculator, runMaruCalculator)
 import Prelude hiding (fail)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -12,15 +13,17 @@ oops :: String
 oops = "Oops xD"
 
 
-test_result_type_throws_the_exception_as_a_pure_value_by_fail :: [TestTree]
-test_result_type_throws_the_exception_as_a_pure_value_by_fail =
-  [ testCase "" $ negativeContext oops @?= fail' oops
+test_maru_calculator_throws_the_exception_as_a_pure_value_by_fail :: [TestTree]
+test_maru_calculator_throws_the_exception_as_a_pure_value_by_fail =
+  [ testCase "" $
+      runMaruCalculator (negativeContext oops)
+        @?= runMaruCalculator (fail' oops)
   ]
   where
-    fail' :: String -> Result ()
-    fail' = Result . Left . T.pack
+    fail' :: String -> MaruCalculator ()
+    fail' = throwExc . T.pack
 
 
 -- | An alias of `fail`
-negativeContext :: String -> Result ()
+negativeContext :: String -> MaruCalculator ()
 negativeContext = fail
