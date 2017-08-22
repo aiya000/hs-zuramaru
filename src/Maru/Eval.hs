@@ -14,15 +14,16 @@ module Maru.Eval
   ) where
 
 import Control.Eff (Eff, Member)
-import Control.Eff.Exception (throwExc)
+import Control.Eff.Exception (throwExc, liftEither)
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Control.Monad (foldM)
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.Monoid ((<>))
+import Control.Monad (foldM, join)
+import Data.Distributive (distribute)
+import Data.Monoid ((<>), First(..))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), nonEmpty', Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive)
+import Maru.Type (SExpr(..), Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive, (^$?))
 import Maru.Type.Eval
+import TextShow (showt)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
@@ -63,22 +64,20 @@ eval env sexpr = do
     Right sexpr -> return $ Right (sexpr, newEnv, simplifLogs)
 
 
---NOTE: This logic maybe not enough (e.g. (set x (set y 10)) should be evaluated to (AtomSymbol "x"))
 -- | A naked evaluator of zuramaru
 execute :: SExpr -> MaruEvaluator SExpr
 
--- Evaluate a macro
-execute (Cons (AtomSymbol sym) (Cons x _)) = do
-  g <- lookupSymbol sym ^$ _SomeMaruPrimitive DiscrMacro
-  g sym x
-
---TODO
----- Evaluate a function
---execute (Cons (AtomSymbol x) xs) = do
---  f <- lookupSymbol x ^$ _SomeMaruPrimitive DiscrFunc
---  -- Evaluate recursively
---  xs' <- flatten xs >>= mapM execute >>= nonEmpty'
---  foldM1 (liftBinaryFunc f) xs'
+-- Evaluate a macro,
+-- or Calculate a function
+execute w@(Cons (AtomSymbol sym) xs) = do
+  loadMacro <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrMacro
+  loadFunc  <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrFunc
+  funcLike  <- liftFirst' $ loadMacro <> fmap (upgradeEffects .) loadFunc
+  args      <- flatten xs >>= mapM execute
+  funcLike args
+  where
+    liftFirst' :: Member Fail' r => First' a -> Eff r a
+    liftFirst' = liftEither . getFirst'
 
 execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
 execute (Cons x y)              = return $ Cons x y
@@ -110,8 +109,3 @@ flatten s@(AtomInt _)             = return [s]
 flatten s@(AtomSymbol _)          = return [s]
 flatten Nil                       = return []
 flatten (Cons _ _)                = throwExc ("an unexpected case is detected (flatten)" :: ExceptionCause)
-
-
--- | Simular to @foldM@ but for @NonEmpty@
-foldM1 :: Monad m => (a -> a -> m a) -> NonEmpty a -> m a
-foldM1 f (x :| xs) = foldM f x xs

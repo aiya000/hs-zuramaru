@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -12,6 +13,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
+-- |
+-- `MaruMacro` is evaluated by `MaruEvaluator`.
+-- `MaruFunc` is calculated by `MaruCalculator`.
 module Maru.Type.Eval
   ( ExceptionCause
   , MaruEvaluator
@@ -24,14 +28,17 @@ module Maru.Type.Eval
   , SomeMaruPrimitive (..)
   , MaruPrimitive (..)
   , lookupSymbol
-  , liftBinaryFunc
   , _SomeMaruPrimitive
   , (^$)
-  , Result (..)
+  , MaruCalculator
+  , runMaruCalculator
+  , upgradeEffects
+  , First' (..)
+  , first'
   ) where
 
-import Control.Eff (Eff, Member, (:>))
-import Control.Eff.Exception (runExc, throwExc)
+import Control.Eff (Eff, Member, (:>), run)
+import Control.Eff.Exception (runExc, throwExc, liftEither)
 import Control.Eff.Lift (Lift, runLift)
 import Control.Eff.State.Lazy (State, runState, get)
 import Control.Eff.Writer.Lazy (runMonoidWriter)
@@ -52,14 +59,12 @@ import Prelude hiding (fail)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
--- | A total effect of @MaruEvaluator@
-type Eval = Fail' :> State MaruEnv :> WriterSimplifSteps :> Lift IO :> Void
-
--- | A monad for evaluating a program
-type MaruEvaluator = Eff Eval
+-- | A monad for evaluating a maru's program
+type MaruEvaluator = Eff (Fail' :> State MaruEnv :> WriterSimplifSteps :> Lift IO :> Void)
 
 instance MonadFail MaruEvaluator where
   fail = throwExc . T.pack
+
 
 --TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
 --NOTE: Why eff's runState's type sigunature is different with mtl runState ?
@@ -81,6 +86,7 @@ includeFail cause mm = do
   maybeIt <- mm
   liftMaybe' cause maybeIt
 
+
 --NOTE: Can this is alternated by some lens's function ?
 -- |
 -- This is like `Prism`'s accessor,
@@ -98,29 +104,59 @@ includeFail cause mm = do
 
 
 -- |
--- A part of newtype for `Either`.
--- Avoid orphan instance's declaration.
--- Also this is a concrete type.
-newtype Result a = Result
-  { unResult :: Either ExceptionCause a
-  } deriving (Show, Eq, Functor, Applicative, Monad)
+-- This has effects of the part of `MaruEvaluator`.
+-- Calculate pure functions.
+type MaruCalculator = Eff (Fail' :> Void)
 
-instance MonadFail Result where
-  fail = Result . Left . T.pack
+instance MonadFail MaruCalculator where
+  fail = throwExc . T.pack
+
+-- | Extract the pure calculation from `MaruCalculator`
+runMaruCalculator :: MaruCalculator a -> Either ExceptionCause a
+runMaruCalculator = run . runExc
+
+-- |
+-- A monad morphism.
+-- Bulk out `MaruCalculator`
+upgradeEffects :: MaruCalculator a -> MaruEvaluator a
+upgradeEffects = liftEither . run . runExc
+
+
+-- | Simular to `First`, but using `Either ExceptionCause` instead of `Maybe`
+newtype First' a = First'
+  { getFirst' :: Either ExceptionCause a
+  } deriving (Functor)
+
+instance Monoid (First' a) where
+  mempty = First' $ Left "mempty: `First'` couldn't find the right value"
+  w@(First' (Right x)) `mappend` _ = w
+  _ `mappend` w@(First' (Right y)) = w
+  _ `mappend` _                    = mempty
+
+
+-- |
+-- Like a consturctor, but from `Maybe a`.
+-- If `Nothing` is given, return `mempty`.
+first' :: Maybe a -> First' a
+first' (Just a) = First' $ Right a
+first' Nothing  = mempty
 
 
 -- |
 -- A function of maru.
--- It keeps the purity, no effects.
+-- This keeps the purity, don't happen effects.
 --
 -- Take `[SExpr]` as arguments, its length is checked by each function.
 -- If it is not the expected length, `Nothing` maybe given.
-type MaruFunc = [SExpr] -> Result SExpr
+type MaruFunc = [SExpr] -> MaruCalculator SExpr
 
 -- |
 -- A macro of maru, This is simular to `MaruFunc`.
--- This is possibility to update the state of the environment.
+--
+-- Simular to `MaruFunc`,
+-- but this is possibility to update the state of the environment.
 type MaruMacro = [SExpr] -> MaruEvaluator SExpr
+
 
 -- | An identifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
@@ -201,14 +237,3 @@ lookupSymbol :: forall r. (Member Fail' r, Member (State MaruEnv) r)
 lookupSymbol sym = do
   env <- get
   liftMaybe' ("A symbol '" <> unSymbol sym <> "' is not found") $ M.lookup sym (env :: MaruEnv)
-
-
--- |
--- Lift a binary function of @MaruTerm@ to a binary function of @SExpr@.
--- Take a valid value if both types of @x@ and @y@ are a value of @MaruTerm@ (e.g. symbol, @Int@).
--- Take a invalid value otherwise.
-liftBinaryFunc :: (MaruPrimitive a, SExprLike a) => (a -> a -> a) -> SExpr -> SExpr -> MaruEvaluator SExpr
-liftBinaryFunc f x y = do
-  x' <- fromSExpr x
-  y' <- fromSExpr y
-  return . wrap $ f x' y'

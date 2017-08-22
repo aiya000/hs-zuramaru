@@ -15,7 +15,6 @@ module Maru.Type.Eff
   , WriterSimplifSteps
   , liftMaybe'
   , liftMaybeM
-  , nonEmpty'
   ) where
 
 import Control.Eff (Eff, Member, SetMember)
@@ -23,7 +22,6 @@ import Control.Eff.Exception (Exc, liftEither, Fail, liftMaybe)
 import Control.Eff.Lift (Lift, lift)
 import Control.Eff.Writer.Lazy (Writer)
 import Data.Either.Extra (maybeToEither)
-import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
@@ -71,8 +69,3 @@ liftMaybeM :: ( Typeable m
               , Member Fail r, SetMember Lift (Lift m) r
               ) => m (Maybe a) -> Eff r a
 liftMaybeM m = lift m >>= liftMaybe
-
-
--- | Same as @nonEmpty@ but it is lifted to `Member Fail' r => Eff r` context
-nonEmpty' :: Member Fail' r => [a] -> Eff r (NonEmpty a)
-nonEmpty' = liftMaybe' "An empty list is given" . nonEmpty
