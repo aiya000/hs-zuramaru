@@ -18,6 +18,7 @@ module Maru.Type.Parser
   ) where
 
 import Control.Applicative (Alternative)
+import Control.Lens ((%=), (+=), (-=), makeLenses)
 import Control.Monad (MonadPlus)
 import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
@@ -25,8 +26,6 @@ import Data.Monoid ((<>), Monoid)
 import Data.Sequence (Seq, (|>))
 import Data.String (IsString)
 import Data.Text (Text)
-import Lens.Micro.Mtl ((%=), (+=), (-=))
-import Lens.Micro.TH (makeLenses)
 import Maru.Type.SExpr
 import Text.Megaparsec (ParsecT, ParseError, Dec, runParserT)
 import Text.Megaparsec.Prim (MonadParsec)

@@ -24,9 +24,6 @@ dependencies:
     - extra
     - lens
     - megaparsec
-    - microlens
-    - microlens-mtl
-    - microlens-th
     - mono-traversable
     - mtl
     - profunctors
@@ -41,7 +38,6 @@ dependencies:
     - type-iso
 
 # TODO: Can I alternate type-iso by lens ?
-# TODO: Use only lens (alternate microlens by lens)
 library:
   source-dirs: src
 
