@@ -129,8 +129,8 @@ newtype First' a = First'
 
 instance Monoid (First' a) where
   mempty = First' $ Left "mempty: `First'` couldn't find the right value"
-  w@(First' (Right x)) `mappend` _ = w
-  _ `mappend` w@(First' (Right y)) = w
+  w@(First' (Right _)) `mappend` _ = w
+  _ `mappend` w@(First' (Right _)) = w
   _ `mappend` _                    = mempty
 
 

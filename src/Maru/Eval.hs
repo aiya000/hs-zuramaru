@@ -17,13 +17,10 @@ import Control.Eff (Eff, Member)
 import Control.Eff.Exception (throwExc, liftEither)
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Control.Monad (foldM, join)
-import Data.Distributive (distribute)
-import Data.Monoid ((<>), First(..))
+import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive, (^$?))
 import Maru.Type.Eval
-import TextShow (showt)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
@@ -69,7 +66,7 @@ execute :: SExpr -> MaruEvaluator SExpr
 
 -- Evaluate a macro,
 -- or Calculate a function
-execute w@(Cons (AtomSymbol sym) xs) = do
+execute (Cons (AtomSymbol sym) xs) = do
   loadMacro <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrMacro
   loadFunc  <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrFunc
   funcLike  <- liftFirst' $ loadMacro <> fmap (upgradeEffects .) loadFunc

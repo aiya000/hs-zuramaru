@@ -16,15 +16,12 @@ module Maru.Eval.RuntimeOperation
   , get
   ) where
 
-import Control.Arrow ((>>>))
 import Control.Lens ((^..), folded, filtered, sumOf, productOf)
 import Control.Monad.Fail (fail)
-import Data.Function ((&))
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
-import Data.MonoTraversable (omap)
-import Maru.Type (MaruMacro, MaruFunc, SExpr(..), SomeMaruPrimitive(..), Discriminating(..), SExprIntBullet(..), MaruCalculator, runMaruCalculator)
+import Maru.Type (MaruMacro, MaruFunc, SExpr(..), SomeMaruPrimitive(..), Discriminating(..))
 import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
 import qualified Control.Eff.State.Lazy as STL
@@ -49,6 +46,7 @@ sumOfAtomInt = (AtomInt .) . sumOf $ folded . MT._AtomInt
 
 -- |
 -- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type (runMaruCalculator)
 -- >>> runMaruCalculator $ add [AtomInt 1, AtomInt 2]
 -- Right (AtomInt 3)
 -- >>> runMaruCalculator $ add []
@@ -63,6 +61,7 @@ add xs = case ignoreAtomInt xs of
 
 -- |
 -- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type (runMaruCalculator)
 -- >>> runMaruCalculator $ sub [AtomInt 3, AtomInt 1]
 -- Right (AtomInt 2)
 -- >>> runMaruCalculator $ sub []
@@ -82,6 +81,7 @@ sub w@(x:xs) = case ignoreAtomInt w of
 
 -- |
 -- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type (runMaruCalculator)
 -- >>> runMaruCalculator $ times [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 9)
 -- >>> runMaruCalculator $ times []
@@ -97,6 +97,7 @@ times xs = case ignoreAtomInt xs of
 --TODO: This makes an integral number unless like AtomRatio is implemented to SExpr
 -- |
 -- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type (runMaruCalculator)
 -- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 1)
 -- >>> runMaruCalculator $ div []
@@ -138,7 +139,7 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 --TODO: Correspond for the type of other than Int after the type is added to SExpr and somewhere
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
-set (AtomSymbol sym:AtomInt x:xs) = do
+set (AtomSymbol sym:AtomInt x:_) = do
   env <- STL.get
   STL.put $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
   return $ AtomSymbol sym
