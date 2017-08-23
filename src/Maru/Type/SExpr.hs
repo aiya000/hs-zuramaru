@@ -11,6 +11,7 @@ module Maru.Type.SExpr
   , MaruToken
   , SExpr(..)
   , isAtomInt
+  , unAtomInt
   , SExprLike(..)
   , AST(..)
   , Symbol(..)
@@ -62,6 +63,19 @@ data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
 isAtomInt :: SExpr -> Bool
 isAtomInt (AtomInt _) = True
 isAtomInt _ = False
+
+-- |
+-- Extract `Int` from a term of `AtomInt`.
+--
+-- >>> unAtomInt $ AtomInt 10
+-- Just 10
+-- >>> unAtomInt $ AtomSymbol ":D"
+-- Nothing
+-- >>> unAtomInt $ Cons (AtomInt 10) (AtomInt 20)
+-- Nothing
+unAtomInt :: SExpr -> Maybe Int
+unAtomInt (AtomInt x) = Just x
+unAtomInt _           = Nothing
 
 -- | Same as Show
 instance TextShow SExpr where

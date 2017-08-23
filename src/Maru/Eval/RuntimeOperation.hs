@@ -1,5 +1,8 @@
+{-# LANGUAGE ViewPatterns #-}
+
 -- |
 -- Define functions and macros, these are used in the runtime,
+--
 -- also these are through with `MaruEnv` (it should be `Maru.Eval.initialEnv`)
 --
 -- These respects clisp's behavior basically.
@@ -13,12 +16,19 @@ module Maru.Eval.RuntimeOperation
   , get
   ) where
 
-import Control.Lens ((^..), folded, filtered, sumOf)
+import Control.Arrow ((>>>))
+import Control.Lens ((^..), folded, filtered, sumOf, productOf)
 import Control.Monad.Fail (fail)
+import Data.Function ((&))
+import Data.List (foldl')
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Maybe (maybeToList)
 import Data.MonoTraversable (omap)
 import Maru.Type (MaruMacro, MaruFunc, SExpr(..), SomeMaruPrimitive(..), Discriminating(..), SExprIntBullet(..), MaruCalculator, runMaruCalculator)
+import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
 import qualified Control.Eff.State.Lazy as STL
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Lazy as M
 import qualified Maru.Type as MT
 
@@ -29,7 +39,7 @@ ignoreAtomInt xs = xs ^.. folded . filtered (not . MT.isAtomInt)
 
 -- |
 -- Find all `AtomInt` elements,
--- calculate its summation,
+-- Calculate its summation,
 -- and wrap by `AtomInt`.
 --
 -- Return `AtomInt 0` if the given list is empty.
@@ -61,13 +71,13 @@ add xs = case ignoreAtomInt xs of
 -- Left "sub: invalid arguments are given to (-): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
 sub :: MaruFunc
 sub [] = fail "sub: takes a list of integer values, but took list is empty"
-sub xs = case ignoreAtomInt xs of
-  [] -> return $ negativeSumOfAtomInt xs
+sub w@(x:xs) = case ignoreAtomInt w of
+  [] -> return $ negativeSumOfAtomInt (x:|xs)
   invalidArgs -> fail $ "sub: invalid arguments are given to (-): " ++ show invalidArgs
   where
     -- head - tail
-    negativeSumOfAtomInt :: [SExpr] -> SExpr
-    negativeSumOfAtomInt (x:xs) = sumOfAtomInt . (x:) . flip map xs $ MT.intBullet negate
+    negativeSumOfAtomInt :: NonEmpty SExpr -> SExpr
+    negativeSumOfAtomInt (x:|xs) = sumOfAtomInt . (x:) . flip map xs $ MT.intBullet negate
 
 
 -- |
@@ -79,7 +89,9 @@ sub xs = case ignoreAtomInt xs of
 -- >>> runMaruCalculator $ times [AtomSymbol "xD"]
 -- Left "times: invalid arguments are given to (*): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
 times :: MaruFunc
-times = undefined
+times xs = case ignoreAtomInt xs of
+  [] -> return . AtomInt $ productOf (folded . MT._AtomInt) xs
+  invalidArgs -> fail $ "times: invalid arguments are given to (*): " ++ show invalidArgs
 
 
 --TODO: This makes an integral number unless like AtomRatio is implemented to SExpr
@@ -89,6 +101,8 @@ times = undefined
 -- Right (AtomInt 1)
 -- >>> runMaruCalculator $ div []
 -- Left "div: takes a non empty list, but took list is empty"
+-- >>> runMaruCalculator $ div [AtomSymbol "xD"]
+-- Left "div: invalid arguments are given to (/): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
 -- >>> runMaruCalculator $ div [AtomInt 0, AtomInt 1]
 -- Left "div: 0 is divided by anything"
 -- >>> runMaruCalculator $ div [AtomInt 10, AtomInt 3]
@@ -96,7 +110,28 @@ times = undefined
 -- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 5]
 -- Right (AtomInt 0)
 div :: MaruFunc
-div = undefined
+div [] = fail "div: takes a non empty list, but took list is empty"
+div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
+  ([], Nothing) -> fail "div: 0 is divided by anything"
+  ([], Just z)  -> return z
+  (invalidArgs, _) -> fail $ "div: invalid arguments are given to (/): " ++ show invalidArgs
+  where
+    -- Safe (/)
+    (/?) :: Maybe Double -> Double -> Maybe Double
+    Nothing /? _ = Nothing
+    Just 0  /? _ = Nothing
+    Just x  /? y = Just $ x / y
+    -- Extract [`Int`] from [`AtomInt`],
+    -- and Convert each `Int` to `Double`
+    doublesFromAtomInt :: NonEmpty SExpr -> [Double]
+    doublesFromAtomInt = concatMap (maybeToList . (intToDouble <$>) . MT.unAtomInt) . NE.filter MT.isAtomInt
+    -- All `NonEmpty SExpr` element are `AtomInt`.
+    -- If 0 was devided, return `Nothing`.
+    negativeProductOfAtomInt :: NonEmpty SExpr -> Maybe SExpr
+    negativeProductOfAtomInt (doublesFromAtomInt -> (x:xs))
+      = AtomInt . truncate <$> foldl' (/?) (Just x) xs
+    negativeProductOfAtomInt _
+      = Nothing
 
 
 --NOTE: CLisp's defparameter returns the symbol, it is a defined symbol. This is respecting it.
