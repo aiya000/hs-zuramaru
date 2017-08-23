@@ -11,8 +11,8 @@ import qualified Maru.Eval as Eval
 
 
 -- | See https://github.com/kanaka/mal/blob/master/process/guide.md#step-2-eval
-test_evaluator_evaluates :: [TestTree]
-test_evaluator_evaluates =
+test_evaluator_calculates :: [TestTree]
+test_evaluator_calculates =
   [ testCase "(+ 2 3) to 5" $
       Cons (AtomSymbol "+") (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
       !?= AtomInt 5
