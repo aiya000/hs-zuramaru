@@ -8,6 +8,7 @@ license: MIT
 homepage: https://github.com/aiya000/eliningen
 
 ghc-options:
+    - -Wall
     - -Wno-name-shadowing
     - -Wno-unused-do-bind
     - -Wno-orphans
