@@ -1,3 +1,6 @@
+-- Suppress warnings what is happend by TemplateHaskell
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
