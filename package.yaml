@@ -13,6 +13,7 @@ ghc-options:
     - -Wno-unused-do-bind
     - -Wno-orphans
     - -fprint-potential-instances
+    - -fprint-explicit-kinds
 
 dependencies:
     - base >= 4.7 && < 5
