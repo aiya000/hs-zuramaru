@@ -97,6 +97,7 @@ intBullet :: (Int -> Int) -> SExpr -> SExpr
 intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 
+--TODO: Rename this (this is conflicted with GHC.TypeLits.Symbol)
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype Symbol = Symbol { unSymbol :: Text }
   deriving (IsString, Show, Eq, Ord)
