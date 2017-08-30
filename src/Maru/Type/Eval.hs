@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -6,10 +7,14 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -17,9 +22,15 @@
 -- `MaruMacro` is evaluated by `MaruEvaluator`.
 -- `MaruFunc` is calculated by `MaruCalculator`.
 module Maru.Type.Eval
-  ( ExceptionCause
+  ( Fail'
+  , SimplificationSteps
+  , reportSteps
+  , WriterSimplifSteps
+  , VariablesState
+  , IO'
+  , ExceptionCause
   , MaruEvaluator
-  , includeFail
+  , includeFailure
   , runMaruEvaluator
   , Discriminating (..)
   , MaruEnv
@@ -32,59 +43,95 @@ module Maru.Type.Eval
   , (^$)
   , MaruCalculator
   , runMaruCalculator
-  , upgradeEffects
   , First' (..)
   , first'
+  , castEff
   ) where
 
-import Control.Eff (Eff, Member, (:>), run)
-import Control.Eff.Exception (runExc, throwExc, liftEither)
-import Control.Eff.Lift (Lift, runLift)
-import Control.Eff.State.Lazy (State, runState, get)
-import Control.Eff.Writer.Lazy (runMonoidWriter)
 import Control.Lens (Prism', prism', Getting)
 import Control.Monad.Fail (MonadFail(..))
-import Data.Bifunctor (first)
+import Data.Extensible
 import Data.Map.Lazy (Map)
 import Data.Monoid ((<>), First)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
-import Data.Tuple (swap)
 import Data.Typeable (Typeable, typeRep)
-import Data.Void (Void)
-import Maru.Type.Eff (ExceptionCause, Fail', liftMaybe', SimplificationSteps, WriterSimplifSteps)
 import Maru.Type.Lens ((^$?))
 import Maru.Type.SExpr
 import Prelude hiding (fail)
+import TextShow (TextShow(..))
+import Unsafe.Coerce (unsafeCoerce)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
+
+-- | A message of @Fail'@
+type ExceptionCause = Text
+
+--TODO: Use >: instead of ':> after `extensible` package is updated
+-- |
+-- An effect of @MaruEvaluator@.
+-- A possible of the failure.
+type Fail' = "fail'" ':> EitherEff ExceptionCause
+
+
+-- A log for 簡約s
+type SimplificationSteps = [SExpr]
+
+-- |
+-- Append numbers to steps
+--
+-- >>> import Maru.Type.SExpr
+-- >>> reportSteps [Cons (AtomInt 1) (Cons (AtomInt 2) Nil), Cons (AtomInt 2) Nil]
+-- ["1: (1 2)","2: (2)"]
+reportSteps :: SimplificationSteps -> [Text]
+reportSteps = zipWith appendStepNumber [1..] . map visualize
+  where
+    appendStepNumber :: Int -> Text -> Text
+    appendStepNumber n x = showt n <> ": " <> x
+
+-- | An effect of @MaruEvaluator@, for logging simplifications
+type WriterSimplifSteps = "writerSimplifSteps" ':> WriterEff SimplificationSteps
+
+
+-- | An effect of @MaruEvaluator@, for runtime states.
+type VariablesState = "variablesState" ':> State MaruEnv
+
+
+-- | An effect of @MaruEvaluator@, this is same as `IO` in `Eff`
+type IO' = "io" ':> IO
+
+
 -- | A monad for evaluating a maru's program
-type MaruEvaluator = Eff (Fail' :> State MaruEnv :> WriterSimplifSteps :> Lift IO :> Void)
+type MaruEvaluator = Eff '[Fail', VariablesState, WriterSimplifSteps, IO']
 
 instance MonadFail MaruEvaluator where
-  fail = throwExc . T.pack
+  fail = throwEff #fail' . T.pack
 
 
 --TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
 --NOTE: Why eff's runState's type sigunature is different with mtl runState ?
 -- | Run an evaluation of @MaruEvaluator a@
 runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
-runMaruEvaluator m env = fmap (flatten . first swap . swap) . runLift . runMonoidWriter . runState env $ runExc m
+runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
   where
+    runMaruEvaluator' :: MaruEvaluator a -> MaruEnv -> IO (((Either ExceptionCause a), MaruEnv), [SExpr])
+    runMaruEvaluator' m env = retractEff . runWriterEff . flip runStateEff env $ runEitherEff m
     flatten :: ((a, b), c) -> (a, b, c)
     flatten ((x, y), z) = (x, y, z)
 
 
 -- |
--- Like `liftEitherM`.
---
--- Include `Maybe` as `Fail'`.
--- If it is Nothing, the whole of MaruEvaluator to be failed.
-includeFail :: ExceptionCause -> MaruEvaluator (Maybe a) -> MaruEvaluator a
-includeFail cause mm = do
+-- Include `Maybe` to `EitherEff` context.
+-- If it is Nothing, the whole of `Associate k (EitherEff e) xs => Eff xs a`
+-- to be failed.
+includeFailure :: forall e xs a. Associate "fail'" (EitherEff e) xs
+               => e -> Eff xs (Maybe a) -> Eff xs a
+includeFailure cause mm = do
   maybeIt <- mm
-  liftMaybe' cause maybeIt
+  case maybeIt of
+    Nothing -> throwEff #fail' cause
+    Just x  -> return x
 
 
 --NOTE: Can this is alternated by some lens's function ?
@@ -100,26 +147,20 @@ includeFail cause mm = do
   let typeNameOfS = T.pack . show $ typeRep (Proxy :: Proxy s)
       typeNameOfA = T.pack . show $ typeRep (Proxy :: Proxy a)
       cause = "(^$): `" <> typeNameOfA <> "` couldn't be getten from `" <> typeNameOfS <> "`"
-  includeFail cause $ m ^$? acs
+  includeFailure cause $ m ^$? acs
 
 
 -- |
 -- This has effects of the part of `MaruEvaluator`.
 -- Calculate pure functions.
-type MaruCalculator = Eff (Fail' :> Void)
+type MaruCalculator = Eff '[Fail']
 
 instance MonadFail MaruCalculator where
-  fail = throwExc . T.pack
+  fail = throwEff #fail' . T.pack
 
 -- | Extract the pure calculation from `MaruCalculator`
 runMaruCalculator :: MaruCalculator a -> Either ExceptionCause a
-runMaruCalculator = run . runExc
-
--- |
--- A monad morphism.
--- Bulk out `MaruCalculator`
-upgradeEffects :: MaruCalculator a -> MaruEvaluator a
-upgradeEffects = liftEither . run . runExc
+runMaruCalculator = leaveEff . runEitherEff
 
 
 -- | Simular to `First`, but using `Either ExceptionCause` instead of `Maybe`
@@ -232,8 +273,17 @@ instance MaruPrimitive MaruMacro where
 -- |
 -- Take a value from @MaruEnv@ in @State@.
 -- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
-lookupSymbol :: forall r. (Member Fail' r, Member (State MaruEnv) r)
-             => Symbol -> Eff r SomeMaruPrimitive
+lookupSymbol :: forall xs.
+                ( Associate "fail'" (EitherEff ExceptionCause) xs -- ^ `Fail'`
+                , Associate "variablesState" (State MaruEnv) xs   -- ^ `VariablesState`
+                ) => Symbol -> Eff xs SomeMaruPrimitive
 lookupSymbol sym = do
-  env <- get
-  liftMaybe' ("A symbol '" <> unSymbol sym <> "' is not found") $ M.lookup sym (env :: MaruEnv)
+  env <- getEff #variablesState
+  let cause = "A symbol '" <> unSymbol sym <> "' is not found"
+  includeFailure cause . return $ M.lookup sym env
+
+
+
+--TODO: Use Data.Extensible.Effect.castEff instead after extensible's version is updated (this version doesn't have castEff)
+castEff :: IncludeAssoc ys xs => Eff xs a -> Eff ys a
+castEff = unsafeCoerce

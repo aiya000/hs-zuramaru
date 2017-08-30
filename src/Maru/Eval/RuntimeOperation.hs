@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ViewPatterns #-}
 
 -- |
@@ -18,13 +19,13 @@ module Maru.Eval.RuntimeOperation
 
 import Control.Lens ((^..), folded, filtered, sumOf, productOf)
 import Control.Monad.Fail (fail)
+import Data.Extensible (getEff, putEff)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
 import Maru.Type (MaruMacro, MaruFunc, SExpr(..), SomeMaruPrimitive(..), Discriminating(..))
 import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
-import qualified Control.Eff.State.Lazy as STL
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Lazy as M
 import qualified Maru.Type as MT
@@ -140,8 +141,8 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
 set (AtomSymbol sym:AtomInt x:_) = do
-  env <- STL.get
-  STL.put $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
+  env <- getEff #variablesState
+  putEff #variablesState $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
   return $ AtomSymbol sym
 set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 --set xs = fail $ "set: requires a symbol as a head element but a form of `" ++ show x "` is detected"

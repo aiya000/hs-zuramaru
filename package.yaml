@@ -21,7 +21,7 @@ dependencies:
     - containers
     - distributive
     - either
-    - extensible-effects
+    - extensible
     - extra
     - lens
     - megaparsec

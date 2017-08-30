@@ -1,13 +1,16 @@
 -- Suppress warnings what is happend by TemplateHaskell
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -16,28 +19,22 @@ module Maru.Main
   ( runRepl
   ) where
 
-import Control.Eff (Eff, Member, SetMember, (:>))
-import Control.Eff.Exception (throwExc, Fail, runFail)
-import Control.Eff.Lift (Lift, lift, runLift)
-import Control.Eff.State.Lazy (State, runState)
 import Control.Exception.Safe (SomeException)
 import Control.Lens ((.~), (.=), (%=), DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
 import Control.Monad (mapM, when, void, forM_)
-import Control.Monad.Fail (MonadFail(..))
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
+import Data.Extensible
 import Data.Function ((&))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Types.Injective (Injective(..))
-import Data.Void (Void)
 import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Maru.Type
 import Safe (tailMay)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
 import TextShow (showt)
-import qualified Control.Eff.State.Lazy as EST
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as Eval
@@ -105,22 +102,14 @@ makeLensesFor [ ("replOpts", "replOptsA")
 
 
 -- | For Lens Accessors
-instance Member (State ReplState) r => MonadState ReplState (Eff r) where
-  get = EST.get
-  put = EST.put
-
-
--- |
--- The locally @MonadFail@ context
--- (This overrides existed @MonadFail@ instance)
-instance Member Fail r => MonadFail (Eff r) where
-  fail _ = throwExc ()
+instance Associate "stateRepl" (State ReplState) xs => MonadState ReplState (Eff xs) where
+  get = getEff #stateRepl
+  put = putEff #stateRepl
 
 
 instance Injective (Maybe ()) Bool where
   to (Just ()) = True
   to Nothing   = False
-
 
 
 -- |
@@ -138,17 +127,20 @@ runRepl :: IO ()
 runRepl = do
   options <- cmdArgs cliOptions
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
-  void . runLift $ runState initialState repl
+  void . retractEff @ "io" $ runStateEff @ "stateRepl" repl initialState
 
+--TODO: Use >: instead of ':> after `extensible` package is updated
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: Eff (State ReplState :> Lift IO :> Void) ()
+repl :: Eff [ "stateRepl" ':> State ReplState
+            , "io" ':> IO
+            ] ()
 repl = do
-  loopIsRequired <- to <$> runFail rep
+  loopIsRequired <- to <$> runMaybeEff @ "maybe" rep
   when loopIsRequired repl
 
 -- |
@@ -157,11 +149,13 @@ repl = do
 -- Return True otherwise.
 --
 -- If @rep@ throws a () of the error, it means what the loop of REP exiting is required.
-rep :: (Member Fail r, Member (State ReplState) r, SetMember Lift (Lift IO) r)
-    => Eff r ()
+rep :: Eff '[ "maybe" ':> MaybeEff
+            , "stateRepl" ':> State ReplState
+            , "io" ':> IO
+            ] ()
 rep = do
-  input      <- liftMaybeM readPhase
-  evalResult <- evalPhase input
+  input      <- castEff readPhase
+  evalResult <- castEff $ evalPhase input
   printPhase evalResult
 
 
@@ -169,11 +163,22 @@ rep = do
 -- Read line from stdin.
 -- If stdin gives to interrupt, return Nothing.
 -- If it's not, return it and it is added to history file
-readPhase :: IO (Maybe Text)
+readPhase :: Eff '[ "maybe" ':> MaybeEff
+                  , "io" ':> IO
+                  ] Text
 readPhase = do
-  maybeInput <- R.readline "zuramaru> "
-  mapM R.addHistory maybeInput
-  return (T.pack <$> maybeInput)
+  maybeInput <- liftEff #io $ R.readline "zuramaru> "
+  liftEff #io $ mapM R.addHistory maybeInput
+  T.pack <$> liftMaybe maybeInput
+
+--TODO: why?
+--liftMaybe :: Associate k MaybeEff xs => Proxy k -> Maybe a -> Eff xs a
+--liftMaybe k Nothing  = throwEff k ()
+--liftMaybe _ (Just x) = return x
+liftMaybe :: Maybe a -> Eff '["maybe" ':> MaybeEff, "io" ':> IO] a
+liftMaybe Nothing  = throwEff #maybe ()
+liftMaybe (Just x) = return x
+
 
 -- |
 -- Do parse and evaluate a Text to a SExpr.
@@ -183,8 +188,9 @@ readPhase = do
 -- Execute the evaluation.
 -- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
 -- A state of @MaruEnv@ is updated by new environment of the result.
-evalPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r)
-          => Text -> Eff r EvalPhaseResult
+evalPhase :: Text -> Eff '[ "stateRepl" ':> State ReplState
+                          , "io" ':> IO
+                          ] EvalPhaseResult
 evalPhase code = do
   evalIsNeeded <- gets $ doEval . replOpts
   -- Get a real evaluator or an empty evaluator.
@@ -198,7 +204,7 @@ evalPhase code = do
           newLog = "parse result: " <> showt sexpr
       replLogsA . evalLogsA %= (++ newLog : logs')
       env        <- gets replEnv
-      evalResult <- lift $ eval' env sexpr
+      evalResult <- liftEff #io $ eval' env sexpr
       case evalResult of
         Left evalErrorResult -> return $ EvalError evalErrorResult
         Right (result, newEnv, steps) -> do
@@ -212,16 +218,17 @@ evalPhase code = do
 
 
 -- | Do 'Print' for a result of 'Read' and 'Eval'
-printPhase :: (Member (State ReplState) r, SetMember Lift (Lift IO) r)
-           => EvalPhaseResult -> Eff r ()
+printPhase :: ( Associate "stateRepl" (State ReplState) xs
+              , Associate "io" IO xs
+              ) => EvalPhaseResult -> Eff xs ()
 printPhase result = do
   DebugLogs readLogs' evalLogs' <- gets replLogs
   debugMode'                    <- gets $ debugMode . replOpts
-  lift $ case result of
+  liftEff #io $ case result of
     ParseError e      -> TIO.putStrLn . T.pack . forgetMatrixAnnotation $ Parser.parseErrorPretty e
     EvalError  e      -> TIO.putStrLn . T.pack $ show e
     RightResult sexpr -> TIO.putStrLn $ MT.visualize sexpr
-  lift . when debugMode' $ do
+  liftEff #io . when debugMode' $ do
     forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
     forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)
   where

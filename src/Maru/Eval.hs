@@ -1,9 +1,11 @@
 -- Suppress warnings what is happend by TemplateHaskell
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -16,13 +18,13 @@ module Maru.Eval
   , eval
   ) where
 
-import Control.Eff (Eff, Member)
-import Control.Eff.Exception (throwExc, liftEither)
+import Control.Arrow ((>>>))
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
+import Data.Extensible (Associate, EitherEff, Eff, throwEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), Fail', SimplificationSteps, Symbol(..), _SomeMaruPrimitive, (^$?))
+import Maru.Type (SExpr(..), SimplificationSteps, Symbol(..), _SomeMaruPrimitive, (^$?))
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -72,18 +74,21 @@ execute :: SExpr -> MaruEvaluator SExpr
 execute (Cons (AtomSymbol sym) xs) = do
   loadMacro <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrMacro
   loadFunc  <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrFunc
-  funcLike  <- liftFirst' $ loadMacro <> fmap (upgradeEffects .) loadFunc
+  funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
   args      <- flatten xs >>= mapM execute
   funcLike args
   where
-    liftFirst' :: Member Fail' r => First' a -> Eff r a
-    liftFirst' = liftEither . getFirst'
+    liftFirst' :: Associate "fail'" (EitherEff ExceptionCause) xs
+               => First' a -> Eff xs a
+    liftFirst' = getFirst' >>> \case
+      Left  e -> throwEff #fail' e
+      Right a -> return a
 
 execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
 execute (Cons x y)              = return $ Cons x y
 execute (AtomInt x)             = return $ AtomInt x
 execute Nil                     = return Nil
-execute (AtomSymbol (Symbol x)) = throwExc ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
+execute (AtomSymbol (Symbol x)) = throwEff #fail' ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
 
 
 -- |
@@ -101,11 +106,11 @@ execute (AtomSymbol (Symbol x)) = throwExc ("An operator (" <> x <> ") is specif
 -- [Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
 --
 -- >>> let a = Cons (AtomSymbol "+") (Cons (AtomSymbol "*") (Cons (AtomSymbol "+") Nil)) -- (+ (* +))
-flatten :: Member Fail' r => SExpr -> Eff r [SExpr]
+flatten :: Associate "fail'" (EitherEff ExceptionCause) xs => SExpr -> Eff xs [SExpr]
 flatten (Cons (AtomInt x) y) = (:) <$> pure (AtomInt x) <*> flatten y
 
 flatten s@(Cons (AtomSymbol _) _) = return [s]
 flatten s@(AtomInt _)             = return [s]
 flatten s@(AtomSymbol _)          = return [s]
 flatten Nil                       = return []
-flatten (Cons _ _)                = throwExc ("an unexpected case is detected (flatten)" :: ExceptionCause)
+flatten (Cons _ _)                = throwEff #fail' ("an unexpected case is detected (flatten)" :: ExceptionCause)
