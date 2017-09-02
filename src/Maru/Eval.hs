@@ -24,7 +24,7 @@ import Control.Exception.Throwable.TH (declareException)
 import Data.Extensible (Associate, EitherEff, Eff, throwEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), SimplificationSteps, Symbol(..), _SomeMaruPrimitive, (^$?))
+import Maru.Type (SExpr(..), SimplificationSteps, MaruSymbol(..), _SomeMaruPrimitive, (^$?))
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -84,11 +84,11 @@ execute (Cons (AtomSymbol sym) xs) = do
       Left  e -> throwEff #fail' e
       Right a -> return a
 
-execute (Cons (AtomInt x) Nil)  = return $ AtomInt x
-execute (Cons x y)              = return $ Cons x y
-execute (AtomInt x)             = return $ AtomInt x
-execute Nil                     = return Nil
-execute (AtomSymbol (Symbol x)) = throwEff #fail' ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
+execute (Cons (AtomInt x) Nil)      = return $ AtomInt x
+execute (Cons x y)                  = return $ Cons x y
+execute (AtomInt x)                 = return $ AtomInt x
+execute Nil                         = return Nil
+execute (AtomSymbol (MaruSymbol x)) = throwEff #fail' ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
 
 
 -- |

@@ -210,7 +210,7 @@ data Discriminating :: * -> * where
 
 
 -- | The state of the runtime
-type MaruEnv = Map Symbol SomeMaruPrimitive
+type MaruEnv = Map MaruSymbol SomeMaruPrimitive
 
 -- | A reversible monomorphic type for @MaruPrimitive@
 data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discriminating a) a
@@ -258,7 +258,7 @@ instance MaruPrimitive Int where
 
 -- | As a symbol
 instance MaruPrimitive Text where
-  fromSExpr (AtomSymbol (Symbol x)) = return x
+  fromSExpr (AtomSymbol (MaruSymbol x)) = return x
   fromSExpr _ = fail "it cannot be converted to MaruPrimitive Text"
 
 instance MaruPrimitive MaruFunc where
@@ -276,10 +276,10 @@ instance MaruPrimitive MaruMacro where
 lookupSymbol :: forall xs.
                 ( Associate "fail'" (EitherEff ExceptionCause) xs -- ^ `Fail'`
                 , Associate "variablesState" (State MaruEnv) xs   -- ^ `VariablesState`
-                ) => Symbol -> Eff xs SomeMaruPrimitive
+                ) => MaruSymbol -> Eff xs SomeMaruPrimitive
 lookupSymbol sym = do
   env <- getEff #variablesState
-  let cause = "A symbol '" <> unSymbol sym <> "' is not found"
+  let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"
   includeFailure cause . return $ M.lookup sym env
 
 

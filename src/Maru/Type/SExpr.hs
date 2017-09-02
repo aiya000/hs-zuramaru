@@ -14,7 +14,7 @@ module Maru.Type.SExpr
   , unAtomInt
   , SExprLike(..)
   , AST(..)
-  , Symbol(..)
+  , MaruSymbol(..)
   , scottEncode
   , scottDecode
   , _Cons
@@ -46,10 +46,10 @@ type MaruToken = P.Token Text
 
 
 -- | n-ary tree and terms
-data SExpr = Cons SExpr SExpr  -- ^ Appending list and list
-           | Nil               -- ^ A representation of empty list
-           | AtomInt Int       -- ^ A pattern of the atom for @Int@ (primitive)
-           | AtomSymbol Symbol -- ^ A pattern of the atom for @Symbol@ (primitive)
+data SExpr = Cons SExpr SExpr -- ^ Appending list and list
+           | Nil              -- ^ A representation of empty list
+           | AtomInt Int      -- ^ A pattern of the atom for @Int@ (primitive)
+           | AtomSymbol MaruSymbol -- ^ A pattern of the atom for @MaruSymbol@ (primitive)
   deriving (Show, Eq)
 
 -- |
@@ -97,9 +97,8 @@ intBullet :: (Int -> Int) -> SExpr -> SExpr
 intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 
---TODO: Rename this (this is conflicted with GHC.TypeLits.Symbol)
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
-newtype Symbol = Symbol { unSymbol :: Text }
+newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
   deriving (IsString, Show, Eq, Ord)
 
 
@@ -113,7 +112,7 @@ instance SExprLike Int where
 
 -- | As a symbol
 instance SExprLike Text where
-  wrap = AtomSymbol . Symbol
+  wrap = AtomSymbol . MaruSymbol
 
 
 -- | The abstract syntax tree
@@ -135,9 +134,9 @@ instance AST SExpr where
       a  <<>> "" = a
       "" <<>> b  = b
       a  <<>> b  = a <> " " <> b
-  visualize Nil                     = "()"
-  visualize (AtomSymbol (Symbol x)) = x
-  visualize (AtomInt x)             = showt x
+  visualize Nil                         = "()"
+  visualize (AtomSymbol (MaruSymbol x)) = x
+  visualize (AtomInt x)                 = showt x
 
 
 -- | Concatenate SExpr by Cons

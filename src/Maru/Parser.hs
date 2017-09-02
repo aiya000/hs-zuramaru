@@ -66,7 +66,7 @@ sexprParser = do
     numberParser = intParser
 
     symbolParser :: MaruParser SExpr
-    symbolParser = AtomSymbol . Symbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
+    symbolParser = AtomSymbol . MaruSymbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
 
     intParser :: MaruParser SExpr
     intParser = AtomInt . read <$> P.some P.digitChar
