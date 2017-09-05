@@ -48,12 +48,13 @@ sumOfAtomInt = (AtomInt .) . sumOf $ folded . MT._AtomInt
 -- |
 -- >>> :set -XOverloadedStrings
 -- >>> import Maru.Type (runMaruCalculator)
+-- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ add [AtomInt 1, AtomInt 2]
 -- Right (AtomInt 3)
 -- >>> runMaruCalculator $ add []
 -- Right (AtomInt 0)
--- >>> runMaruCalculator $ add [AtomSymbol "xD"]
--- Left "add: invalid arguments are given to (+): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
+-- >>> isLeft . runMaruCalculator $ add [AtomSymbol "xD"]
+-- True
 add :: MaruFunc
 add xs = case ignoreAtomInt xs of
   [] -> return $ sumOfAtomInt xs
@@ -63,12 +64,13 @@ add xs = case ignoreAtomInt xs of
 -- |
 -- >>> :set -XOverloadedStrings
 -- >>> import Maru.Type (runMaruCalculator)
+-- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ sub [AtomInt 3, AtomInt 1]
 -- Right (AtomInt 2)
--- >>> runMaruCalculator $ sub []
--- Left "sub: takes a list of integer values, but took list is empty"
--- >>> runMaruCalculator $ sub [AtomSymbol "xD"]
--- Left "sub: invalid arguments are given to (-): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
+-- >>> isLeft . runMaruCalculator $ sub []
+-- True
+-- >>> isLeft . runMaruCalculator $ sub [AtomSymbol "xD"]
+-- True
 sub :: MaruFunc
 sub [] = fail "sub: takes a list of integer values, but took list is empty"
 sub w@(x:xs) = case ignoreAtomInt w of
@@ -83,12 +85,13 @@ sub w@(x:xs) = case ignoreAtomInt w of
 -- |
 -- >>> :set -XOverloadedStrings
 -- >>> import Maru.Type (runMaruCalculator)
+-- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ times [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 9)
 -- >>> runMaruCalculator $ times []
 -- Right (AtomInt 1)
--- >>> runMaruCalculator $ times [AtomSymbol "xD"]
--- Left "times: invalid arguments are given to (*): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
+-- >>> isLeft . runMaruCalculator $ times [AtomSymbol "xD"]
+-- True
 times :: MaruFunc
 times xs = case ignoreAtomInt xs of
   [] -> return . AtomInt $ productOf (folded . MT._AtomInt) xs
@@ -99,14 +102,15 @@ times xs = case ignoreAtomInt xs of
 -- |
 -- >>> :set -XOverloadedStrings
 -- >>> import Maru.Type (runMaruCalculator)
+-- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 1)
--- >>> runMaruCalculator $ div []
--- Left "div: takes a non empty list, but took list is empty"
--- >>> runMaruCalculator $ div [AtomSymbol "xD"]
--- Left "div: invalid arguments are given to (/): [AtomSymbol (Symbol {unSymbol = \"xD\"})]"
--- >>> runMaruCalculator $ div [AtomInt 0, AtomInt 1]
--- Left "div: 0 is divided by anything"
+-- >>> isLeft . runMaruCalculator $ div []
+-- True
+-- >>> isLeft . runMaruCalculator $ div [AtomSymbol "xD"]
+-- True
+-- >>> isLeft . runMaruCalculator $ div [AtomInt 0, AtomInt 1]
+-- True
 -- >>> runMaruCalculator $ div [AtomInt 10, AtomInt 3]
 -- Right (AtomInt 3)
 -- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 5]
