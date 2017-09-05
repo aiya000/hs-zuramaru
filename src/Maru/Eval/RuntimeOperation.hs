@@ -140,8 +140,24 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
       = Nothing
 
 
---NOTE: CLisp's defparameter returns the symbol, it is a defined symbol. This is respecting it.
 --TODO: Correspond for the type of other than Int after the type is added to SExpr and somewhere
+-- |
+-- Set a variable of the name to a value,
+-- and Return the just given name.
+--
+-- Take a first element of `[SExpr]` as a name.
+-- Take a second element of `[SExpr]` as a value.
+--
+-- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type
+-- >>> import Maru.Eval
+-- >>> import Control.Lens hiding (set)
+-- >>> import qualified Data.Map.Lazy as M
+-- >>> (Right sexpr, env, _) <- flip runMaruEvaluator initialEnv $ set [AtomSymbol "*x*", AtomInt 10]
+-- >>> sexpr == AtomSymbol "*x*"
+-- True
+-- >>> M.lookup "*x*" env ^? _Just . _SomeMaruPrimitive DiscrInt
+-- Just 10
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
 set (AtomSymbol sym:AtomInt x:_) = do
@@ -149,12 +165,44 @@ set (AtomSymbol sym:AtomInt x:_) = do
   putEff #variablesState $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
   return $ AtomSymbol sym
 set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
---set xs = fail $ "set: requires a symbol as a head element but a form of `" ++ show x "` is detected"
 
 
+-- |
+-- Find a name from the current environment (`MaruEnv`).
+--
+-- Return the variable of the name if it is found.
+-- Return `Nil` if it is not found.
+--
+-- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type
+-- >>> import Maru.Eval
+-- >>> import qualified Data.Map.Lazy as M
+-- >>> let modifiedEnv = M.insert "*x*" (SomeMaruPrimitive DiscrInt 10) initialEnv
+-- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*x*"]
+-- >>> sexpr == AtomInt 10
+-- True
+-- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "this-is-an-undefined-variable"]
+-- >>> sexpr == Nil
+-- True
 find :: MaruMacro
 find = undefined
 
 
+-- |
+-- Similar to find,
+-- but this throws the exception if the given name is not found.
+--
+-- >>> :set -XOverloadedStrings
+-- >>> import Maru.Type
+-- >>> import Maru.Eval
+-- >>> import Data.Either
+-- >>> import qualified Data.Map.Lazy as M
+-- >>> let modifiedEnv = M.insert "*x*" (SomeMaruPrimitive DiscrInt 10) initialEnv
+-- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "*x*"]
+-- >>> sexpr == AtomInt 10
+-- True
+-- >>> (evalResult, env, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "this-is-an-undefined-variable"]
+-- >>> isLeft evalResult
+-- True
 get :: MaruMacro
 get = undefined
