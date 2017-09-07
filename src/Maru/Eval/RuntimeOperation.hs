@@ -30,6 +30,14 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Lazy as M
 import qualified Maru.Type as MT
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+-- >>> import Control.Lens hiding (set)
+-- >>> import Data.Either
+-- >>> import Maru.Eval
+-- >>> import Maru.Type
+-- >>> import qualified Data.Map.Lazy as M
+
 
 ignoreAtomInt :: [SExpr] -> [SExpr]
 ignoreAtomInt xs = xs ^.. folded . filtered (not . MT.isAtomInt)
@@ -46,9 +54,6 @@ sumOfAtomInt = (AtomInt .) . sumOf $ folded . MT._AtomInt
 
 
 -- |
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type (runMaruCalculator)
--- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ add [AtomInt 1, AtomInt 2]
 -- Right (AtomInt 3)
 -- >>> runMaruCalculator $ add []
@@ -62,9 +67,6 @@ add xs = case ignoreAtomInt xs of
 
 
 -- |
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type (runMaruCalculator)
--- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ sub [AtomInt 3, AtomInt 1]
 -- Right (AtomInt 2)
 -- >>> isLeft . runMaruCalculator $ sub []
@@ -83,9 +85,6 @@ sub w@(x:xs) = case ignoreAtomInt w of
 
 
 -- |
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type (runMaruCalculator)
--- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ times [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 9)
 -- >>> runMaruCalculator $ times []
@@ -100,9 +99,6 @@ times xs = case ignoreAtomInt xs of
 
 --TODO: This makes an integral number unless like AtomRatio is implemented to SExpr
 -- |
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type (runMaruCalculator)
--- >>> import Data.Either (isLeft)
 -- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 1)
 -- >>> isLeft . runMaruCalculator $ div []
@@ -148,11 +144,6 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 -- Take a first element of `[SExpr]` as a name.
 -- Take a second element of `[SExpr]` as a value.
 --
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type
--- >>> import Maru.Eval
--- >>> import Control.Lens hiding (set)
--- >>> import qualified Data.Map.Lazy as M
 -- >>> (Right sexpr, env, _) <- flip runMaruEvaluator initialEnv $ set [AtomSymbol "*x*", AtomInt 10]
 -- >>> sexpr == AtomSymbol "*x*"
 -- True
@@ -173,10 +164,6 @@ set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 -- Return the variable of the name if it is found.
 -- Return `Nil` if it is not found.
 --
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type
--- >>> import Maru.Eval
--- >>> import qualified Data.Map.Lazy as M
 -- >>> let modifiedEnv = M.insert "*x*" (SomeMaruPrimitive DiscrInt 10) initialEnv
 -- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*x*"]
 -- >>> sexpr == AtomInt 10
@@ -192,11 +179,6 @@ find = undefined
 -- Similar to find,
 -- but this throws the exception if the given name is not found.
 --
--- >>> :set -XOverloadedStrings
--- >>> import Maru.Type
--- >>> import Maru.Eval
--- >>> import Data.Either
--- >>> import qualified Data.Map.Lazy as M
 -- >>> let modifiedEnv = M.insert "*x*" (SomeMaruPrimitive DiscrInt 10) initialEnv
 -- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "*x*"]
 -- >>> sexpr == AtomInt 10
