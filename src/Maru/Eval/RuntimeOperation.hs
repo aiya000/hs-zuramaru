@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
 -- |
@@ -17,17 +18,19 @@ module Maru.Eval.RuntimeOperation
   , get
   ) where
 
-import Control.Lens ((^..), folded, filtered, sumOf, productOf)
+import Control.Lens hiding (set)
 import Control.Monad.Fail (fail)
 import Data.Extensible (getEff, putEff)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
-import Maru.Type (MaruMacro, MaruFunc, SExpr(..), SomeMaruPrimitive(..), Discriminating(..))
+import Data.Monoid ((<>))
+import Maru.Type
 import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Lazy as M
+import qualified Data.Text as T
 import qualified Maru.Type as MT
 
 -- $setup
@@ -172,7 +175,15 @@ set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 -- >>> sexpr == Nil
 -- True
 find :: MaruMacro
-find = undefined
+find [] = fail "find: requires non empty arguments"
+find (AtomSymbol sym:_) = do
+  env <- getEff #variablesState
+  --TODO: other than Int
+  let maybeValue = M.lookup sym env >>= (^? _SomeMaruPrimitive DiscrInt)
+  case maybeValue of
+    Nothing -> return Nil
+    Just x  -> return $ AtomInt x
+find xs = fail $ "find: an invalid condition is detected `" ++ show xs ++ "`"
 
 
 -- |
@@ -187,4 +198,10 @@ find = undefined
 -- >>> isLeft evalResult
 -- True
 get :: MaruMacro
-get = undefined
+get [] = fail "get: requires non empty arguments"
+get (AtomSymbol sym:_) = do
+  value <- find [AtomSymbol sym]
+  case value of
+    Nil -> fail . T.unpack . unMaruSymbol $ "get: A symbol '" <> sym <> "' is not found in the current environment"
+    _   -> return value
+get xs = fail $ "get: an invalid condition is detected `" ++ show xs ++ "`"

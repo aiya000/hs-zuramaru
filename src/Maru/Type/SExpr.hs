@@ -99,7 +99,7 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
-  deriving (IsString, Show, Eq, Ord)
+  deriving (IsString, Monoid, Show, Eq, Ord)
 
 
 -- | @a@ can be represented as @SExpr@
