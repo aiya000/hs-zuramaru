@@ -45,7 +45,6 @@ module Maru.Type.Eval
   , runMaruCalculator
   , First' (..)
   , first'
-  , castEff
   ) where
 
 import Control.Lens (Prism', prism', Getting)
@@ -68,11 +67,10 @@ import qualified Data.Text as T
 -- | A message of @Fail'@
 type ExceptionCause = Text
 
---TODO: Use >: instead of ':> after `extensible` package is updated
 -- |
 -- An effect of @MaruEvaluator@.
 -- A possible of the failure.
-type Fail' = "fail'" ':> EitherEff ExceptionCause
+type Fail' = "fail'" >: EitherEff ExceptionCause
 
 
 -- A log for 簡約s
@@ -91,15 +89,15 @@ reportSteps = zipWith appendStepNumber [1..] . map visualize
     appendStepNumber n x = showt n <> ": " <> x
 
 -- | An effect of @MaruEvaluator@, for logging simplifications
-type WriterSimplifSteps = "writerSimplifSteps" ':> WriterEff SimplificationSteps
+type WriterSimplifSteps = "writerSimplifSteps" >: WriterEff SimplificationSteps
 
 
 -- | An effect of @MaruEvaluator@, for runtime states.
-type VariablesState = "variablesState" ':> State MaruEnv
+type VariablesState = "variablesState" >: State MaruEnv
 
 
 -- | An effect of @MaruEvaluator@, this is same as `IO` in `Eff`
-type IO' = "io" ':> IO
+type IO' = "io" >: IO
 
 
 -- | A monad for evaluating a maru's program
@@ -192,9 +190,10 @@ first' Nothing  = mempty
 type MaruFunc = [SExpr] -> MaruCalculator SExpr
 
 -- |
--- A macro of maru, This is simular to `MaruFunc`.
+-- A macro of maru,
+-- this means the impure function.
 --
--- Simular to `MaruFunc`,
+-- Similar to `MaruFunc`,
 -- but this is possibility to update the state of the environment.
 type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
@@ -281,9 +280,3 @@ lookupSymbol sym = do
   env <- getEff #variablesState
   let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"
   includeFailure cause . return $ M.lookup sym env
-
-
-
---TODO: Use Data.Extensible.Effect.castEff instead after extensible's version is updated (this version doesn't have castEff)
-castEff :: IncludeAssoc ys xs => Eff xs a -> Eff ys a
-castEff = unsafeCoerce

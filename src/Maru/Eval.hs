@@ -21,7 +21,7 @@ module Maru.Eval
 import Control.Arrow ((>>>))
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Data.Extensible (Associate, EitherEff, Eff, throwEff)
+import Data.Extensible (Associate, EitherEff, Eff, throwEff, castEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), SimplificationSteps, MaruSymbol(..), _SomeMaruPrimitive, (^$?))

@@ -129,15 +129,14 @@ runRepl = do
   let initialState = ReplState options Eval.initialEnv emptyDebugLog
   void . retractEff @ "io" $ runStateEff @ "stateRepl" repl initialState
 
---TODO: Use >: instead of ':> after `extensible` package is updated
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: Eff [ "stateRepl" ':> State ReplState
-            , "io" ':> IO
+repl :: Eff [ "stateRepl" >: State ReplState
+            , "io" >: IO
             ] ()
 repl = do
   loopIsRequired <- to <$> runMaybeEff @ "maybe" rep
@@ -149,9 +148,9 @@ repl = do
 -- Return True otherwise.
 --
 -- If @rep@ throws a () of the error, it means what the loop of REP exiting is required.
-rep :: Eff '[ "maybe" ':> MaybeEff
-            , "stateRepl" ':> State ReplState
-            , "io" ':> IO
+rep :: Eff '[ "maybe" >: MaybeEff
+            , "stateRepl" >: State ReplState
+            , "io" >: IO
             ] ()
 rep = do
   input      <- castEff readPhase
@@ -163,8 +162,8 @@ rep = do
 -- Read line from stdin.
 -- If stdin gives to interrupt, return Nothing.
 -- If it's not, return it and it is added to history file
-readPhase :: Eff '[ "maybe" ':> MaybeEff
-                  , "io" ':> IO
+readPhase :: Eff '[ "maybe" >: MaybeEff
+                  , "io" >: IO
                   ] Text
 readPhase = do
   maybeInput <- liftEff #io $ R.readline "zuramaru> "
@@ -175,7 +174,7 @@ readPhase = do
 --liftMaybe :: Associate k MaybeEff xs => Proxy k -> Maybe a -> Eff xs a
 --liftMaybe k Nothing  = throwEff k ()
 --liftMaybe _ (Just x) = return x
-liftMaybe :: Maybe a -> Eff '["maybe" ':> MaybeEff, "io" ':> IO] a
+liftMaybe :: Maybe a -> Eff '["maybe" >: MaybeEff, "io" >: IO] a
 liftMaybe Nothing  = throwEff #maybe ()
 liftMaybe (Just x) = return x
 
@@ -188,8 +187,8 @@ liftMaybe (Just x) = return x
 -- Execute the evaluation.
 -- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
 -- A state of @MaruEnv@ is updated by new environment of the result.
-evalPhase :: Text -> Eff '[ "stateRepl" ':> State ReplState
-                          , "io" ':> IO
+evalPhase :: Text -> Eff '[ "stateRepl" >: State ReplState
+                          , "io" >: IO
                           ] EvalPhaseResult
 evalPhase code = do
   evalIsNeeded <- gets $ doEval . replOpts
