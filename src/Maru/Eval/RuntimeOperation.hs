@@ -20,7 +20,6 @@ module Maru.Eval.RuntimeOperation
 
 import Control.Lens hiding (set)
 import Control.Monad.Fail (fail)
-import Data.Extensible (getEff, putEff)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
@@ -155,8 +154,8 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
 set (AtomSymbol sym:AtomInt x:_) = do
-  env <- getEff #variablesState
-  putEff #variablesState $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
+  env <- getMaruEnv
+  putMaruEnv $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
   return $ AtomSymbol sym
 set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 
@@ -177,7 +176,7 @@ set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 find :: MaruMacro
 find [] = fail "find: requires non empty arguments"
 find (AtomSymbol sym:_) = do
-  env <- getEff #variablesState
+  env <- getMaruEnv
   --TODO: other than Int
   let maybeValue = M.lookup sym env >>= (^? _SomeMaruPrimitive DiscrInt)
   case maybeValue of

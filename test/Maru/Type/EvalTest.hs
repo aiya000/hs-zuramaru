@@ -3,8 +3,7 @@
 module Maru.Type.EvalTest where
 
 import Control.Monad.Fail (fail)
-import Data.Extensible (throwEff)
-import Maru.Type.Eval (MaruCalculator, runMaruCalculator)
+import Maru.Type.Eval (MaruCalculator, runMaruCalculator, throwFail)
 import Prelude hiding (fail)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -23,7 +22,7 @@ test_maru_calculator_throws_the_exception_as_a_pure_value_by_fail =
   ]
   where
     fail' :: String -> MaruCalculator ()
-    fail' = throwEff #fail' . T.pack
+    fail' = throwFail . T.pack
 
 
 -- | An alias of `fail`

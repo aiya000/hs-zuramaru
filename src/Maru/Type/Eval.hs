@@ -22,15 +22,27 @@
 -- `MaruMacro` is evaluated by `MaruEvaluator`.
 -- `MaruFunc` is calculated by `MaruCalculator`.
 module Maru.Type.Eval
-  ( Fail'
+  ( Fail
+  , FailKey
+  , FailValue
+  , throwFail
+  , includeFail
   , SimplificationSteps
   , reportSteps
-  , WriterSimplifSteps
-  , VariablesState
-  , IO'
+  , SimplifSteps
+  , SimplifStepsKey
+  , SimplifStepsValue
+  , MaruVariables
+  , MaruVariablesKey
+  , MaruVariablesValue
+  , getMaruEnv
+  , putMaruEnv
+  , IOEff
+  , IOEffKey
+  , IOEffValue
+  , liftIOEff
   , ExceptionCause
   , MaruEvaluator
-  , includeFailure
   , runMaruEvaluator
   , Discriminating (..)
   , MaruEnv
@@ -64,13 +76,30 @@ import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
 
--- | A message of @Fail'@
+-- | A message of @Fail@
 type ExceptionCause = Text
 
 -- |
 -- An effect of @MaruEvaluator@.
 -- A possible of the failure.
-type Fail' = "fail'" >: EitherEff ExceptionCause
+type Fail      = FailKey >: FailValue
+type FailKey   = "fail"
+type FailValue = EitherEff ExceptionCause
+
+-- | `throwEff` for `Fail`
+throwFail :: Associate FailKey FailValue xs => ExceptionCause -> Eff xs a
+throwFail = throwEff #fail
+
+-- |
+-- Include `Maybe` to `Fail` context.
+-- If it is Nothing,
+-- the whole of `Fail a` to be failed.
+includeFail :: Associate FailKey FailValue xs => ExceptionCause -> Eff xs (Maybe a) -> Eff xs a
+includeFail cause mm = do
+  maybeIt <- mm
+  case maybeIt of
+    Nothing -> throwFail cause
+    Just x  -> return x
 
 
 -- A log for 簡約s
@@ -89,25 +118,43 @@ reportSteps = zipWith appendStepNumber [1..] . map visualize
     appendStepNumber n x = showt n <> ": " <> x
 
 -- | An effect of @MaruEvaluator@, for logging simplifications
-type WriterSimplifSteps = "writerSimplifSteps" >: WriterEff SimplificationSteps
+type SimplifSteps      = SimplifStepsKey >: SimplifStepsValue
+type SimplifStepsKey   = "simplifSteps"
+type SimplifStepsValue = WriterEff SimplificationSteps
 
 
 -- | An effect of @MaruEvaluator@, for runtime states.
-type VariablesState = "variablesState" >: State MaruEnv
+type MaruVariables      = MaruVariablesKey >: MaruVariablesValue
+type MaruVariablesKey   = "maruVariables"
+type MaruVariablesValue = State MaruEnv
+
+-- | `getEff` for `MaruVariables`
+getMaruEnv :: Associate MaruVariablesKey MaruVariablesValue xs => Eff xs MaruEnv
+getMaruEnv = getEff #maruVariables
+
+-- | `putEff` for `MaruVariables`
+putMaruEnv :: Associate MaruVariablesKey MaruVariablesValue xs => MaruEnv -> Eff xs ()
+putMaruEnv = putEff #maruVariables
 
 
 -- | An effect of @MaruEvaluator@, this is same as `IO` in `Eff`
-type IO' = "io" >: IO
+type IOEff      = IOEffKey >: IOEffValue
+type IOEffKey   = "ioEff"
+type IOEffValue = IO
+
+-- | `liftEff` for `IOEff`
+liftIOEff :: Associate IOEffKey IOEffValue xs => IO a -> Eff xs a
+liftIOEff = liftEff #ioEff
 
 
 -- | A monad for evaluating a maru's program
-type MaruEvaluator = Eff '[Fail', VariablesState, WriterSimplifSteps, IO']
+type MaruEvaluator = Eff '[Fail, MaruVariables, SimplifSteps, IOEff]
 
 instance MonadFail MaruEvaluator where
-  fail = throwEff #fail' . T.pack
+  fail = throwFail . T.pack
 
 
---TODO: Can Fail' context include WriterSimplifSteps context ? (I want to catch a canceled logs for debugging)
+--TODO: Can Fail context include SimplifSteps context ? (I want to catch a canceled logs for debugging)
 --NOTE: Why eff's runState's type sigunature is different with mtl runState ?
 -- | Run an evaluation of @MaruEvaluator a@
 runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
@@ -117,19 +164,6 @@ runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
     runMaruEvaluator' m env = retractEff . runWriterEff . flip runStateEff env $ runEitherEff m
     flatten :: ((a, b), c) -> (a, b, c)
     flatten ((x, y), z) = (x, y, z)
-
-
--- |
--- Include `Maybe` to `EitherEff` context.
--- If it is Nothing, the whole of `Associate k (EitherEff e) xs => Eff xs a`
--- to be failed.
-includeFailure :: forall e xs a. Associate "fail'" (EitherEff e) xs
-               => e -> Eff xs (Maybe a) -> Eff xs a
-includeFailure cause mm = do
-  maybeIt <- mm
-  case maybeIt of
-    Nothing -> throwEff #fail' cause
-    Just x  -> return x
 
 
 --NOTE: Can this is alternated by some lens's function ?
@@ -145,16 +179,16 @@ includeFailure cause mm = do
   let typeNameOfS = T.pack . show $ typeRep (Proxy :: Proxy s)
       typeNameOfA = T.pack . show $ typeRep (Proxy :: Proxy a)
       cause = "(^$): `" <> typeNameOfA <> "` couldn't be getten from `" <> typeNameOfS <> "`"
-  includeFailure cause $ m ^$? acs
+  includeFail cause $ m ^$? acs
 
 
 -- |
 -- This has effects of the part of `MaruEvaluator`.
 -- Calculate pure functions.
-type MaruCalculator = Eff '[Fail']
+type MaruCalculator = Eff '[Fail]
 
 instance MonadFail MaruCalculator where
-  fail = throwEff #fail' . T.pack
+  fail = throwFail . T.pack
 
 -- | Extract the pure calculation from `MaruCalculator`
 runMaruCalculator :: MaruCalculator a -> Either ExceptionCause a
@@ -273,10 +307,10 @@ instance MaruPrimitive MaruMacro where
 -- Take a value from @MaruEnv@ in @State@.
 -- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
 lookupSymbol :: forall xs.
-                ( Associate "fail'" (EitherEff ExceptionCause) xs -- ^ `Fail'`
-                , Associate "variablesState" (State MaruEnv) xs   -- ^ `VariablesState`
+                ( Associate FailKey FailValue xs
+                , Associate MaruVariablesKey MaruVariablesValue xs
                 ) => MaruSymbol -> Eff xs SomeMaruPrimitive
 lookupSymbol sym = do
-  env <- getEff #variablesState
+  env <- getMaruEnv
   let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"
-  includeFailure cause . return $ M.lookup sym env
+  includeFail cause . return $ M.lookup sym env

@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -21,7 +20,7 @@ module Maru.Eval
 import Control.Arrow ((>>>))
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Data.Extensible (Associate, EitherEff, Eff, throwEff, castEff)
+import Data.Extensible (Associate, Eff, castEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type (SExpr(..), SimplificationSteps, MaruSymbol(..), _SomeMaruPrimitive, (^$?))
@@ -78,17 +77,17 @@ execute (Cons (AtomSymbol sym) xs) = do
   args      <- flatten xs >>= mapM execute
   funcLike args
   where
-    liftFirst' :: Associate "fail'" (EitherEff ExceptionCause) xs
+    liftFirst' :: Associate FailKey FailValue xs
                => First' a -> Eff xs a
     liftFirst' = getFirst' >>> \case
-      Left  e -> throwEff #fail' e
+      Left  e -> throwFail e
       Right a -> return a
 
 execute (Cons (AtomInt x) Nil)      = return $ AtomInt x
 execute (Cons x y)                  = return $ Cons x y
 execute (AtomInt x)                 = return $ AtomInt x
 execute Nil                         = return Nil
-execute (AtomSymbol (MaruSymbol x)) = throwEff #fail' ("An operator (" <> x <> ") is specified without any argument" :: ExceptionCause)
+execute (AtomSymbol (MaruSymbol x)) = throwFail $ "An operator (" <> x <> ") is specified without any argument"
 
 
 -- |
@@ -106,11 +105,11 @@ execute (AtomSymbol (MaruSymbol x)) = throwEff #fail' ("An operator (" <> x <> "
 -- [Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
 --
 -- >>> let a = Cons (AtomSymbol "+") (Cons (AtomSymbol "*") (Cons (AtomSymbol "+") Nil)) -- (+ (* +))
-flatten :: Associate "fail'" (EitherEff ExceptionCause) xs => SExpr -> Eff xs [SExpr]
+flatten :: Associate FailKey FailValue xs => SExpr -> Eff xs [SExpr]
 flatten (Cons (AtomInt x) y) = (:) <$> pure (AtomInt x) <*> flatten y
 
 flatten s@(Cons (AtomSymbol _) _) = return [s]
 flatten s@(AtomInt _)             = return [s]
 flatten s@(AtomSymbol _)          = return [s]
 flatten Nil                       = return []
-flatten (Cons _ _)                = throwEff #fail' ("an unexpected case is detected (flatten)" :: ExceptionCause)
+flatten (Cons _ _)                = throwFail $ "an unexpected case is detected (flatten)"
