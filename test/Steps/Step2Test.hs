@@ -17,10 +17,7 @@ test_evaluator_calculates =
       Cons (AtomSymbol "+") (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
       !?= AtomInt 5
   , testCase "(+ 2 (* 3 4)) to 14" $
-      Cons (AtomSymbol "+") (Cons (AtomInt 2)
-                            (Cons (AtomSymbol "*") (Cons (AtomInt 3)
-                                                   (Cons (AtomInt 4)
-                                                   Nil))))
+      Cons (AtomSymbol "+") (Cons (AtomInt 2) (Cons (Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))) Nil))
       !?= AtomInt 14
   ] ++ myAddtionalCases
   where
