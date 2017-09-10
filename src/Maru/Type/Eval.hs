@@ -281,33 +281,14 @@ instance Show SomeMaruPrimitive where
 
 -- |
 -- A value of the runtime.
--- This has the partial commutual conversion with @SExpr@.
+-- These can be used in the code of maru.
 --
 -- This is strongly associated with @MaruTerm@.
-class MaruPrimitive a where
-  -- |
-  -- Get out @a@ from @SExpr@ if @SExpr@ represents @a@.
-  --
-  -- There is the possiblity to load a true (Haskell's) value of @a@ from @MaruEnv@.
-  -- For example, the function may load its instance from @MaruEnv@ (also it maybe failed).
-  fromSExpr :: SExpr -> MaruEvaluator a
-
-instance MaruPrimitive Int where
-  fromSExpr (AtomInt x) = return x
-  fromSExpr _ = fail "it cannot be converted to MaruPrimitive Int"
-
--- | As a symbol
-instance MaruPrimitive Text where
-  fromSExpr (AtomSymbol (MaruSymbol x)) = return x
-  fromSExpr _ = fail "it cannot be converted to MaruPrimitive Text"
-
-instance MaruPrimitive MaruFunc where
-  fromSExpr (AtomSymbol x) = lookupSymbol x ^$ _SomeMaruPrimitive DiscrFunc
-  fromSExpr _ = fail "it cannot be converted to MaruPrimitive (Int -> Int -> Int)"
-
-instance MaruPrimitive MaruMacro where
-  fromSExpr (AtomSymbol x) = lookupSymbol x ^$ _SomeMaruPrimitive DiscrMacro
-  fromSExpr _ = fail "it cannot be converted to MaruPrimitive MaruMacro"
+class MaruPrimitive a
+instance MaruPrimitive Int -- ^ integral terms
+instance MaruPrimitive Text
+instance MaruPrimitive MaruFunc -- ^ maru functions
+instance MaruPrimitive MaruMacro -- ^ maru macros
 
 
 -- |
