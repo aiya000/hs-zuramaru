@@ -20,10 +20,11 @@ module Maru.Eval
 import Control.Arrow ((>>>))
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
+import Control.Lens (preview, (<&>))
 import Data.Extensible (Associate, Eff, castEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
-import Maru.Type (SExpr(..), SimplificationSteps, MaruSymbol(..), _SomeMaruPrimitive, (^$?))
+import Maru.Type
 import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
@@ -71,8 +72,8 @@ execute :: SExpr -> MaruEvaluator SExpr
 -- Evaluate a macro,
 -- or Calculate a function
 execute (Cons (AtomSymbol sym) xs) = do
-  loadMacro <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrMacro
-  loadFunc  <- first' <$> lookupSymbol sym ^$? _SomeMaruPrimitive DiscrFunc
+  loadMacro <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrMacro))
+  loadFunc  <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrFunc))
   funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
   args      <- flatten xs >>= mapM execute
   funcLike args

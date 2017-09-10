@@ -62,7 +62,7 @@ module Maru.Type.Eval
   , first'
   ) where
 
-import Control.Lens (Prism', prism', Getting)
+import Control.Lens
 import Control.Monad.Fail (MonadFail(..))
 import Data.Extensible
 import Data.Map.Lazy (Map)
@@ -70,7 +70,6 @@ import Data.Monoid ((<>), First)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import Data.Typeable (Typeable, typeRep)
-import Maru.Type.Lens ((^$?))
 import Maru.Type.SExpr
 import Prelude hiding (fail)
 import TextShow (TextShow(..))
@@ -178,7 +177,7 @@ runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
 -- This is like `Prism`'s accessor,
 -- but don't return result as `Maybe`.
 --
--- Simular to (^$?) but Nothing is included as a failure of the whole of `MaruEvaluator`.
+-- Similar to 'x <&> review f' but Nothing is included as a failure of the whole of `MaruEvaluator`.
 --
 -- `Typeable` for the error message.
 (^$) :: (Typeable s, Typeable a) => MaruEvaluator s -> Getting (First a) s a -> MaruEvaluator a
@@ -186,7 +185,7 @@ runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
   let typeNameOfS = T.pack . show $ typeRep (Proxy :: Proxy s)
       typeNameOfA = T.pack . show $ typeRep (Proxy :: Proxy a)
       cause = "(^$): `" <> typeNameOfA <> "` couldn't be getten from `" <> typeNameOfS <> "`"
-  includeFail cause $ m ^$? acs
+  includeFail cause $ m <&> preview acs
 
 
 -- |
