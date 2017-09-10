@@ -8,6 +8,7 @@ import Maru.Type
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
 import qualified Data.Map.Lazy as M
+import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as E
 import qualified Maru.Parser as P
 
@@ -47,11 +48,19 @@ test_preset_function = set_test ++ find_test ++ get_test
           (sexpr, _) <- runCode' modifiedEnv "(get *x*)"
           sexpr @?= AtomInt 10
       , testCase "`get` throws an exception if the key is not defined" $ do
-          result <- sequence $ E.eval E.initialEnv <$> P.parse "(find this-is-an-undefined-variable)"
+          result <- sequence $ E.eval E.initialEnv <$> P.parse "(get this-is-an-undefined-variable)"
           case result of
             -- the parse is succeed, but the evaluation is failed
             Right (Left _) -> return ()
-            _              -> assertFailure "The exception is expected, but the exception was not thrown"
+            Right (Right (sexpr, env, steps)) -> do
+              putStrLn "Fail"
+              putStrLn "The exception is expected, but the exception was not thrown"
+              putStrLn $ "got output result: " ++ show sexpr
+              putStrLn $ "got final environment: " ++ show env
+              putStrLn "got logs:"
+              mapM_ TIO.putStrLn $ reportSteps steps
+              assertFailure ""
+            Left e -> assertFailure $ show e
       ]
 
 
