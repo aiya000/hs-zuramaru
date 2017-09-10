@@ -30,6 +30,9 @@ import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+
 declareException "EvalException" ["EvalException"]
 
 
@@ -75,7 +78,7 @@ execute (Cons (AtomSymbol sym) xs) = do
   loadMacro <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrMacro))
   loadFunc  <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrFunc))
   funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
-  args      <- flatten xs >>= mapM execute
+  args      <- mapM execute $ flatten xs
   funcLike args
   where
     liftFirst' :: Associate FailKey FailValue xs
@@ -84,33 +87,25 @@ execute (Cons (AtomSymbol sym) xs) = do
       Left  e -> throwFail e
       Right a -> return a
 
-execute (Cons (AtomInt x) Nil)      = return $ AtomInt x
-execute (Cons x y)                  = return $ Cons x y
-execute (AtomInt x)                 = return $ AtomInt x
-execute Nil                         = return Nil
-execute (AtomSymbol (MaruSymbol x)) = throwFail $ "An operator (" <> x <> ") is specified without any argument"
+execute (AtomInt x)    = return $ AtomInt x
+execute (AtomSymbol x) = return $ AtomSymbol x
+execute (Cons x y)     = Cons <$> execute x <*> execute y
+execute Nil            = return Nil
 
 
 -- |
--- Extact a first layer.
--- Also don't touch a second layer and more.
---
--- >>> let x = Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) -- (1 2 3)
--- >>> flatten x
--- [AtomInt 1, AtomInt 2, AtomInt 3]
--- >>> let y = Cons (AtomInt 2) (Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))) -- (2 (* 3 4))
--- >>> flatten y
--- [AtomInt 2, Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
--- >> let z = Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil)) -- (* 3 4)
--- >> flatten z
--- [Cons (AtomSymbol "*") (Cons (AtomInt 3) (Cons (AtomInt 4) Nil))]
---
--- >>> let a = Cons (AtomSymbol "+") (Cons (AtomSymbol "*") (Cons (AtomSymbol "+") Nil)) -- (+ (* +))
-flatten :: Associate FailKey FailValue xs => SExpr -> Eff xs [SExpr]
-flatten (Cons (AtomInt x) y) = (:) <$> pure (AtomInt x) <*> flatten y
-
-flatten s@(Cons (AtomSymbol _) _) = return [s]
-flatten s@(AtomInt _)             = return [s]
-flatten s@(AtomSymbol _)          = return [s]
-flatten Nil                       = return []
-flatten (Cons _ _)                = throwFail $ "an unexpected case is detected (flatten)"
+-- >>> flatten Nil -- ()
+-- []
+-- >>> flatten $ AtomInt 10 -- 10
+-- [AtomInt 10]
+-- >>> flatten $ Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) -- (1 2 3)
+-- [AtomInt 1,AtomInt 2,AtomInt 3]
+-- >>> flatten $ Cons (AtomInt 2) (Cons (Cons (AtomInt 3) (Cons (AtomInt 4) (Cons (AtomInt 5) Nil))) Nil) -- (2 (3 4 5))
+-- [AtomInt 2,Cons (AtomInt 3) (Cons (AtomInt 4) (Cons (AtomInt 5) Nil))]
+-- >>> flatten $ Cons (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)) (Cons (Cons (AtomInt 3) (Cons (AtomInt 4) Nil)) Nil) -- ((1 2) (3 4))
+-- [Cons (AtomInt 1) (Cons (AtomInt 2) Nil),Cons (AtomInt 3) (Cons (AtomInt 4) Nil)]
+flatten :: SExpr -> [SExpr]
+flatten Nil            = []
+flatten (AtomInt x)    = [AtomInt x]
+flatten (AtomSymbol x) = [AtomSymbol x]
+flatten (Cons x y)     = [x] ++ flatten y
