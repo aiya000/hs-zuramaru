@@ -20,7 +20,7 @@ module Maru.Main
   ) where
 
 import Control.Exception.Safe (SomeException)
-import Control.Lens ((.~), (.=), (%=), DefName(..), lensField, makeLensesFor, makeLensesWith, lensRules)
+import Control.Lens
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
@@ -29,7 +29,6 @@ import Data.Function ((&))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Data.Types.Injective (Injective(..))
 import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
 import Maru.Type
 import Safe (tailMay)
@@ -107,11 +106,6 @@ instance Associate "stateRepl" (State ReplState) xs => MonadState ReplState (Eff
   put = putEff #stateRepl
 
 
-instance Injective (Maybe ()) Bool where
-  to (Just ()) = True
-  to Nothing   = False
-
-
 -- |
 -- The eval phase do parse and evaluation,
 -- take its error or a rightly result
@@ -137,7 +131,7 @@ runRepl = do
 -- Debug mode shows the parse and the evaluation's optionally result.
 repl :: Eff '["stateRepl" >: State ReplState, IOEff] ()
 repl = do
-  loopIsRequired <- to <$> runMaybeEff @ "maybe" rep
+  loopIsRequired <- runMaybeEff @ "maybe" rep <&> view _iso
   when loopIsRequired repl
 
 -- |
@@ -242,3 +236,17 @@ makeLensesA = makeLensesWith (lensRules & lensField .~ addSuffix)
   where
     addSuffix :: Name -> [Name] -> Name -> [DefName]
     addSuffix _ _ recordName = [TopName . mkName $ nameBase recordName ++ "A"]
+
+
+-- |
+-- An isomorphism of between `Maybe ()` and `Bool`.
+-- `Just ()` is mapped to `True`
+_iso :: Iso' (Maybe ()) Bool
+_iso = iso to from
+  where
+    to :: Maybe () -> Bool
+    to (Just ()) = True
+    to Nothing   = False
+    from :: Bool -> Maybe ()
+    from True  = Just ()
+    from False = Nothing

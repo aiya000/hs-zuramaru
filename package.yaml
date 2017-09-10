@@ -36,9 +36,7 @@ dependencies:
     - text-show
     - throwable-exceptions
     - transformers
-    - type-iso
 
-# TODO: Can I alternate type-iso by lens ?
 library:
   source-dirs: src
 
