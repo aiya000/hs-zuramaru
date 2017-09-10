@@ -25,7 +25,6 @@ import Data.Extensible (Associate, Eff, castEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type
-import Maru.Type.Eval
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP

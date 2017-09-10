@@ -73,7 +73,6 @@ import Data.Typeable (Typeable, typeRep)
 import Maru.Type.SExpr
 import Prelude hiding (fail)
 import TextShow (TextShow(..))
-import Unsafe.Coerce (unsafeCoerce)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 
