@@ -37,11 +37,11 @@ import qualified Text.Megaparsec as P
 import qualified TextShow as TS
 
 -- |
--- Format of zuramaru source code
--- (this doesn't mean the file path of source code)
+-- The format for the code of maru.
+-- (This doesn't mean a file path of the code.)
 type SourceCode = Text
 
--- | Format of parser token
+-- | The format for the token of `MaruParser`
 type MaruToken = P.Token Text
 
 
@@ -62,7 +62,7 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
 -- False
 isAtomInt :: SExpr -> Bool
 isAtomInt (AtomInt _) = True
-isAtomInt _ = False
+isAtomInt _           = False
 
 -- |
 -- Extract `Int` from a term of `AtomInt`.
@@ -92,7 +92,7 @@ instance MonoFunctor SExprIntBullet where
   omap f (SExprIntBullet (AtomInt x)) = SExprIntBullet . AtomInt $ f x
   omap _ x = x
 
--- | Apply by omap a function to a SExprIntBullet with wrapping and unwrapping
+-- | Apply by `omap` a function to a `SExprIntBullet` with wrapping and unwrapping
 intBullet :: (Int -> Int) -> SExpr -> SExpr
 intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
@@ -102,9 +102,9 @@ newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
   deriving (IsString, Monoid, Show, Eq, Ord)
 
 
--- | @a@ can be represented as @SExpr@
+-- | 'a' can be represented as `SExpr`
 class SExprLike a where
-  -- | @a@ can be converted as @SExpr@.
+  -- | 'a' can be converted as `SExpr`
   wrap :: a -> SExpr
 
 instance SExprLike Int where
@@ -120,7 +120,7 @@ class AST a where
   -- |
   -- Convert an AST to a text of syntax.
   --
-  -- e.g. @(Cons 10 (Cons 20 Nil))@ to "(10 20)"
+  -- e.g. '(Cons 10 (Cons 20 Nil))' is converted to "(10 20)"
   visualize :: a -> Text
 
 instance AST SExpr where
@@ -139,7 +139,8 @@ instance AST SExpr where
   visualize (AtomInt x)                 = showt x
 
 
--- | Concatenate SExpr by Cons
+-- |
+-- Concatenate `SExpr` by `Cons`
 --
 -- >>> let xs = [(AtomInt 1), (Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil)] -- [1, (2 3)]
 -- >>> scottEncode xs
@@ -154,7 +155,7 @@ scottEncode :: [SExpr] -> SExpr
 scottEncode [] = Nil
 scottEncode (x:xs) = Cons x $ scottEncode xs
 
--- | The inverse function of @scottEncode@
+-- | The inverse function of `scottEncode`
 --
 -- >>> let xs = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
 -- >>> scottDecode xs

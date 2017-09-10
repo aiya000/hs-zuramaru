@@ -8,6 +8,7 @@ module Maru.Parser
   , P.parseErrorPretty
   , parse
   , debugParse
+  , ParseResult
   ) where
 
 import Control.Applicative ((<|>))

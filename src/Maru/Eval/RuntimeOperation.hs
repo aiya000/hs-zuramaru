@@ -143,8 +143,8 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 -- Set a variable of the name to a value,
 -- and Return the just given name.
 --
--- Take a first element of `[SExpr]` as a name.
--- Take a second element of `[SExpr]` as a value.
+-- Take a first element of [`SExpr`] as a name.
+-- Take a second element of [`SExpr`] as a value.
 --
 -- >>> (Right sexpr, env, _) <- flip runMaruEvaluator initialEnv $ set [AtomSymbol "*x*", AtomInt 10]
 -- >>> sexpr == AtomSymbol "*x*"
@@ -154,8 +154,7 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
 set (AtomSymbol sym:AtomInt x:_) = do
-  env <- getMaruEnv
-  putMaruEnv $ M.insert sym (SomeMaruPrimitive DiscrInt x) env
+  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrInt x
   return $ AtomSymbol sym
 set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 

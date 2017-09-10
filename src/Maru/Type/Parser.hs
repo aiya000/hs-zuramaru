@@ -38,14 +38,14 @@ type ParseErrorResult = ParseError MaruToken Dec
 newtype ParseLog = ParseLog { unParseLog :: Text }
   deriving (IsString, Monoid)
 
--- | Current state of MaruParser
+-- | Current state of `MaruParser`
 data MaruState = MaruState
   { _parseLogs      :: Seq ParseLog
   , _parseNestLevel :: Int
   }
 makeLenses ''MaruState
 
--- | Parser with parsing logs
+-- | A parser for the code of maru
 newtype MaruParser a = MaruParser { unMaruParser :: ParsecT Dec Text (State MaruState) a }
   deriving ( Functor, Applicative, Monad
            , Alternative, MonadPlus
@@ -55,7 +55,7 @@ newtype MaruParser a = MaruParser { unMaruParser :: ParsecT Dec Text (State Maru
 -- |
 -- Run parser and extract result and logs.
 --
--- `MaruState`'s _parseLogs is converted to a list.
+-- But `MaruState`'s `_parseLogs` is converted to the list.
 runMaruParser :: MaruParser a -> Text -> (Either (ParseError MaruToken Dec) a, [ParseLog])
 runMaruParser parser source =
   let initialState = MaruState [] 0

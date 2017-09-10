@@ -12,6 +12,6 @@ import Data.Monoid (First)
 infixl 8 ^$?
 
 --NOTE: Can this is alternated by something ? https://www.stackage.org/haddock/lts-8.11/lens-4.15.1/Control-Lens-Fold.html#v:-94--63-
--- | (^?) over a `Functor`
+-- | (`^?`) over a `Functor`
 (^$?) :: Functor f => f s -> Getting (First a) s a -> f (Maybe a)
 fb ^$? acs = (^? acs) <$> fb

@@ -19,6 +19,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 -- |
+-- Integrate types of extensible's Effect.
+--
 -- `MaruMacro` is evaluated by `MaruEvaluator`.
 -- `MaruFunc` is calculated by `MaruCalculator`.
 module Maru.Type.Eval
@@ -37,6 +39,7 @@ module Maru.Type.Eval
   , MaruVariablesValue
   , getMaruEnv
   , putMaruEnv
+  , modifyMaruEnv
   , IOEff
   , IOEffKey
   , IOEffValue
@@ -102,7 +105,7 @@ includeFail cause mm = do
     Just x  -> return x
 
 
--- A log for 簡約s
+-- | A log for 簡約s
 type SimplificationSteps = [SExpr]
 
 -- |
@@ -135,6 +138,10 @@ getMaruEnv = getEff #maruVariables
 -- | `putEff` for `MaruVariables`
 putMaruEnv :: Associate MaruVariablesKey MaruVariablesValue xs => MaruEnv -> Eff xs ()
 putMaruEnv = putEff #maruVariables
+
+-- | `modifyEff` for `maruVariables`
+modifyMaruEnv :: Associate MaruVariablesKey MaruVariablesValue xs => (MaruEnv -> MaruEnv) -> Eff xs ()
+modifyMaruEnv = modifyEff #maruVariables
 
 
 -- | An effect of @MaruEvaluator@, this is same as `IO` in `Eff`
@@ -195,7 +202,7 @@ runMaruCalculator :: MaruCalculator a -> Either ExceptionCause a
 runMaruCalculator = leaveEff . runEitherEff
 
 
--- | Simular to `First`, but using `Either ExceptionCause` instead of `Maybe`
+-- | Simular to `First`, but using '`Either` `ExceptionCause`' instead of `Maybe`
 newtype First' a = First'
   { getFirst' :: Either ExceptionCause a
   } deriving (Functor)
@@ -208,7 +215,7 @@ instance Monoid (First' a) where
 
 
 -- |
--- Like a consturctor, but from `Maybe a`.
+-- Like a consturctor, but from '`Maybe` a'.
 -- If `Nothing` is given, return `mempty`.
 first' :: Maybe a -> First' a
 first' (Just a) = First' $ Right a
@@ -219,7 +226,7 @@ first' Nothing  = mempty
 -- A function of maru.
 -- This keeps the purity, don't happen effects.
 --
--- Take `[SExpr]` as arguments, its length is checked by each function.
+-- Take [`SExpr`] as arguments, its length is checked by each function.
 -- If it is not the expected length, `Nothing` maybe given.
 type MaruFunc = [SExpr] -> MaruCalculator SExpr
 
@@ -234,7 +241,9 @@ type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
 -- | An identifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
+  -- | The identifier for a normalized term of the integer
   DiscrInt  :: Discriminating Int
+  -- | The identifier for a variable of maru
   DiscrText :: Discriminating Text
   -- | The identifier for a function
   DiscrFunc :: Discriminating MaruFunc
@@ -304,8 +313,8 @@ instance MaruPrimitive MaruMacro where
 
 
 -- |
--- Take a value from @MaruEnv@ in @State@.
--- If @sym@ is not exists, take invalid value of @Exc NoSuchSymbolException'@
+-- Take a value from `MaruEnv` in `State`.
+-- If `sym` is not exists, take invalid value of '`Exc` `NoSuchSymbolException'`'
 lookupSymbol :: forall xs.
                 ( Associate FailKey FailValue xs
                 , Associate MaruVariablesKey MaruVariablesValue xs
