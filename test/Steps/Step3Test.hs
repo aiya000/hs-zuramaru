@@ -65,10 +65,7 @@ runCode = runCode' E.initialEnv
 runCode' :: MaruEnv -> Text -> IO (SExpr, MaruEnv)
 runCode' env code = do
   result <- sequence $ E.eval env <$> P.parse code
-  let x = ( result ^? _Right . _Right . _1
-          , result ^? _Right . _Right . _2
-          )
-  case x of
-    (Nothing, _)     -> fail "An evaluation or a parse is failed"
-    (Just y, Just z) -> return (y, z)
-    (_, _)           -> fail "fatal error"
+  case result of
+    Left e                  -> fail $ show e
+    Right (Left e)          -> fail $ show e
+    Right (Right (x, y, _)) -> return (x, y)
