@@ -36,6 +36,9 @@ import TextShow (TextShow, showb, showt)
 import qualified Text.Megaparsec as P
 import qualified TextShow as TS
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+
 -- |
 -- The format for the code of maru.
 -- (This doesn't mean a file path of the code.)
@@ -53,7 +56,6 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
   deriving (Show, Eq)
 
 -- |
--- >>> :set -XOverloadedStrings
 -- >>> isAtomInt $ AtomInt 10
 -- True
 -- >>> isAtomInt Nil
