@@ -71,14 +71,18 @@ eval env sexpr = do
 -- | A naked evaluator of zuramaru
 execute :: SExpr -> MaruEvaluator SExpr
 
+--TODO: Maybe, this must reference the function and macro of behind of the symbol. e.g. 'eval (insert (MaruSymbol "f") (SomeMaruPrimitive DiscrSExpr $ MaruSymbol "set") initialEnv) (Cons (AtomSymbol "f") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)))' should define "x" as 10 in the env.
 -- Evaluate a macro,
 -- or Calculate a function
-execute (Cons (AtomSymbol sym) xs) = do
-  loadMacro <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrMacro))
-  loadFunc  <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrFunc))
-  funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
-  args      <- mapM execute $ flatten xs
-  funcLike args
+execute (Cons x xs) =
+  case x of
+    AtomSymbol sym -> do
+      loadMacro <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrMacro))
+      loadFunc  <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrFunc))
+      funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
+      args      <- mapM execute $ flatten xs
+      funcLike args
+    _ -> throwFail $ "expected a symbol, but got: " <> showt x
   where
     liftFirst' :: Associate FailKey FailValue xs
                => First' a -> Eff xs a
@@ -88,7 +92,6 @@ execute (Cons (AtomSymbol sym) xs) = do
 
 execute (AtomInt x)    = return $ AtomInt x
 execute (AtomSymbol x) = return $ AtomSymbol x
-execute (Cons x y)     = Cons <$> execute x <*> execute y
 execute Nil            = return Nil
 
 
