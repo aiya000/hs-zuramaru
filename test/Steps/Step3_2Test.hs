@@ -18,9 +18,9 @@ test_preset_function = defBang_test ++ letStar_test ++ call_test ++ addtional_te
 defBang_test :: [TestTree]
 defBang_test =
   [ testCase "`def!` adds a value with a key to environment" $ do
-      (sexpr, env, _) <- runCodeInstantly "(def! *x* 10)"
+      (sexpr, env, _) <- runCodeInstantly "(def! *poi* 10)"
       sexpr @?= AtomInt 10
-      env ^? to (M.lookup "*x*") . _Just . _SomeMaruPrimitive DiscrSExpr
+      env ^? to (M.lookup "*poi*") . _Just . _SomeMaruPrimitive DiscrSExpr
         @?= Just (AtomInt 10)
   ]
 
@@ -41,21 +41,23 @@ call_test =
   [ testCase "`call` calls a first element of the list as a function/macro with tail elements implicitly" $ do
       (sexpr, _, _) <- runCodeInstantly "(+ 1 2)"
       sexpr @?= AtomInt 3
+      (sexpr, _, _) <- runCode modifiedEnv "*x*"
+      sexpr @?= AtomInt 10
       (sexpr, _, _) <- runCode modifiedEnv "*y*"
       sexpr @?= AtomInt 10
   ]
   where
-    -- initialEnv ∪ { (*y* : 10) }
+    -- initialEnv ∪ { (*x* := 10), (*x* := *x*) }
     modifiedEnv :: MaruEnv
-    modifiedEnv = M.insert "*y*" expectedTerm E.initialEnv
-    -- *x*: 10
-    expectedTerm :: SomeMaruPrimitive
-    expectedTerm = SomeMaruPrimitive DiscrSExpr $ AtomInt 10
+    modifiedEnv = let x = SomeMaruPrimitive DiscrSExpr $ AtomInt 10
+                      y = SomeMaruPrimitive DiscrSExpr $ AtomSymbol "*x*"
+                  in M.insert "*x*" x
+                     $ M.insert "*y*" y E.initialEnv
 
 
 addtional_test :: [TestTree]
 addtional_test =
-  [ testCase "After `let*` scope is end, a created variable is not existed" $ do
+  [ testCase "After `let*` scope is end, a created variable is not existed (for lexical scopes)" $ do
       (_, env, _) <- runCodeInstantly "(let* (x 10) x)"
       M.lookup "x" env ^? _Just . _SomeMaruPrimitive DiscrSExpr @?= Nothing
   ]
