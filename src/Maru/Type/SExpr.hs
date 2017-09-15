@@ -12,9 +12,12 @@ module Maru.Type.SExpr
   , SExpr(..)
   , isAtomInt
   , unAtomInt
+  , isAtomSymbol
   , SExprLike(..)
   , AST(..)
   , MaruSymbol(..)
+  , pack
+  , unpack
   , scottEncode
   , scottDecode
   , _Cons
@@ -33,6 +36,7 @@ import Data.Profunctor (dimap)
 import Data.String (IsString)
 import Data.Text (Text)
 import TextShow (TextShow, showb, showt)
+import qualified Data.Text as T
 import qualified Text.Megaparsec as P
 import qualified TextShow as TS
 
@@ -79,6 +83,17 @@ unAtomInt :: SExpr -> Maybe Int
 unAtomInt (AtomInt x) = Just x
 unAtomInt _           = Nothing
 
+-- |
+-- >>> isAtomSymbol $ AtomSymbol "x"
+-- True
+-- >>> isAtomSymbol Nil
+-- False
+-- >>> isAtomSymbol $ AtomInt 10
+-- False
+isAtomSymbol :: SExpr -> Bool
+isAtomSymbol (AtomSymbol _) = True
+isAtomSymbol _              = False
+
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
@@ -103,6 +118,16 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
   deriving (IsString, Monoid, Show, Eq, Ord)
 
+-- |
+-- Wrap `String`.
+-- If you want to wrap `Text`, please use `MaruSymbol` value constructor instead.
+pack :: String -> MaruSymbol
+pack = MaruSymbol . T.pack
+
+-- | A dual of `pack`
+unpack :: MaruSymbol -> String
+unpack = T.unpack . unMaruSymbol
+
 
 -- | 'a' can be represented as `SExpr`
 class SExprLike a where
@@ -112,6 +137,7 @@ class SExprLike a where
 instance SExprLike Int where
   wrap = AtomInt
 
+--FIXME: Text is not MaruSymbol !!
 -- | As a symbol
 instance SExprLike Text where
   wrap = AtomSymbol . MaruSymbol

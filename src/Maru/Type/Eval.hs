@@ -47,6 +47,7 @@ module Maru.Type.Eval
   , ExceptionCause
   , MaruEvaluator
   , runMaruEvaluator
+  , newSymbol
   , Discriminating (..)
   , MaruEnv
   , MaruFunc
@@ -70,11 +71,13 @@ import Data.Monoid ((<>), First)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import Data.Typeable (Typeable, typeRep)
+import Data.Unique (newUnique, hashUnique)
 import Maru.Type.SExpr
 import Prelude hiding (fail)
 import TextShow (TextShow(..))
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
+import qualified Maru.Type.SExpr as MTS
 
 
 -- | A message of @Fail@
@@ -170,6 +173,20 @@ runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
     flatten :: ((a, b), c) -> (a, b, c)
     flatten ((x, y), z) = (x, y, z)
 
+-- |
+-- Create a symbol of the variable name,
+-- it is unique (is not duplicated) in the runtime.
+newSymbol :: MaruEvaluator MaruSymbol
+newSymbol = ("n" <>) <$> newSymbol' ""
+  where
+    -- Take a base of the name.
+    newSymbol' :: MaruSymbol -> MaruEvaluator MaruSymbol
+    newSymbol' baseName = do
+      name <- liftIOEff $ (baseName <>) . MTS.pack . show . hashUnique <$> newUnique
+      env <- getMaruEnv
+      case M.lookup name env of
+           Nothing -> newSymbol' name
+           Just  _ -> return name
 
 --NOTE: Can this is alternated by some lens's function ?
 -- |
@@ -220,14 +237,21 @@ first' (Just a) = First' $ Right a
 first' Nothing  = mempty
 
 
+--TODO: Use 'newtype' instead of 'type' for avoid to execute unindended operations
 -- |
 -- A function of maru.
 -- This keeps the purity, don't happen effects.
 --
 -- Take [`SExpr`] as arguments, its length is checked by each function.
 -- If it is not the expected length, `Nothing` maybe given.
+--
+-- Notice:
+--
+-- The function is Haskell's function, is represented by Haskell.
+-- The function is not maru's (runtime's) function (cannot be defined in the runtime).
 type MaruFunc = [SExpr] -> MaruCalculator SExpr
 
+--TODO: Use 'newtype' instead of 'type' for avoid to execute unindended operations
 -- |
 -- A macro of maru,
 -- this means the impure function.
