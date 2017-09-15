@@ -49,6 +49,8 @@ initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrFunc OP.add)
                         , ("set", SomeMaruPrimitive DiscrMacro OP.set)
                         , ("find", SomeMaruPrimitive DiscrMacro OP.find)
                         , ("get", SomeMaruPrimitive DiscrMacro OP.get)
+                        , ("def!", SomeMaruPrimitive DiscrMacro OP.defBang)
+                        , ("let*", SomeMaruPrimitive DiscrMacro OP.letStar)
                         ]
 
 

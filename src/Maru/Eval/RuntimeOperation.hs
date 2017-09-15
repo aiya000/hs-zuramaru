@@ -16,6 +16,9 @@ module Maru.Eval.RuntimeOperation
   , set
   , find
   , get
+  , defBang
+  , letStar
+  , call
   ) where
 
 import Control.Lens hiding (set)
@@ -39,6 +42,10 @@ import qualified Maru.Type as MT
 -- >>> import Maru.Eval
 -- >>> import Maru.Type
 -- >>> import qualified Data.Map.Lazy as M
+-- >>> :{
+-- >>> let modifiedEnv = M.insert "*f*" (SomeMaruPrimitive DiscrSExpr $ AtomSymbol "set") $
+--                       M.insert "*x*" (SomeMaruPrimitive DiscrSExpr $ AtomInt 10) initialEnv
+-- >>> :}
 
 
 ignoreAtomInt :: [SExpr] -> [SExpr]
@@ -167,15 +174,13 @@ set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 -- Return the variable of the name if it is found.
 -- Return `Nil` if it is not found.
 --
--- >>> let modifiedEnv  = M.insert "*x*" (SomeMaruPrimitive DiscrSExpr $ AtomInt 10) initialEnv
--- >>> let modifiedEnv' = M.insert "*f*" (SomeMaruPrimitive DiscrSExpr $ AtomSymbol "set") modifiedEnv
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv' $ find [AtomSymbol "*x*"]
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*x*"]
 -- >>> sexpr
 -- AtomInt 10
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv' $ find [AtomSymbol "*f*"]
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*f*"]
 -- >>> sexpr == AtomSymbol "set"
 -- True
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv' $ find [AtomSymbol "this-is-an-undefined-variable"]
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "this-is-an-undefined-variable"]
 -- >>> sexpr
 -- Nil
 find :: MaruMacro
@@ -193,22 +198,54 @@ find xs = fail $ "find: an invalid condition is detected `" ++ show xs ++ "`"
 -- Similar to find,
 -- but this `throwFail`s the exception if the given name is not found.
 --
--- >>> let modifiedEnv = M.insert "*x*" (SomeMaruPrimitive DiscrSExpr $ AtomInt 10) initialEnv
--- >>> let modifiedEnv' = M.insert "*f*" (SomeMaruPrimitive DiscrSExpr $ AtomSymbol "set") modifiedEnv
--- >>> (Right sexpr, env, _) <- flip runMaruEvaluator modifiedEnv' $ get [AtomSymbol "*x*"]
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "*x*"]
 -- >>> sexpr
 -- AtomInt 10
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv' $ find [AtomSymbol "*f*"]
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*f*"]
 -- >>> sexpr == AtomSymbol "set"
 -- True
--- >>> (evalResult, env, _) <- flip runMaruEvaluator modifiedEnv' $ get [AtomSymbol "this-is-an-undefined-variable"]
+-- >>> (evalResult, _, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "this-is-an-undefined-variable"]
 -- >>> isLeft evalResult
 -- True
 get :: MaruMacro
 get [] = fail "get: requires non empty arguments"
-get (AtomSymbol sym:_) = do
-  value <- find [AtomSymbol sym]
+get w@(AtomSymbol sym:_) = do
+  value <- find w
   case value of
     Nil -> fail . T.unpack . unMaruSymbol $ "get: A symbol '" <> sym <> "' is not found in the current environment"
     _   -> return value
 get xs = fail $ "get: an invalid condition is detected `" ++ show xs ++ "`"
+
+
+-- |
+-- def!
+--
+-- >>> (Right sexpr, env, _) <- flip runMaruEvaluator initialEnv $ defBang [AtomSymbol "*x*", AtomInt 10]
+-- >>> sexpr
+-- AtomInt 10
+-- >>> M.lookup "*x*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
+-- Just (AtomInt 10)
+defBang :: MaruMacro
+defBang = undefined
+
+-- |
+-- let*
+--
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ letStar [Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil), Cons (AtomSymbol "*x*") Nil]
+-- >>> sexpr
+-- AtomInt 10
+letStar :: MaruMacro
+letStar = undefined
+
+-- |
+-- The caller for a head element of the list, this is called always implicitly
+--
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ call [AtomSymbol "+", Cons (AtomInt 1) (Cons (AtomInt 2) Nil)]
+-- >>> let Right expected = runMaruCalculator $ add [AtomInt 1, AtomInt 2]
+-- >>> sexpr == expected
+-- True
+-- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ call [AtomSymbol "*x*"]
+-- >>> sexpr
+-- AtomInt 10
+call :: MaruMacro
+call = undefined
