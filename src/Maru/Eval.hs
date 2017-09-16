@@ -19,6 +19,7 @@ module Maru.Eval
 
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
+import Control.Lens ((&), _1, _2, (.~))
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
 import Data.Monoid ((<>))
@@ -137,6 +138,10 @@ execute sexpr                        = call sexpr
 -- >>> M.lookup "*z*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
 -- Just (AtomInt 3)
 defBang :: SExpr -> MaruEvaluator SExpr
+defBang s@(Cons (AtomSymbol _) (Cons x@(AtomSymbol _) _)) = do
+  x' <- call x
+  let s' = s & _Cons . _2 . _Cons . _1 .~ x'
+  defBang s'
 defBang (Cons (AtomSymbol sym) (Cons x _)) = do
   modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
   return x
