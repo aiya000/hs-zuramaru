@@ -19,7 +19,6 @@ module Maru.Eval
 
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Control.Lens ((&), _1, _2, (.~))
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
 import Data.Monoid ((<>))
@@ -131,21 +130,30 @@ execute sexpr                        = call sexpr
 --
 -- Define "*z*" over a calculation (+ 1 2)
 --
--- >>> let calc = (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*z*") (Cons calc Nil))
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
 -- >>> result
 -- Right (AtomInt 3)
 -- >>> M.lookup "*z*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
 -- Just (AtomInt 3)
 defBang :: SExpr -> MaruEvaluator SExpr
-defBang s@(Cons (AtomSymbol _) (Cons x@(AtomSymbol _) _)) = do
-  x' <- call x
-  let s' = s & _Cons . _2 . _Cons . _1 .~ x'
-  defBang s'
-defBang (Cons (AtomSymbol sym) (Cons x _)) = do
-  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
-  return x
-defBang s = fail $ "def!: an invalid condition is detected `" ++ show s ++ "`"
+defBang (Cons (AtomSymbol sym) s) =
+  case s of
+    -- e.g. (def! x (+ 1 2)) should set x to 3.
+    -- `execute (def! x (+ 1 2))` (a fake notation)
+    --    maps '(Cons (Cons + (Cons 1 (Cons 2 Nil))) Nil)'
+    --    to 's'.
+    --    ('x' is mapped to '(Cons + (Cons 1 (Cons 2 Nil)))')
+    Cons x Nil -> defineSymToItsResult sym x
+    _          -> defineSymToItsResult sym s
+  where
+    -- Calculate `SExpr`,
+    -- and Set `MaruSymbol`
+    defineSymToItsResult :: MaruSymbol -> SExpr -> MaruEvaluator SExpr
+    defineSymToItsResult sym sexpr = do
+      sexpr' <- execute sexpr
+      modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr sexpr'
+      return sexpr'
+defBang s = throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
 
 
 -- |
