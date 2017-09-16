@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -16,9 +17,6 @@ module Maru.Eval.RuntimeOperation
   , set
   , find
   , get
-  , defBang
-  , letStar
-  , call
   ) where
 
 import Control.Lens hiding (set)
@@ -162,8 +160,8 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
 -- Just Nil
 set :: MaruMacro
 set [] = fail "set: requires non empty arguments"
-set (AtomSymbol sym:AtomInt x:_) = do
-  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrInt x
+set (AtomSymbol sym:x:_) = do
+  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
   return $ AtomSymbol sym
 set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
 
@@ -187,10 +185,11 @@ find :: MaruMacro
 find [] = fail "find: requires non empty arguments"
 find (AtomSymbol sym:_) = do
   env <- getMaruEnv
-  let maybeValue = M.lookup sym env >>= (^? _SomeMaruPrimitive DiscrInt)
-  case maybeValue of
+  case M.lookup sym env of
     Nothing -> return Nil
-    Just x  -> return $ AtomInt x
+    Just (SomeMaruPrimitive DiscrFunc  f) -> intoSExpr f
+    Just (SomeMaruPrimitive DiscrMacro f) -> intoSExpr f
+    Just (SomeMaruPrimitive DiscrSExpr x) -> intoSExpr x
 find xs = fail $ "find: an invalid condition is detected `" ++ show xs ++ "`"
 
 
@@ -215,37 +214,3 @@ get w@(AtomSymbol sym:_) = do
     Nil -> fail . T.unpack . unMaruSymbol $ "get: A symbol '" <> sym <> "' is not found in the current environment"
     _   -> return value
 get xs = fail $ "get: an invalid condition is detected `" ++ show xs ++ "`"
-
-
--- |
--- def!
---
--- >>> (Right sexpr, env, _) <- flip runMaruEvaluator initialEnv $ defBang [AtomSymbol "*x*", AtomInt 10]
--- >>> sexpr
--- AtomInt 10
--- >>> M.lookup "*x*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
--- Just (AtomInt 10)
-defBang :: MaruMacro
-defBang = undefined
-
--- |
--- let*
---
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ letStar [Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil), Cons (AtomSymbol "*x*") Nil]
--- >>> sexpr
--- AtomInt 10
-letStar :: MaruMacro
-letStar = undefined
-
--- |
--- The caller for a head element of the list, this is called always implicitly
---
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ call [AtomSymbol "+", Cons (AtomInt 1) (Cons (AtomInt 2) Nil)]
--- >>> let Right expected = runMaruCalculator $ add [AtomInt 1, AtomInt 2]
--- >>> sexpr == expected
--- True
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator initialEnv $ call [AtomSymbol "*x*"]
--- >>> sexpr
--- AtomInt 10
-call :: MaruMacro
-call = undefined

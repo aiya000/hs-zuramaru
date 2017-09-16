@@ -17,21 +17,31 @@ module Maru.Eval
   , eval
   ) where
 
-import Control.Arrow ((>>>))
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
-import Control.Lens (preview, (<&>))
-import Data.Extensible (Associate, Eff, castEff)
+import Control.Monad.Fail (fail)
+import Data.Extensible (castEff)
 import Data.Monoid ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type
+import Prelude hiding (fail)
 import TextShow (showt)
 import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
+import qualified Maru.Type as MT
 
 -- $setup
 -- >>> :set -XOverloadedStrings
+-- >>> import Control.Lens ((^?), _Just)
+-- >>> import qualified Maru.Eval.RuntimeOperation as OP
+-- >>> import qualified Data.Map.Lazy as M
+-- >>> :{
+-- >>> let modifiedEnv =
+--       let x = SomeMaruPrimitive DiscrSExpr $ AtomInt 10
+--           y = SomeMaruPrimitive DiscrSExpr $ AtomSymbol "*x*"
+--       in M.insert "*y*" y $ M.insert "*x*" x initialEnv
+-- >>> :}
 
 declareException "EvalException" ["EvalException"]
 
@@ -50,8 +60,6 @@ initialEnv = M.fromList [ ("+", SomeMaruPrimitive DiscrFunc OP.add)
                         , ("set", SomeMaruPrimitive DiscrMacro OP.set)
                         , ("find", SomeMaruPrimitive DiscrMacro OP.find)
                         , ("get", SomeMaruPrimitive DiscrMacro OP.get)
-                        , ("def!", SomeMaruPrimitive DiscrMacro OP.defBang)
-                        , ("let*", SomeMaruPrimitive DiscrMacro OP.letStar)
                         ]
 
 
@@ -71,33 +79,6 @@ eval env sexpr = do
     Right sexpr -> return $ Right (sexpr, newEnv, simplifLogs)
 
 
--- | A naked evaluator of zuramaru
-execute :: SExpr -> MaruEvaluator SExpr
-
---TODO: Maybe, this must reference the function and macro of behind of the symbol. e.g. 'eval (insert (MaruSymbol "f") (SomeMaruPrimitive DiscrSExpr $ MaruSymbol "set") initialEnv) (Cons (AtomSymbol "f") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)))' should define "x" as 10 in the env.
--- Evaluate a macro,
--- or Calculate a function
-execute (Cons x xs) =
-  case x of
-    AtomSymbol sym -> do
-      loadMacro <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrMacro))
-      loadFunc  <- first' <$> (lookupSymbol sym <&> preview (_SomeMaruPrimitive DiscrFunc))
-      funcLike  <- liftFirst' $ loadMacro <> fmap (castEff .) loadFunc
-      args      <- mapM execute $ flatten xs
-      funcLike args
-    _ -> throwFail $ "expected a symbol, but got: " <> showt x
-  where
-    liftFirst' :: Associate FailKey FailValue xs
-               => First' a -> Eff xs a
-    liftFirst' = getFirst' >>> \case
-      Left  e -> throwFail e
-      Right a -> return a
-
-execute (AtomInt x)    = return $ AtomInt x
-execute (AtomSymbol x) = return $ AtomSymbol x
-execute Nil            = return Nil
-
-
 -- |
 -- >>> flatten Nil -- ()
 -- []
@@ -114,3 +95,118 @@ flatten Nil            = []
 flatten (AtomInt x)    = [AtomInt x]
 flatten (AtomSymbol x) = [AtomSymbol x]
 flatten (Cons x y)     = [x] ++ flatten y
+
+
+-- |
+-- A naked evaluator of zuramaru
+--
+-- Evaluate a macro,
+-- or Calculate a function
+execute :: SExpr -> MaruEvaluator SExpr
+execute (Cons (AtomSymbol "def!") s) = defBang s
+execute (Cons (AtomSymbol "let*") s) = letStar s
+execute sexpr                        = call sexpr
+
+
+-- |
+-- def!
+--
+-- (def! *x* 10)
+--
+-- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
+-- >>> result
+-- Right (AtomInt 10)
+-- >>> M.lookup "*x*" envWithX ^? _Just . _SomeMaruPrimitive DiscrSExpr
+-- Just (AtomInt 10)
+--
+-- Define "*y*" over "*x*"
+-- (def! *y* *x*)
+--
+-- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
+-- >>> result
+-- Right (AtomInt 10)
+-- >>> M.lookup "*y*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
+-- Just (AtomInt 10)
+--
+-- Define "*z*" over a calculation (+ 1 2)
+--
+-- >>> let calc = (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*z*") (Cons calc Nil))
+-- >>> result
+-- Right (AtomInt 3)
+-- >>> M.lookup "*z*" env ^? _Just . _SomeMaruPrimitive DiscrSExpr
+-- Just (AtomInt 3)
+defBang :: SExpr -> MaruEvaluator SExpr
+defBang (Cons (AtomSymbol sym) (Cons x _)) = do
+  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
+  return x
+defBang s = fail $ "def!: an invalid condition is detected `" ++ show s ++ "`"
+
+
+-- |
+-- let*
+--
+-- (let* (x 10) x)
+--
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
+-- >>> result
+-- Right (AtomInt 10)
+-- >>> M.lookup "x" env
+-- Nothing
+letStar :: SExpr -> MaruEvaluator SExpr
+letStar (Cons (Cons (AtomSymbol sym) (Cons x Nil)) body) = do
+  --TODO: Create new scope
+  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
+  execute body
+letStar s = fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
+
+
+-- |
+-- Call general function/macro (other than def!/let*).
+-- If it has a head element, apply tail elements to the head element. (+ 1 2)
+--
+-- If it is a symbol, find the symbol from current environment (`MaruEnv`)
+-- (Throw exception if it couldn't be found).
+--
+-- If it is an another primitive value, return just it.
+--
+-- (+ 1 2)
+--
+-- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+-- >>> let expected = runMaruCalculator $ OP.add [AtomInt 1, AtomInt 2]
+-- >>> result == expected
+-- True
+--
+-- *x*
+--
+-- >>> (result, _, _) <- flip runMaruEvaluator modifiedEnv $ call (AtomSymbol "*x*")
+-- >>> result
+-- Right (AtomInt 10)
+--
+-- *y*
+--
+-- >>> (result', _, _) <- flip runMaruEvaluator modifiedEnv $ call (AtomSymbol "*y*")
+-- >>> result' == result
+-- True
+call :: SExpr -> MaruEvaluator SExpr
+call (Cons (AtomSymbol sym) y) = lookupSymbol sym >>= \case
+  SomeMaruPrimitive DiscrFunc f -> do
+    args <- mapM execute $ flatten y
+    castEff $ f args
+  SomeMaruPrimitive DiscrMacro f -> do
+    args <- mapM execute $ flatten y
+    f args
+  SomeMaruPrimitive DiscrSExpr s ->
+    return s
+
+call (AtomSymbol sym) =
+  lookupSymbol sym >>= \case
+    --FIXME: Don't use the symbol as a text, create a term of text and use it instead
+    f@(SomeMaruPrimitive DiscrFunc  _) -> return . AtomSymbol . MT.pack $ show f
+    f@(SomeMaruPrimitive DiscrMacro _) -> return . AtomSymbol . MT.pack $ show f
+    SomeMaruPrimitive DiscrSExpr s@(AtomSymbol _) -> call s
+    SomeMaruPrimitive DiscrSExpr x -> return x
+
+call s@(Cons x _) = throwFail $ "expected a symbol, but '" <> showt x <> "' from '" <> showt s <> "'"
+call (AtomInt x)  = return $ AtomInt x
+call Nil          = return Nil

@@ -263,14 +263,12 @@ type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
 -- | An identifier for dicriminate a type of @SomeMaruPrimitive@
 data Discriminating :: * -> * where
-  -- | The identifier for a normalized term of the integer
-  DiscrInt  :: Discriminating Int
-  -- | The identifier for a variable of maru
-  DiscrText :: Discriminating Text
-  -- | The identifier for a function
+  -- | The identifier for a function, this decorates `MaruFunc` (Please see `MaruFunc` if you want to know this)
   DiscrFunc :: Discriminating MaruFunc
-  -- | The identifier for a macro
+  -- | The identifier for a macro, similar to `DiscrFunc`, but for `MaruMacro`
   DiscrMacro :: Discriminating MaruMacro
+  -- | The identifier for the S expression
+  DiscrSExpr :: Discriminating SExpr
 
 
 -- | The state of the runtime
@@ -281,38 +279,74 @@ data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discrim
 
 -- | A `Prism` for `SomeMaruPrimitive`
 _SomeMaruPrimitive :: MaruPrimitive a => Discriminating a -> Prism' SomeMaruPrimitive a
-_SomeMaruPrimitive DiscrInt = prism' (SomeMaruPrimitive DiscrInt) $
-  \case SomeMaruPrimitive DiscrInt x -> Just x
-        _ -> Nothing
-_SomeMaruPrimitive DiscrText = prism' (SomeMaruPrimitive DiscrText) $
-  \case SomeMaruPrimitive DiscrText x -> Just x
-        _ -> Nothing
 _SomeMaruPrimitive DiscrFunc = prism' (SomeMaruPrimitive DiscrFunc) $
   \case SomeMaruPrimitive DiscrFunc f -> Just f
         _ -> Nothing
 _SomeMaruPrimitive DiscrMacro = prism' (SomeMaruPrimitive DiscrMacro) $
   \case SomeMaruPrimitive DiscrMacro f -> Just f
         _ -> Nothing
-
+_SomeMaruPrimitive DiscrSExpr = prism' (SomeMaruPrimitive DiscrSExpr) $
+  \case SomeMaruPrimitive DiscrSExpr x -> Just x
+        _ -> Nothing
 
 instance Show SomeMaruPrimitive where
   show x = "SomeMaruPrimitive " ++ case x of
-    SomeMaruPrimitive DiscrInt  a -> show a
-    SomeMaruPrimitive DiscrText a -> T.unpack a
     SomeMaruPrimitive DiscrFunc  _ -> "#func"
     SomeMaruPrimitive DiscrMacro _ -> "#macro"
+    SomeMaruPrimitive DiscrSExpr y -> show y
 
 
 -- |
 -- A value of the runtime.
 -- These can be used in the code of maru.
 --
+-- e.g.
+-- 10 is an integral term,
+-- '+' is a (preset) function,
+-- `set` is a (preset) macro,
+-- 'x' is a name of the variable,
+-- `Nil` is a S expression.
+--
 -- This is strongly associated with @MaruTerm@.
-class MaruPrimitive a
-instance MaruPrimitive Int -- ^ integral terms
-instance MaruPrimitive Text
-instance MaruPrimitive MaruFunc -- ^ maru functions
-instance MaruPrimitive MaruMacro -- ^ maru macros
+class MaruPrimitive a where
+  -- | `a` may can be represented as a `SExpr`
+  intoSExpr :: a -> MaruEvaluator SExpr
+
+-- |
+-- maru preset functions
+--
+-- >>> let f = return . head :: MaruFunc
+-- >>> (Right sexpr, _, _) <- runMaruEvaluator (intoSExpr f) initialEnv
+-- >>> isAtomSymbol sexpr
+-- True
+instance MaruPrimitive MaruFunc where
+  -- Similar to MaruMacro's intoSExpr
+  intoSExpr f = intoSExpr (castEff . f :: [SExpr] -> MaruEvaluator SExpr)
+
+-- |
+-- maru preset macros
+--
+-- >>> let f = return . head :: MaruMacro
+-- >>> (Right sexpr, _, _) <- runMaruEvaluator (intoSExpr f) initialEnv
+-- >>> isAtomSymbol sexpr
+-- True
+instance MaruPrimitive MaruMacro where
+  -- Register `f` to the environment.
+  -- and Return its symbol.
+  intoSExpr f =  do
+    sym <- newSymbol
+    modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrMacro f
+    return $ AtomSymbol sym
+
+-- | mostly general terms
+instance MaruPrimitive SExpr where
+  intoSExpr = return
+
+-- | `SomeMaruPrimitive` is some `MaruPrimitive` (lol)
+instance MaruPrimitive SomeMaruPrimitive where
+  intoSExpr (SomeMaruPrimitive DiscrFunc  f) = intoSExpr f
+  intoSExpr (SomeMaruPrimitive DiscrMacro f) = intoSExpr f
+  intoSExpr (SomeMaruPrimitive DiscrSExpr s) = intoSExpr s
 
 
 -- |
