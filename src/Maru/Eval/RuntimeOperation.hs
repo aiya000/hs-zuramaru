@@ -14,9 +14,6 @@ module Maru.Eval.RuntimeOperation
   , sub
   , times
   , div
-  , set
-  , find
-  , get
   ) where
 
 import Control.Lens hiding (set)
@@ -24,13 +21,10 @@ import Control.Monad.Fail (fail)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
-import Data.Monoid ((<>))
 import Maru.Type
 import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Map.Lazy as M
-import qualified Data.Text as T
 import qualified Maru.Type as MT
 
 -- $setup
@@ -40,10 +34,6 @@ import qualified Maru.Type as MT
 -- >>> import Maru.Eval
 -- >>> import Maru.Type
 -- >>> import qualified Data.Map.Lazy as M
--- >>> :{
--- >>> let modifiedEnv = M.insert "*f*" (SomeMaruPrimitive DiscrSExpr $ AtomSymbol "set") $
---                       M.insert "*x*" (SomeMaruPrimitive DiscrSExpr $ AtomInt 10) initialEnv
--- >>> :}
 
 
 ignoreAtomInt :: [SExpr] -> [SExpr]
@@ -141,76 +131,3 @@ div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
       = AtomInt . truncate <$> foldl' (/?) (Just x) xs
     negativeProductOfAtomInt _
       = Nothing
-
-
--- |
--- Set a variable of the name to a value,
--- and Return the just given name.
---
--- Take a first element of [`SExpr`] as a name.
--- Take a second element of [`SExpr`] as a value.
---
--- >>> (Right sexpr, newEnv, _) <- flip runMaruEvaluator initialEnv $ set [AtomSymbol "*x*", AtomInt 10]
--- >>> sexpr == AtomSymbol "*x*"
--- True
--- >>> M.lookup "*x*" newEnv ^? _Just . _SomeMaruPrimitive DiscrSExpr
--- Just (AtomInt 10)
--- >>> (Right sexpr, newEnv, _) <- flip runMaruEvaluator initialEnv $ set [AtomSymbol "this-is-an-undefined-variable", Nil]
--- >>> M.lookup "this-is-an-undefined-variable" newEnv ^? _Just . _SomeMaruPrimitive DiscrSExpr
--- Just Nil
-set :: MaruMacro
-set [] = fail "set: requires non empty arguments"
-set (AtomSymbol sym:x:_) = do
-  modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrSExpr x
-  return $ AtomSymbol sym
-set xs = fail $ "set: an invalid condition is detected `" ++ show xs ++ "`"
-
-
--- |
--- Find a name from the current environment (`MaruEnv`).
---
--- Return the variable of the name if it is found.
--- Return `Nil` if it is not found.
---
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*x*"]
--- >>> sexpr
--- AtomInt 10
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*f*"]
--- >>> sexpr == AtomSymbol "set"
--- True
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "this-is-an-undefined-variable"]
--- >>> sexpr
--- Nil
-find :: MaruMacro
-find [] = fail "find: requires non empty arguments"
-find (AtomSymbol sym:_) = do
-  env <- getMaruEnv
-  case M.lookup sym env of
-    Nothing -> return Nil
-    Just (SomeMaruPrimitive DiscrFunc  f) -> intoSExpr f
-    Just (SomeMaruPrimitive DiscrMacro f) -> intoSExpr f
-    Just (SomeMaruPrimitive DiscrSExpr x) -> intoSExpr x
-find xs = fail $ "find: an invalid condition is detected `" ++ show xs ++ "`"
-
-
--- |
--- Similar to find,
--- but this `throwFail`s the exception if the given name is not found.
---
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "*x*"]
--- >>> sexpr
--- AtomInt 10
--- >>> (Right sexpr, _, _) <- flip runMaruEvaluator modifiedEnv $ find [AtomSymbol "*f*"]
--- >>> sexpr == AtomSymbol "set"
--- True
--- >>> (evalResult, _, _) <- flip runMaruEvaluator modifiedEnv $ get [AtomSymbol "this-is-an-undefined-variable"]
--- >>> isLeft evalResult
--- True
-get :: MaruMacro
-get [] = fail "get: requires non empty arguments"
-get w@(AtomSymbol sym:_) = do
-  value <- find w
-  case value of
-    Nil -> fail . T.unpack . unMaruSymbol $ "get: A symbol '" <> sym <> "' is not found in the current environment"
-    _   -> return value
-get xs = fail $ "get: an invalid condition is detected `" ++ show xs ++ "`"
