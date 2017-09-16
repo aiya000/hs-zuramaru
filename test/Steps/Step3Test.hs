@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Steps.Step3_2Test where
+module Steps.Step3Test where
 
 import Control.Lens
 import Maru.Type (SExpr(..), MaruEnv, SomeMaruPrimitive(..), _SomeMaruPrimitive, Discriminating(..))
