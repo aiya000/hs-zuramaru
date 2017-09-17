@@ -9,6 +9,8 @@
 -- also these are through with `MaruEnv` (it should be `Maru.Eval.initialEnv`)
 --
 -- These respects clisp's behavior basically.
+--
+-- `add`, `sub`, `times`, and `div` are regarded as axiomly functions.
 module Maru.Eval.RuntimeOperation
   ( add
   , sub

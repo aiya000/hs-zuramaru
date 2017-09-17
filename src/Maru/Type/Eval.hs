@@ -1,18 +1,11 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -48,14 +41,10 @@ module Maru.Type.Eval
   , MaruEvaluator
   , runMaruEvaluator
   , newSymbol
-  , Discriminating (..)
   , MaruEnv
   , MaruFunc
   , MaruMacro
-  , SomeMaruPrimitive (..)
-  , MaruPrimitive (..)
   , lookupSymbol
-  , _SomeMaruPrimitive
   , (^$)
   , MaruCalculator
   , runMaruCalculator
@@ -261,93 +250,8 @@ type MaruFunc = [SExpr] -> MaruCalculator SExpr
 type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
 
--- | An identifier for dicriminate a type of @SomeMaruPrimitive@
-data Discriminating :: * -> * where
-  -- | The identifier for a function, this decorates `MaruFunc` (Please see `MaruFunc` if you want to know this)
-  DiscrFunc :: Discriminating MaruFunc
-  -- | The identifier for a macro, similar to `DiscrFunc`, but for `MaruMacro`
-  DiscrMacro :: Discriminating MaruMacro
-  -- | The identifier for the S expression
-  DiscrSExpr :: Discriminating SExpr
-
-
 -- | The state of the runtime
-type MaruEnv = Map MaruSymbol SomeMaruPrimitive
-
--- | A reversible monomorphic type for @MaruPrimitive@
-data SomeMaruPrimitive = forall a. MaruPrimitive a => SomeMaruPrimitive (Discriminating a) a
-
--- | A `Prism` for `SomeMaruPrimitive`
-_SomeMaruPrimitive :: MaruPrimitive a => Discriminating a -> Prism' SomeMaruPrimitive a
-_SomeMaruPrimitive DiscrFunc = prism' (SomeMaruPrimitive DiscrFunc) $
-  \case SomeMaruPrimitive DiscrFunc f -> Just f
-        _ -> Nothing
-_SomeMaruPrimitive DiscrMacro = prism' (SomeMaruPrimitive DiscrMacro) $
-  \case SomeMaruPrimitive DiscrMacro f -> Just f
-        _ -> Nothing
-_SomeMaruPrimitive DiscrSExpr = prism' (SomeMaruPrimitive DiscrSExpr) $
-  \case SomeMaruPrimitive DiscrSExpr x -> Just x
-        _ -> Nothing
-
-instance Show SomeMaruPrimitive where
-  show x = "SomeMaruPrimitive " ++ case x of
-    SomeMaruPrimitive DiscrFunc  _ -> "#func"
-    SomeMaruPrimitive DiscrMacro _ -> "#macro"
-    SomeMaruPrimitive DiscrSExpr y -> show y
-
-
--- |
--- A value of the runtime.
--- These can be used in the code of maru.
---
--- e.g.
--- 10 is an integral term,
--- '+' is a (preset) function,
--- `set` is a (preset) macro,
--- 'x' is a name of the variable,
--- `Nil` is a S expression.
---
--- This is strongly associated with @MaruTerm@.
-class MaruPrimitive a where
-  -- | `a` may can be represented as a `SExpr`
-  intoSExpr :: a -> MaruEvaluator SExpr
-
--- |
--- maru preset functions
---
--- >>> let f = return . head :: MaruFunc
--- >>> (Right sexpr, _, _) <- runMaruEvaluator (intoSExpr f) initialEnv
--- >>> isAtomSymbol sexpr
--- True
-instance MaruPrimitive MaruFunc where
-  -- Similar to MaruMacro's intoSExpr
-  intoSExpr f = intoSExpr (castEff . f :: [SExpr] -> MaruEvaluator SExpr)
-
--- |
--- maru preset macros
---
--- >>> let f = return . head :: MaruMacro
--- >>> (Right sexpr, _, _) <- runMaruEvaluator (intoSExpr f) initialEnv
--- >>> isAtomSymbol sexpr
--- True
-instance MaruPrimitive MaruMacro where
-  -- Register `f` to the environment.
-  -- and Return its symbol.
-  intoSExpr f =  do
-    sym <- newSymbol
-    modifyMaruEnv . M.insert sym $ SomeMaruPrimitive DiscrMacro f
-    return $ AtomSymbol sym
-
--- | mostly general terms
-instance MaruPrimitive SExpr where
-  intoSExpr = return
-
--- | `SomeMaruPrimitive` is some `MaruPrimitive` (lol)
-instance MaruPrimitive SomeMaruPrimitive where
-  intoSExpr (SomeMaruPrimitive DiscrFunc  f) = intoSExpr f
-  intoSExpr (SomeMaruPrimitive DiscrMacro f) = intoSExpr f
-  intoSExpr (SomeMaruPrimitive DiscrSExpr s) = intoSExpr s
-
+type MaruEnv = Map MaruSymbol SExpr
 
 -- |
 -- Take a value from `MaruEnv` in `State`.
@@ -355,7 +259,7 @@ instance MaruPrimitive SomeMaruPrimitive where
 lookupSymbol :: forall xs.
                 ( Associate FailKey FailValue xs
                 , Associate MaruVariablesKey MaruVariablesValue xs
-                ) => MaruSymbol -> Eff xs SomeMaruPrimitive
+                ) => MaruSymbol -> Eff xs SExpr
 lookupSymbol sym = do
   env <- getMaruEnv
   let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"

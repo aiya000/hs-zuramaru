@@ -3,7 +3,7 @@
 module Steps.Step3Test where
 
 import Control.Lens
-import Maru.Type (SExpr(..), MaruEnv, SomeMaruPrimitive(..), _SomeMaruPrimitive, Discriminating(..))
+import Maru.Type (SExpr(..), MaruEnv)
 import MaruTest (runCodeInstantly, runCode)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -20,7 +20,7 @@ defBang_test =
   [ testCase "`def!` adds a value with a key to environment" $ do
       (sexpr, env, _) <- runCodeInstantly "(def! *poi* 10)"
       sexpr @?= AtomInt 10
-      env ^? to (M.lookup "*poi*") . _Just . _SomeMaruPrimitive DiscrSExpr
+      env ^? to (M.lookup "*poi*") . _Just
         @?= Just (AtomInt 10)
   ]
 
@@ -49,15 +49,14 @@ call_test =
   where
     -- initialEnv ∪ { (*x* := 10), (*x* := *x*) }
     modifiedEnv :: MaruEnv
-    modifiedEnv = let x = SomeMaruPrimitive DiscrSExpr $ AtomInt 10
-                      y = SomeMaruPrimitive DiscrSExpr $ AtomSymbol "*x*"
-                  in M.insert "*x*" x
-                     $ M.insert "*y*" y E.initialEnv
+    modifiedEnv = M.insert "*y*" (AtomSymbol "*x*")
+                $ M.insert "*x*" (AtomInt 10) E.initialEnv
 
 
 addtional_test :: [TestTree]
 addtional_test =
   [ testCase "After `let*` scope is end, a created variable is not existed (for lexical scopes)" $ do
       (_, env, _) <- runCodeInstantly "(let* (x 10) x)"
-      M.lookup "x" env ^? _Just . _SomeMaruPrimitive DiscrSExpr @?= Nothing
+      M.lookup "x" env ^? _Just
+        @?= Nothing
   ]
