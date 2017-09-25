@@ -7,6 +7,7 @@ import Test.Tasty.HUnit (testCase)
 test_doctest :: [TestTree]
 test_doctest =
   [ doctestCase "src/Maru/Type/SExpr.hs"
+  , doctestCase "src/Maru/Type/Eval.hs"
   , doctestCase "src/Maru/Eval.hs"
   , doctestCase "src/Maru/Eval/RuntimeOperation.hs"
   ]

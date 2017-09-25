@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -21,7 +22,7 @@ import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
-import Data.Monoid ((<>))
+import Data.Semigroup ((<>))
 import Data.Typeable (Typeable)
 import Maru.Type
 import Prelude hiding (fail)
@@ -32,12 +33,15 @@ import qualified Maru.Eval.RuntimeOperation as OP
 
 -- $setup
 -- >>> :set -XOverloadedStrings
+-- >>> :set -XOverloadedLists
 -- >>> import Control.Lens ((^?), _Just)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
--- >>> import qualified Data.Map.Lazy as M
+-- >>> import qualified Maru.Type.Eval as TE
 -- >>> :{
--- >>> let modifiedEnv = M.insert "*y*" (AtomSymbol "*x*")
---                     $ M.insert "*x*" (AtomInt 10) initialEnv
+-- >>> let modifiedEnv = initialEnv <>
+--                         [[ ("*x*", AtomInt 10)
+--                          , ("*y*", AtomSymbol "*x*")
+--                          ]]
 -- >>> :}
 
 declareException "EvalException" ["EvalException"]
@@ -47,7 +51,7 @@ declareException "EvalException" ["EvalException"]
 -- An initial value of the runtime.
 -- This is the empty.
 initialEnv :: MaruEnv
-initialEnv = M.fromList []
+initialEnv = [M.empty]
 
 
 -- |
@@ -104,7 +108,7 @@ execute sexpr                        = call sexpr
 -- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
 -- >>> result
 -- Right (AtomInt 10)
--- >>> M.lookup "*x*" envWithX ^? _Just 
+-- >>> TE.lookup "*x*" envWithX ^? _Just 
 -- Just (AtomInt 10)
 --
 -- Define "*y*" over "*x*"
@@ -113,7 +117,7 @@ execute sexpr                        = call sexpr
 -- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
 -- >>> result
 -- Right (AtomInt 10)
--- >>> M.lookup "*y*" env ^? _Just
+-- >>> TE.lookup "*y*" env ^? _Just
 -- Just (AtomInt 10)
 --
 -- Define "*z*" over a calculation (+ 1 2)
@@ -121,7 +125,7 @@ execute sexpr                        = call sexpr
 -- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
 -- >>> result
 -- Right (AtomInt 3)
--- >>> M.lookup "*z*" env ^? _Just
+-- >>> TE.lookup "*z*" env ^? _Just
 -- Just (AtomInt 3)
 defBang :: SExpr -> MaruEvaluator SExpr
 defBang (Cons (AtomSymbol sym) s) =
@@ -139,7 +143,7 @@ defBang (Cons (AtomSymbol sym) s) =
     defineSymToItsResult :: MaruSymbol -> SExpr -> MaruEvaluator SExpr
     defineSymToItsResult sym sexpr = do
       sexpr' <- execute sexpr
-      modifyMaruEnv $ M.insert sym sexpr'
+      insertGlobalVar sym sexpr'
       return sexpr'
 defBang s = throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
 
@@ -152,13 +156,14 @@ defBang s = throwFail $ "def!: an invalid condition is detected `" <> showt s <>
 -- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
 -- >>> result
 -- Right (AtomInt 10)
--- >>> M.lookup "x" env
+-- >>> TE.lookup "x" env
 -- Nothing
 letStar :: SExpr -> MaruEvaluator SExpr
 letStar (Cons (Cons (AtomSymbol sym) (Cons x Nil)) body) = do
-  --TODO: Create new scope
-  modifyMaruEnv $ M.insert sym x
-  execute body
+  newScope sym x
+  result <- execute body
+  popNewerScope
+  return result
 letStar s = fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
 
 

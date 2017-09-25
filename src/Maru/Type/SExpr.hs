@@ -33,6 +33,7 @@ import Data.List (foldl')
 import Data.MonoTraversable (MonoFunctor(..), Element)
 import Data.Monoid ((<>))
 import Data.Profunctor (dimap)
+import Data.Semigroup (Semigroup)
 import Data.String (IsString)
 import Data.Text (Text)
 import TextShow (TextShow, showb, showt)
@@ -116,7 +117,7 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
-  deriving (IsString, Monoid, Show, Eq, Ord)
+  deriving (IsString, Semigroup, Monoid, Show, Eq, Ord)
 
 -- |
 -- Wrap `String`.
