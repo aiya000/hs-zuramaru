@@ -23,7 +23,7 @@ test_parser_and_printer_converts_left_to_right =
     isConvertedTo code expected =
       case Parser.parse code of
         Left  e     -> assertFailure $ "The parse is failed: " ++ Parser.parseErrorPretty e
-        Right sexpr -> MT.visualize sexpr @?= expected
+        Right sexpr -> MT.readable sexpr @?= expected
 
     myAddtionalTest :: [TestTree]
     myAddtionalTest =

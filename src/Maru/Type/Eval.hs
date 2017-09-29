@@ -120,7 +120,7 @@ type SimplificationSteps = [SExpr]
 -- >>> reportSteps [Cons (AtomInt 1) (Cons (AtomInt 2) Nil), Cons (AtomInt 2) Nil]
 -- ["1: (1 2)","2: (2)"]
 reportSteps :: SimplificationSteps -> [Text]
-reportSteps = zipWith appendStepNumber [1..] . map visualize
+reportSteps = zipWith appendStepNumber [1..] . map readable
   where
     appendStepNumber :: Int -> Text -> Text
     appendStepNumber n x = showt n <> ": " <> x

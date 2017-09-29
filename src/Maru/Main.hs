@@ -214,7 +214,7 @@ printPhase result = do
   liftIOEff $ case result of
     ParseError e      -> TIO.putStrLn . T.pack . forgetMatrixAnnotation $ Parser.parseErrorPretty e
     EvalError  e      -> TIO.putStrLn . T.pack $ show e
-    RightResult sexpr -> TIO.putStrLn $ MT.visualize sexpr
+    RightResult sexpr -> TIO.putStrLn $ MT.readable sexpr
   liftIOEff . when debugMode' $ do
     forM_ readLogs' $ TIO.putStrLn . ("<debug>(readPhase): " <>)
     forM_ evalLogs' $ TIO.putStrLn . ("<debug>(evalPhase): " <>)

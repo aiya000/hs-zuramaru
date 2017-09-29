@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -14,7 +13,7 @@ module Maru.Type.SExpr
   , unAtomInt
   , isAtomSymbol
   , SExprLike(..)
-  , AST(..)
+  , readable
   , MaruSymbol(..)
   , pack
   , unpack
@@ -43,6 +42,7 @@ import qualified TextShow as TS
 
 -- $setup
 -- >>> :set -XOverloadedStrings
+-- >>> import Maru.Parser (parse)
 
 -- |
 -- The format for the code of maru.
@@ -144,28 +144,21 @@ instance SExprLike Text where
   wrap = AtomSymbol . MaruSymbol
 
 
--- | The abstract syntax tree
-class AST a where
-  -- |
-  -- Convert an AST to a text of syntax.
-  --
-  -- e.g. '(Cons 10 (Cons 20 Nil))' is converted to "(10 20)"
-  visualize :: a -> Text
-
-instance AST SExpr where
-  -- |
-  -- Convert AST to human readable syntax.
-  -- This maybe the inverse function of the parser.
-  visualize (Cons x y) =
-    let innerListSyntax = foldl' (<<>>) "" $ map visualize $ scottDecode y
-    in "(" <> visualize x <<>> innerListSyntax <> ")"
-    where
-      a  <<>> "" = a
-      "" <<>> b  = b
-      a  <<>> b  = a <> " " <> b
-  visualize Nil                         = "()"
-  visualize (AtomSymbol (MaruSymbol x)) = x
-  visualize (AtomInt x)                 = showt x
+-- |
+-- Show `SExpr` as the human readable syntax.
+-- This is the inverse function of the parser,
+-- if the format is ignored (e.g. '( +  1 2)` =~ '(+ 1 2)').
+readable :: SExpr -> Text
+readable (Cons x y) =
+  let innerListSyntax = foldl' (<<>>) "" . map readable $ scottDecode y
+  in "(" <> readable x <<>> innerListSyntax <> ")"
+  where
+    a  <<>> "" = a
+    "" <<>> b  = b
+    a  <<>> b  = a <> " " <> b
+readable Nil                         = "()"
+readable (AtomSymbol (MaruSymbol x)) = x
+readable (AtomInt x)                 = showt x
 
 
 -- |
