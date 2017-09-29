@@ -20,16 +20,15 @@ module Maru.Main
   ) where
 
 import Control.Exception.Safe (SomeException)
-import Control.Lens
+import Control.Lens ((<&>), view, (%=), (.=), Iso', iso)
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
 import Data.Extensible
-import Data.Function ((&))
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
-import Language.Haskell.TH (Name, mkName, nameBase, DecsQ)
+import Maru.TH (makeLensesA)
 import Maru.Type
 import Safe (tailMay)
 import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, (&=))
@@ -47,11 +46,7 @@ data CliOptions = CliOptions
   , doEval    :: Bool
   } deriving (Show, Data, Typeable)
 
---TODO: Use makeLensesA after GHC is fixed (https://ghc.haskell.org/trac/ghc/ticket/13932)
-makeLensesFor [ ("debugMode", "debugModeA")
-              , ("doEval", "doEvalA")
-              ] ''CliOptions
---makeLensesA ''CliOptions
+makeLensesA ''CliOptions
 
 -- | Default of @CliOptions@
 cliOptions :: CliOptions
@@ -77,10 +72,7 @@ data DebugLogs = DebugLogs
   , evalLogs :: [Text]
   } deriving (Show)
 
-makeLensesFor [ ("readLogs", "readLogsA")
-              , ("evalLogs", "evalLogsA")
-              ] ''DebugLogs
---makeLensesA ''DebugLogs
+makeLensesA ''DebugLogs
 
 emptyDebugLog :: DebugLogs
 emptyDebugLog = DebugLogs [] []
@@ -93,12 +85,7 @@ data ReplState = ReplState
   , replLogs :: DebugLogs  -- ^ this value is appended in the runtime
   }
 
-makeLensesFor [ ("replOpts", "replOptsA")
-              , ("replEnv", "replEnvA")
-              , ("replLogs", "replLogsA")
-              ] ''ReplState
---makeLensesA ''ReplState
-
+makeLensesA ''ReplState
 
 -- | For Lens Accessors
 instance Associate "stateRepl" (State ReplState) xs => MonadState ReplState (Eff xs) where
@@ -225,16 +212,6 @@ printPhase result = do
       case tailMay $ lines parseErrorInfo of
         Nothing -> ""
         Just xs  -> unlines xs
-
-
--- |
--- makeLenses with 'A' suffix.
--- e.g. replEnv -> replEnvA
-makeLensesA :: Name -> DecsQ
-makeLensesA = makeLensesWith (lensRules & lensField .~ addSuffix)
-  where
-    addSuffix :: Name -> [Name] -> Name -> [DefName]
-    addSuffix _ _ recordName = [TopName . mkName $ nameBase recordName ++ "A"]
 
 
 -- |
