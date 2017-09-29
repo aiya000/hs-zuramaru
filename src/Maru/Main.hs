@@ -206,7 +206,7 @@ evalPhase code = do
 
 -- | Do 'Print' for a result of 'Read' and 'Eval'
 printPhase :: ( Associate "stateRepl" (State ReplState) xs
-              , Associate IOEffKey IOEffValue xs
+              , IOEffAssociation xs
               ) => EvalPhaseResult -> Eff xs ()
 printPhase result = do
   DebugLogs readLogs' evalLogs' <- gets replLogs
@@ -225,7 +225,6 @@ printPhase result = do
       case tailMay $ lines parseErrorInfo of
         Nothing -> ""
         Just xs  -> unlines xs
-
 
 
 -- |

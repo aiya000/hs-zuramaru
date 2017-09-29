@@ -15,7 +15,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
---TODO: Use ConstraintKinds like MaruScopesAssociation
 -- |
 -- Integrate types of extensible's Effect.
 --
@@ -25,6 +24,7 @@ module Maru.Type.Eval
   ( Fail
   , FailKey
   , FailValue
+  , FailAssociation
   , throwFail
   , includeFail
   , SimplificationSteps
@@ -32,9 +32,11 @@ module Maru.Type.Eval
   , SimplifSteps
   , SimplifStepsKey
   , SimplifStepsValue
+  , SimplifStepsAssociation
   , MaruScopes
   , MaruScopesKey
   , MaruScopesValue
+  , MaruScopesAssociation
   , insertGlobalVar
   , newScope
   , popNewerScope
@@ -45,6 +47,7 @@ module Maru.Type.Eval
   , IOEff
   , IOEffKey
   , IOEffValue
+  , IOEffAssociation
   , liftIOEff
   , ExceptionCause
   , MaruEvaluator
@@ -93,16 +96,18 @@ type ExceptionCause = Text
 type Fail      = FailKey >: FailValue
 type FailKey   = "fail"
 type FailValue = EitherEff ExceptionCause
+-- | `Fail`'s `Associate`
+type FailAssociation = Associate FailKey FailValue
 
 -- | `throwEff` for `Fail`
-throwFail :: Associate FailKey FailValue xs => ExceptionCause -> Eff xs a
+throwFail :: FailAssociation xs => ExceptionCause -> Eff xs a
 throwFail = throwEff #fail
 
 -- |
 -- Include `Maybe` to `Fail` context.
 -- If it is Nothing,
 -- the whole of `Fail a` to be failed.
-includeFail :: Associate FailKey FailValue xs => ExceptionCause -> Eff xs (Maybe a) -> Eff xs a
+includeFail :: FailAssociation xs => ExceptionCause -> Eff xs (Maybe a) -> Eff xs a
 includeFail cause mm = do
   maybeIt <- mm
   case maybeIt of
@@ -129,6 +134,7 @@ reportSteps = zipWith appendStepNumber [1..] . map readable
 type SimplifSteps      = SimplifStepsKey >: SimplifStepsValue
 type SimplifStepsKey   = "simplifSteps"
 type SimplifStepsValue = WriterEff SimplificationSteps
+type SimplifStepsAssociation = Associate MaruScopesKey MaruScopesValue
 
 
 -- |
@@ -154,7 +160,7 @@ type MaruScopesAssociation = Associate MaruScopesKey MaruScopesValue
 type MaruEnv = NonEmpty MaruScope
 
 -- | Insert a variable to the toplevel scope
-insertGlobalVar :: Associate MaruScopesKey MaruScopesValue xs => MaruSymbol -> SExpr -> Eff xs ()
+insertGlobalVar :: MaruScopesAssociation xs => MaruSymbol -> SExpr -> Eff xs ()
 insertGlobalVar sym val = do
   env <- getMaruEnv
   let env'   = NE.init env
@@ -173,13 +179,13 @@ insertGlobalVar sym val = do
 -- e.g.
 --   1. unintended empty scope is never created
 --   2. high affinity of `MaruEnv` (`NonEmpty`)  is kept
-newScope :: Associate MaruScopesKey MaruScopesValue xs => MaruSymbol -> SExpr -> Eff xs ()
+newScope :: MaruScopesAssociation xs => MaruSymbol -> SExpr -> Eff xs ()
 newScope sym val = modifyMaruEnv ([(sym, val)] <|)
 
 -- |
 -- Remove the newest scope (about the newest scope is written in `MaruEnv`),
 -- and Return removed scope
-popNewerScope :: Associate MaruScopesKey MaruScopesValue xs => Eff xs MaruScope
+popNewerScope :: MaruScopesAssociation xs => Eff xs MaruScope
 popNewerScope = do
   (newest:|restEnv) <- getMaruEnv
   case NE.nonEmpty restEnv of
@@ -192,15 +198,15 @@ popNewerScope = do
 type MaruScope = Map MaruSymbol SExpr
 
 -- | `getEff` for `MaruScopes`
-getMaruEnv :: Associate MaruScopesKey MaruScopesValue xs => Eff xs MaruEnv
+getMaruEnv :: MaruScopesAssociation xs => Eff xs MaruEnv
 getMaruEnv = getEff #maruScopes
 
 -- | `putEff` for `MaruScopes`
-putMaruEnv :: Associate MaruScopesKey MaruScopesValue xs => MaruEnv -> Eff xs ()
+putMaruEnv :: MaruScopesAssociation xs => MaruEnv -> Eff xs ()
 putMaruEnv = putEff #maruScopes
 
 -- | `modifyEff` for `maruScopes`
-modifyMaruEnv :: Associate MaruScopesKey MaruScopesValue xs => (MaruEnv -> MaruEnv) -> Eff xs ()
+modifyMaruEnv :: MaruScopesAssociation xs => (MaruEnv -> MaruEnv) -> Eff xs ()
 modifyMaruEnv = modifyEff #maruScopes
 
 -- | Find a variable from the whole of the runtime environment with a symbol
@@ -212,9 +218,10 @@ lookup sym xs = getFirst . mconcat . NE.toList $ NE.map (First . M.lookup sym) x
 type IOEff      = IOEffKey >: IOEffValue
 type IOEffKey   = "ioEff"
 type IOEffValue = IO
+type IOEffAssociation = Associate IOEffKey IOEffValue
 
 -- | `liftEff` for `IOEff`
-liftIOEff :: Associate IOEffKey IOEffValue xs => IO a -> Eff xs a
+liftIOEff :: IOEffAssociation xs => IO a -> Eff xs a
 liftIOEff = liftEff #ioEff
 
 
@@ -328,8 +335,8 @@ type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 -- Take a value from `MaruScope` in `State`.
 -- If `sym` is not exists, take invalid value of '`Exc` `NoSuchSymbolException'`'
 lookupSymbol :: forall xs.
-                ( Associate FailKey FailValue xs
-                , Associate MaruScopesKey MaruScopesValue xs
+                ( FailAssociation xs
+                , MaruScopesAssociation xs
                 ) => MaruSymbol -> Eff xs SExpr
 lookupSymbol sym = do
   env <- getMaruEnv
