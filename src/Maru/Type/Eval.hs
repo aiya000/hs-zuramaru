@@ -57,7 +57,7 @@ module Maru.Type.Eval
   , MaruFunc
   , MaruMacro
   , lookup
-  , lookupSymbol
+  , lookupVar
   , (^$)
   , MaruCalculator
   , runMaruCalculator
@@ -330,15 +330,14 @@ type MaruFunc = [SExpr] -> MaruCalculator SExpr
 type MaruMacro = [SExpr] -> MaruEvaluator SExpr
 
 
---NOTE: Should I rename this to ... 'lookupVar' ?
 -- |
--- Take a value from `MaruScope` in `State`.
--- If `sym` is not exists, take invalid value of '`Exc` `NoSuchSymbolException'`'
-lookupSymbol :: forall xs.
-                ( FailAssociation xs
-                , MaruScopesAssociation xs
-                ) => MaruSymbol -> Eff xs SExpr
-lookupSymbol sym = do
+-- Take a variable from `MaruScopes` effect.
+-- If `sym` is not exists, the whole of this `Eff` to be failed
+lookupVar :: forall xs.
+             ( FailAssociation xs
+             , MaruScopesAssociation xs
+             ) => MaruSymbol -> Eff xs SExpr
+lookupVar sym = do
   env <- getMaruEnv
   let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"
   includeFail cause . return $ lookup sym env

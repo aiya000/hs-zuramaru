@@ -214,7 +214,7 @@ call (Cons (AtomSymbol sym) y) = do
     realBody _   = Nothing
 
 call (AtomSymbol sym) =
-  lookupSymbol sym >>= \case
+  lookupVar sym >>= \case
     AtomSymbol s -> call $ AtomSymbol s
     x            -> return x
 
