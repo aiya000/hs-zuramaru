@@ -54,8 +54,8 @@ module Maru.Type.Eval
   , runMaruEvaluator
   , newSymbol
   , MaruScope
-  , MaruFunc
-  , MaruMacro
+  , MaruFunc (..)
+  , MaruMacro (..)
   , lookup
   , lookupVar
   , (^$)
@@ -306,7 +306,6 @@ first' (Just a) = First' $ Right a
 first' Nothing  = mempty
 
 
---TODO: Use 'newtype' instead of 'type' for avoid to execute unindended operations
 -- |
 -- A function of maru.
 -- This keeps the purity, don't happen effects.
@@ -318,16 +317,19 @@ first' Nothing  = mempty
 --
 -- The function is Haskell's function, is represented by Haskell.
 -- The function is not maru's (runtime's) function (cannot be defined in the runtime).
-type MaruFunc = [SExpr] -> MaruCalculator SExpr
+newtype MaruFunc = MaruFunc
+  { execFunc :: [SExpr] -> MaruCalculator SExpr
+  }
 
---TODO: Use 'newtype' instead of 'type' for avoid to execute unindended operations
 -- |
 -- A macro of maru,
 -- this means the impure function.
 --
 -- Similar to `MaruFunc`,
 -- but this is possibility to update the state of the environment.
-type MaruMacro = [SExpr] -> MaruEvaluator SExpr
+newtype MaruMacro = MaruMacro
+  { execMacro :: [SExpr] -> MaruEvaluator SExpr
+  }
 
 
 -- |

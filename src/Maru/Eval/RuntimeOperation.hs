@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -53,30 +54,31 @@ sumOfAtomInt = (AtomInt .) . sumOf $ folded . MT._AtomInt
 
 
 -- |
--- >>> runMaruCalculator $ add [AtomInt 1, AtomInt 2]
+-- >>> runMaruCalculator $ execFunc add [AtomInt 1, AtomInt 2]
 -- Right (AtomInt 3)
--- >>> runMaruCalculator $ add []
+-- >>> runMaruCalculator $ execFunc add []
 -- Right (AtomInt 0)
--- >>> isLeft . runMaruCalculator $ add [AtomSymbol "xD"]
+-- >>> isLeft . runMaruCalculator $ execFunc add [AtomSymbol "xD"]
 -- True
 add :: MaruFunc
-add xs = case ignoreAtomInt xs of
+add = MaruFunc $ \xs -> case ignoreAtomInt xs of
   [] -> return $ sumOfAtomInt xs
   invalidArgs -> fail $ "add: invalid arguments are given to (+): " ++ show invalidArgs
 
 
 -- |
--- >>> runMaruCalculator $ sub [AtomInt 3, AtomInt 1]
+-- >>> runMaruCalculator $ execFunc sub [AtomInt 3, AtomInt 1]
 -- Right (AtomInt 2)
--- >>> isLeft . runMaruCalculator $ sub []
+-- >>> isLeft . runMaruCalculator $ execFunc sub []
 -- True
--- >>> isLeft . runMaruCalculator $ sub [AtomSymbol "xD"]
+-- >>> isLeft . runMaruCalculator $ execFunc sub [AtomSymbol "xD"]
 -- True
 sub :: MaruFunc
-sub [] = fail "sub: takes a list of integer values, but took list is empty"
-sub w@(x:xs) = case ignoreAtomInt w of
-  [] -> return $ negativeSumOfAtomInt (x:|xs)
-  invalidArgs -> fail $ "sub: invalid arguments are given to (-): " ++ show invalidArgs
+sub = MaruFunc $ \case
+  [] -> fail "sub: takes a list of integer values, but took list is empty"
+  w@(x:xs) -> case ignoreAtomInt w of
+    [] -> return $ negativeSumOfAtomInt (x:|xs)
+    invalidArgs -> fail $ "sub: invalid arguments are given to (-): " ++ show invalidArgs
   where
     -- head - tail
     negativeSumOfAtomInt :: NonEmpty SExpr -> SExpr
@@ -84,38 +86,39 @@ sub w@(x:xs) = case ignoreAtomInt w of
 
 
 -- |
--- >>> runMaruCalculator $ times [AtomInt 3, AtomInt 3]
+-- >>> runMaruCalculator $ execFunc times [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 9)
--- >>> runMaruCalculator $ times []
+-- >>> runMaruCalculator $ execFunc times []
 -- Right (AtomInt 1)
--- >>> isLeft . runMaruCalculator $ times [AtomSymbol "xD"]
+-- >>> isLeft . runMaruCalculator $ execFunc times [AtomSymbol "xD"]
 -- True
 times :: MaruFunc
-times xs = case ignoreAtomInt xs of
+times = MaruFunc $ \xs -> case ignoreAtomInt xs of
   [] -> return . AtomInt $ productOf (folded . MT._AtomInt) xs
   invalidArgs -> fail $ "times: invalid arguments are given to (*): " ++ show invalidArgs
 
 
 --TODO: This makes an integral number unless like AtomRatio is implemented to SExpr
 -- |
--- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 3]
+-- >>> runMaruCalculator $ execFunc div [AtomInt 3, AtomInt 3]
 -- Right (AtomInt 1)
--- >>> isLeft . runMaruCalculator $ div []
+-- >>> isLeft . runMaruCalculator $ execFunc div []
 -- True
--- >>> isLeft . runMaruCalculator $ div [AtomSymbol "xD"]
+-- >>> isLeft . runMaruCalculator $ execFunc div [AtomSymbol "xD"]
 -- True
--- >>> isLeft . runMaruCalculator $ div [AtomInt 0, AtomInt 1]
+-- >>> isLeft . runMaruCalculator $ execFunc div [AtomInt 0, AtomInt 1]
 -- True
--- >>> runMaruCalculator $ div [AtomInt 10, AtomInt 3]
+-- >>> runMaruCalculator $ execFunc div [AtomInt 10, AtomInt 3]
 -- Right (AtomInt 3)
--- >>> runMaruCalculator $ div [AtomInt 3, AtomInt 5]
+-- >>> runMaruCalculator $ execFunc div [AtomInt 3, AtomInt 5]
 -- Right (AtomInt 0)
 div :: MaruFunc
-div [] = fail "div: takes a non empty list, but took list is empty"
-div w@(x:xs) = case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
-  ([], Nothing) -> fail "div: 0 is divided by anything"
-  ([], Just z)  -> return z
-  (invalidArgs, _) -> fail $ "div: invalid arguments are given to (/): " ++ show invalidArgs
+div = MaruFunc $ \case
+  [] -> fail "div: takes a non empty list, but took list is empty"
+  w@(x:xs) -> case (ignoreAtomInt w, negativeProductOfAtomInt (x:|xs)) of
+    ([], Nothing) -> fail "div: 0 is divided by anything"
+    ([], Just z)  -> return z
+    (invalidArgs, _) -> fail $ "div: invalid arguments are given to (/): " ++ show invalidArgs
   where
     -- Safe (/)
     (/?) :: Maybe Double -> Double -> Maybe Double

@@ -179,7 +179,7 @@ letStar s = fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
 -- (+ 1 2)
 --
 -- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
--- >>> let expected = runMaruCalculator $ OP.add [AtomInt 1, AtomInt 2]
+-- >>> let expected = runMaruCalculator $ execFunc OP.add [AtomInt 1, AtomInt 2]
 -- >>> result == expected
 -- True
 --
@@ -202,7 +202,7 @@ call (Cons (AtomSymbol sym) y) = do
   args <- mapM execute $ flatten y
   let maybeCalculator = realBody sym -- 「そうか、リアルボディ！！」
   case maybeCalculator of
-    Just calc -> castEff $ calc args
+    Just calc -> castEff $ execFunc calc args
     Nothing   -> error "TODO: implement SExpr behabior of a function"
   where
     -- Get the read body of `MaruFunc` from the symbol
