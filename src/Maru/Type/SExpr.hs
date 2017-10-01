@@ -148,6 +148,17 @@ instance SExprLike Text where
 -- Show `SExpr` as the human readable syntax.
 -- This is the inverse function of the parser,
 -- if the format is ignored (e.g. '( +  1 2)` =~ '(+ 1 2)').
+--
+-- >>> readable <$> parse "10"
+-- Right "10"
+-- >>> parse . readable $ AtomInt 10
+-- Right (AtomInt 10)
+--
+-- >>> readable <$> parse "(+ 1 2)"
+-- Right "(+ 1 2)"
+-- >>> let result = parse . readable $ Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))
+-- >>> result == Right (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+-- True
 readable :: SExpr -> Text
 readable (Cons x y) =
   let innerListSyntax = foldl' (<<>>) "" . map readable $ scottDecode y
