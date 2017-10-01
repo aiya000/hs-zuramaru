@@ -84,6 +84,7 @@ eval env sexpr = do
 flatten :: SExpr -> [SExpr]
 flatten Nil            = []
 flatten (AtomInt x)    = [AtomInt x]
+flatten (AtomBool x)   = [AtomBool x]
 flatten (AtomSymbol x) = [AtomSymbol x]
 flatten (Cons x y)     = [x] ++ flatten y
 
@@ -220,4 +221,5 @@ call (AtomSymbol sym) =
 
 call s@(Cons x _) = throwFail $ "expected a symbol, but '" <> showt x <> "' from '" <> showt s <> "'"
 call (AtomInt x)  = return $ AtomInt x
+call (AtomBool x)  = return $ AtomBool x
 call Nil          = return Nil

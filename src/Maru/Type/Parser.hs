@@ -20,6 +20,7 @@ module Maru.Type.Parser
 import Control.Applicative (Alternative)
 import Control.Lens ((%=), (+=), (-=), makeLenses)
 import Control.Monad (MonadPlus)
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.State.Class (MonadState, gets)
 import Control.Monad.State.Lazy (State, runState)
 import Data.Monoid ((<>), Monoid)
@@ -49,7 +50,9 @@ makeLenses ''MaruState
 newtype MaruParser a = MaruParser { unMaruParser :: ParsecT Dec Text (State MaruState) a }
   deriving ( Functor, Applicative, Monad
            , Alternative, MonadPlus
-           , MonadState MaruState, MonadParsec Dec Text
+           , MonadState MaruState
+           , MonadParsec Dec Text
+           , MonadFail
            )
 
 -- |

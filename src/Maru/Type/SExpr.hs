@@ -56,8 +56,9 @@ type MaruToken = P.Token Text
 -- | n-ary tree and terms
 data SExpr = Cons SExpr SExpr -- ^ Appending list and list
            | Nil              -- ^ A representation of empty list
-           | AtomInt Int      -- ^ A pattern of the atom for @Int@ (primitive)
-           | AtomSymbol MaruSymbol -- ^ A pattern of the atom for @MaruSymbol@ (primitive)
+           | AtomInt Int      -- ^ A pattern of the atom for `Int`
+           | AtomBool Bool    -- ^ A pattern of the atom for `Bool`
+           | AtomSymbol MaruSymbol -- ^ A pattern of the atom for `MaruSymbol`
   deriving (Show, Eq)
 
 -- |
@@ -172,9 +173,11 @@ readable (Cons x y) =
     a  <<>> "" = a
     "" <<>> b  = b
     a  <<>> b  = a <> " " <> b
-readable Nil                         = "()"
+readable Nil = "()"
 readable (AtomSymbol (MaruSymbol x)) = x
-readable (AtomInt x)                 = showt x
+readable (AtomInt x) = showt x
+readable (AtomBool True) = "true"
+readable (AtomBool False) = "false"
 
 
 -- |
@@ -206,7 +209,8 @@ scottDecode :: SExpr -> [SExpr]
 scottDecode (Cons x y) = x : scottDecode y
 scottDecode Nil = []
 scottDecode (AtomSymbol x) = [AtomSymbol x]
-scottDecode (AtomInt x)    = [AtomInt x]
+scottDecode (AtomInt x) = [AtomInt x]
+scottDecode (AtomBool x) = [AtomBool x]
 
 
 makePrisms ''SExpr
