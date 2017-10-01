@@ -154,6 +154,11 @@ instance SExprLike Text where
 -- >>> parse . readable $ AtomInt 10
 -- Right (AtomInt 10)
 --
+-- >>> readable <$> parse "true"
+-- Right "true"
+-- >>> parse . readable $ AtomBool True
+-- Right (AtomBool True)
+--
 -- >>> readable <$> parse "(+ 1 2)"
 -- Right "(+ 1 2)"
 -- >>> let result = parse . readable $ Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))
