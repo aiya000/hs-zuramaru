@@ -147,11 +147,8 @@ readPhase = do
   liftIOEff $ mapM R.addHistory maybeInput
   T.pack <$> liftMaybe maybeInput
 
---TODO: why?
---liftMaybe :: Associate k MaybeEff xs => Proxy k -> Maybe a -> Eff xs a
---liftMaybe k Nothing  = throwEff k ()
---liftMaybe _ (Just x) = return x
-liftMaybe :: Maybe a -> Eff '["maybe" >: MaybeEff, IOEff] a
+-- | Lift up `Nothing` to the failure of the whole
+liftMaybe :: Associate "maybe" MaybeEff xs => Maybe a -> Eff xs a
 liftMaybe Nothing  = throwEff #maybe ()
 liftMaybe (Just x) = return x
 
