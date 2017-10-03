@@ -98,50 +98,8 @@ execute :: SExpr -> MaruEvaluator SExpr
 -- def! and let* is the axioms
 execute (Cons (AtomSymbol "def!") s) = execMacro defBang s
 execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
+execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute sexpr = execMacro call sexpr
-
-
--- |
--- def!
---
--- (def! *x* 10)
---
--- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
--- >>> result
--- Right (AtomInt 10)
--- >>> TE.lookup "*x*" envWithX ^? _Just 
--- Just (AtomInt 10)
---
--- Define "*y*" over "*x*"
--- (def! *y* *x*)
---
--- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ execMacro defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
--- >>> result
--- Right (AtomInt 10)
--- >>> TE.lookup "*y*" env ^? _Just
--- Just (AtomInt 10)
---
--- Define "*z*" over a calculation (+ 1 2)
---
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
--- >>> result
--- Right (AtomInt 3)
--- >>> TE.lookup "*z*" env ^? _Just
--- Just (AtomInt 3)
-defBang :: MaruMacro
-defBang = MaruMacro $ \case
-  Cons (AtomSymbol sym) s -> case s of
-    Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
-    _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
-  s -> throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
-  where
-    -- Calculate `SExpr`,
-    -- and Set `MaruSymbol`
-    defineSymToItsResult :: MaruSymbol -> SExpr -> MaruEvaluator SExpr
-    defineSymToItsResult sym sexpr = do
-      sexpr' <- execute sexpr
-      insertGlobalVar sym sexpr'
-      return sexpr'
 
 
 -- |
@@ -222,3 +180,75 @@ call = MaruMacro call'
     realBody "*" = Just OP.times
     realBody "/" = Just OP.div
     realBody _   = Nothing
+
+
+-- |
+-- def!
+--
+-- (def! *x* 10)
+--
+-- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
+-- >>> result
+-- Right (AtomInt 10)
+-- >>> TE.lookup "*x*" envWithX ^? _Just 
+-- Just (AtomInt 10)
+--
+-- Define "*y*" over "*x*"
+-- (def! *y* *x*)
+--
+-- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ execMacro defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
+-- >>> result
+-- Right (AtomInt 10)
+-- >>> TE.lookup "*y*" env ^? _Just
+-- Just (AtomInt 10)
+--
+-- Define "*z*" over a calculation (+ 1 2)
+--
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
+-- >>> result
+-- Right (AtomInt 3)
+-- >>> TE.lookup "*z*" env ^? _Just
+-- Just (AtomInt 3)
+defBang :: MaruMacro
+defBang = MaruMacro $ \case
+  Cons (AtomSymbol sym) s -> case s of
+    Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
+    _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
+  s -> throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
+  where
+    -- Calculate `SExpr`,
+    -- and Set `MaruSymbol`
+    defineSymToItsResult :: MaruSymbol -> SExpr -> MaruEvaluator SExpr
+    defineSymToItsResult sym sexpr = do
+      sexpr' <- execute sexpr
+      insertGlobalVar sym sexpr'
+      return sexpr'
+
+
+-- |
+-- 'do' macro evaluates all the taken arguments sequentially
+--
+-- `
+-- (do
+--  (def! x 10)
+--  (def! y (+ x 1))
+--  (def! z (+ y 1)))
+-- `
+-- returns 12
+--
+-- >>> let sexpr = Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "y") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomInt 1) Nil))) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "z") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomInt 1) Nil))) Nil))) Nil))
+-- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro do_ sexpr
+-- >>> result
+-- Right (AtomInt 12)
+do_ :: MaruMacro
+do_ = MaruMacro $ \case
+  -- The calculation for `()` is not needed
+  Cons Nil Nil -> return Nil
+  -- Don't evaluate `(x)` to `x`
+  s@(Cons _ Nil) -> throwFail $ "do: an invalid condition is detected `" <> showt s <> "`"
+  sexpr -> do
+    let evaluatees = flatten sexpr
+    xs <- mapM execute evaluatees
+    if null xs
+      then throwFail "do: fatal error !!" -- This case is already avoided by the above `Cons Nil Nil` pattern
+      else return $ last xs
