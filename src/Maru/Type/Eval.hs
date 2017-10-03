@@ -328,7 +328,7 @@ newtype MaruFunc = MaruFunc
 -- Similar to `MaruFunc`,
 -- but this is possibility to update the state of the environment.
 newtype MaruMacro = MaruMacro
-  { execMacro :: [SExpr] -> MaruEvaluator SExpr
+  { execMacro :: SExpr -> MaruEvaluator SExpr
   }
 
 
