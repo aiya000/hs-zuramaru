@@ -96,9 +96,9 @@ flatten (Cons x y)     = [x] ++ flatten y
 -- or Calculate a function
 execute :: SExpr -> MaruEvaluator SExpr
 -- def! and let* is the axioms
-execute (Cons (AtomSymbol "def!") s) = defBang s
-execute (Cons (AtomSymbol "let*") s) = letStar s
-execute sexpr                        = call sexpr
+execute (Cons (AtomSymbol "def!") s) = execMacro defBang s
+execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
+execute sexpr = execMacro call sexpr
 
 
 -- |
@@ -106,7 +106,7 @@ execute sexpr                        = call sexpr
 --
 -- (def! *x* 10)
 --
--- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
+-- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
 -- >>> result
 -- Right (AtomInt 10)
 -- >>> TE.lookup "*x*" envWithX ^? _Just 
@@ -115,7 +115,7 @@ execute sexpr                        = call sexpr
 -- Define "*y*" over "*x*"
 -- (def! *y* *x*)
 --
--- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
+-- >>> (result, env, _) <- flip runMaruEvaluator envWithX $ execMacro defBang (Cons (AtomSymbol "*y*") (Cons (AtomSymbol "*x*") Nil))
 -- >>> result
 -- Right (AtomInt 10)
 -- >>> TE.lookup "*y*" env ^? _Just
@@ -123,21 +123,17 @@ execute sexpr                        = call sexpr
 --
 -- Define "*z*" over a calculation (+ 1 2)
 --
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
 -- >>> result
 -- Right (AtomInt 3)
 -- >>> TE.lookup "*z*" env ^? _Just
 -- Just (AtomInt 3)
-defBang :: SExpr -> MaruEvaluator SExpr
-defBang (Cons (AtomSymbol sym) s) =
-  case s of
-    -- e.g. (def! x (+ 1 2)) should set x to 3.
-    -- `execute (def! x (+ 1 2))` (a fake notation)
-    --    maps '(Cons (Cons + (Cons 1 (Cons 2 Nil))) Nil)'
-    --    to 's'.
-    --    ('x' is mapped to '(Cons + (Cons 1 (Cons 2 Nil)))')
-    Cons x Nil -> defineSymToItsResult sym x
-    _          -> defineSymToItsResult sym s
+defBang :: MaruMacro
+defBang = MaruMacro $ \case
+  Cons (AtomSymbol sym) s -> case s of
+    Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
+    _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
+  s -> throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
   where
     -- Calculate `SExpr`,
     -- and Set `MaruSymbol`
@@ -146,7 +142,6 @@ defBang (Cons (AtomSymbol sym) s) =
       sexpr' <- execute sexpr
       insertGlobalVar sym sexpr'
       return sexpr'
-defBang s = throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
 
 
 -- |
@@ -154,18 +149,19 @@ defBang s = throwFail $ "def!: an invalid condition is detected `" <> showt s <>
 --
 -- (let* (x 10) x)
 --
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
+-- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
 -- >>> result
 -- Right (AtomInt 10)
 -- >>> TE.lookup "x" env
 -- Nothing
-letStar :: SExpr -> MaruEvaluator SExpr
-letStar (Cons (Cons (AtomSymbol sym) (Cons x Nil)) body) = do
-  newScope sym x
-  result <- execute body
-  popNewerScope
-  return result
-letStar s = fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
+letStar :: MaruMacro
+letStar = MaruMacro $ \case
+  Cons (Cons (AtomSymbol sym) (Cons x Nil)) body -> do
+    newScope sym x
+    result <- execute body
+    popNewerScope
+    return result
+  s -> fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
 
 
 -- |
@@ -179,33 +175,46 @@ letStar s = fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
 --
 -- (+ 1 2)
 --
--- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+-- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
 -- >>> let expected = runMaruCalculator $ execFunc OP.add [AtomInt 1, AtomInt 2]
 -- >>> result == expected
 -- True
 --
 -- *x*
 --
--- >>> (result, _, _) <- flip runMaruEvaluator modifiedEnv $ call (AtomSymbol "*x*")
+-- >>> (result, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro call (AtomSymbol "*x*")
 -- >>> result
 -- Right (AtomInt 10)
 --
 -- *y*
 --
--- >>> (result', _, _) <- flip runMaruEvaluator modifiedEnv $ call (AtomSymbol "*y*")
+-- >>> (result', _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro call (AtomSymbol "*y*")
 -- >>> result' == result
 -- True
-call :: SExpr -> MaruEvaluator SExpr
+call :: MaruMacro
 -- Extract a value
-call (Cons x Nil) = call x
-
-call (Cons (AtomSymbol sym) y) = do
-  args <- mapM execute $ flatten y
-  let maybeCalculator = realBody sym -- 「そうか、リアルボディ！！」
-  case maybeCalculator of
-    Just calc -> castEff $ execFunc calc args
-    Nothing   -> error "TODO: implement SExpr behabior of a function"
+call = MaruMacro call'
   where
+    call' :: SExpr -> MaruEvaluator SExpr
+    call' (Cons x Nil) = call' x
+
+    call' (Cons (AtomSymbol sym) y) = do
+      args <- mapM execute $ flatten y
+      let maybeCalculator = realBody sym -- 「そうか、リアルボディ！！」
+      case maybeCalculator of
+        Just calc -> castEff $ execFunc calc args
+        Nothing   -> error "TODO: implement SExpr behabior of a function"
+
+    call' (AtomSymbol sym) =
+      lookupVar sym >>= \case
+        AtomSymbol s -> call' $ AtomSymbol s
+        x            -> return x
+
+    call' s@(Cons x _) = throwFail $ "expected a symbol, but '" <> showt x <> "' from '" <> showt s <> "'"
+    call' (AtomInt x)  = return $ AtomInt x
+    call' (AtomBool x)  = return $ AtomBool x
+    call' Nil          = return Nil
+
     -- Get the read body of `MaruFunc` from the symbol
     realBody :: MaruSymbol -> Maybe MaruFunc
     realBody "+" = Just OP.add
@@ -213,13 +222,3 @@ call (Cons (AtomSymbol sym) y) = do
     realBody "*" = Just OP.times
     realBody "/" = Just OP.div
     realBody _   = Nothing
-
-call (AtomSymbol sym) =
-  lookupVar sym >>= \case
-    AtomSymbol s -> call $ AtomSymbol s
-    x            -> return x
-
-call s@(Cons x _) = throwFail $ "expected a symbol, but '" <> showt x <> "' from '" <> showt s <> "'"
-call (AtomInt x)  = return $ AtomInt x
-call (AtomBool x)  = return $ AtomBool x
-call Nil          = return Nil
