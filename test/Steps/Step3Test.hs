@@ -12,14 +12,11 @@ import Test.Tasty.HUnit (testCase, (@?=))
 import qualified Maru.Eval as E
 import qualified Maru.Type.Eval as E
 
-test_preset_function :: [TestTree]
-test_preset_function = defBang_test ++ letStar_test ++ call_test ++ addtional_test
 
-
--- def!
-defBang_test :: [TestTree]
-defBang_test =
-  [ testCase "`def!` adds a value with a key to environment" $ do
+-- | def!
+test_defBang_macro :: [TestTree]
+test_defBang_macro =
+  [ testCase "(`def!`) adds a value with a key to environment" $ do
       (sexpr, env, _) <- runCodeInstantly "(def! *poi* 10)"
       sexpr @?= AtomInt 10
       env ^? to (E.lookup "*poi*") . _Just
@@ -27,20 +24,21 @@ defBang_test =
   ]
 
 
--- let*
-letStar_test :: [TestTree]
-letStar_test =
-  [ testCase "`let*` adds a value with akey to new environment scope" $ do
+-- | let*
+test_letStar_macro :: [TestTree]
+test_letStar_macro =
+  [ testCase "(`let*`) adds a value with akey to new environment scope" $ do
       (sexpr, _, _) <- runCodeInstantly "(let* (x 10) x)"
       sexpr @?= AtomInt 10
   ]
 
 
+-- |
 -- e.g. (+ 1 2), *y* to be called by `call`
 -- (regard that *y* is set)
-call_test :: [TestTree]
-call_test =
-  [ testCase "`call` calls a first element of the list as a function/macro with tail elements implicitly" $ do
+test_call :: [TestTree]
+test_call =
+  [ testCase "calls a first element of the list as a function/macro with tail elements implicitly" $ do
       (sexpr, _, _) <- runCodeInstantly "(+ 1 2)"
       sexpr @?= AtomInt 3
       (sexpr, _, _) <- runCode modifiedEnv "*x*"
