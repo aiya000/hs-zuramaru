@@ -11,21 +11,21 @@ import Test.Tasty.HUnit (testCase, (@?=), Assertion)
 import qualified Data.Text as T
 
 
--- | 'printable' can be shown as 'printed'
-itShouldBePrintable :: Text -> Text -> Assertion
-itShouldBePrintable printable printed = do
-  (sexpr, _, _) <- runCodeInstantly printable
-  readable sexpr @?= printed
+-- | 'code' can be evaluated to 'expected'
+shouldBeEvaluatedTo :: Text -> Text -> Assertion
+shouldBeEvaluatedTo code expected = do
+  (sexpr, _, _) <- runCodeInstantly code
+  readable sexpr @?= expected
 
 
 test_boolean_literals :: [TestTree]
 test_boolean_literals =
   [ testCase "`true` literal is printable" $ do
-      itShouldBePrintable "true" "true"
-      itShouldBePrintable "(def! x true)" "true"
+      "true"          `shouldBeEvaluatedTo` "true"
+      "(def! x true)" `shouldBeEvaluatedTo` "true"
   , testCase "`false` literal is printable" $ do
-      itShouldBePrintable "false" "false"
-      itShouldBePrintable "(def! x false)" "false"
+      "false"          `shouldBeEvaluatedTo` "false"
+      "(def! x false)" `shouldBeEvaluatedTo` "false"
   ]
 
 
@@ -33,9 +33,9 @@ test_boolean_literals =
 test_integral_negative_literals :: [TestTree]
 test_integral_negative_literals =
   [ testCase "can be evaluated" $ do
-      itShouldBePrintable "-1" "-1"
-      itShouldBePrintable "(+ -1 2)" "1"
-      itShouldBePrintable "(+ 2 -1)" "1"
+      "-1"       `shouldBeEvaluatedTo` "-1"
+      "(+ -1 2)" `shouldBeEvaluatedTo` "1"
+      "(+ 2 -1)" `shouldBeEvaluatedTo` "1"
   ]
 
 
