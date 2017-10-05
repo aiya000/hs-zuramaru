@@ -134,7 +134,7 @@ reportSteps = zipWith appendStepNumber [1..] . map readable
 type SimplifSteps      = SimplifStepsKey >: SimplifStepsValue
 type SimplifStepsKey   = "simplifSteps"
 type SimplifStepsValue = WriterEff SimplificationSteps
-type SimplifStepsAssociation = Associate MaruScopesKey MaruScopesValue
+type SimplifStepsAssociation = Associate SimplifStepsKey SimplifStepsValue
 
 
 -- |
