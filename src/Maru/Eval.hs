@@ -114,7 +114,7 @@ execute sexpr = execMacro call sexpr
 -- Nothing
 letStar :: MaruMacro
 letStar = MaruMacro $ \case
-  Cons (Cons (AtomSymbol sym) (Cons x Nil)) body -> do
+  Cons (Cons (AtomSymbol sym) (Cons x Nil)) (Cons body Nil) -> do
     newScope sym x
     result <- execute body
     popNewerScope
@@ -154,8 +154,11 @@ call :: MaruMacro
 call = MaruMacro call'
   where
     call' :: SExpr -> MaruEvaluator SExpr
-    call' (Cons x Nil) = call' x
+    -- `()` is evaluted to `()`
+    call' (Cons Nil Nil) = return Nil
 
+    -- `(func {zero or more arguments})` is evaluated to its result.
+    -- `func` is the symbol for the function.
     call' (Cons (AtomSymbol sym) y) = do
       args <- mapM execute $ flatten y
       let maybeCalculator = realBody sym -- 「そうか、リアルボディ！！」
@@ -163,14 +166,16 @@ call = MaruMacro call'
         Just calc -> castEff $ execFunc calc args
         Nothing   -> error "TODO: implement SExpr behabior of a function"
 
+    -- `x` is looked up from the current environment (the `Eff`'s context with `MaruScopesAssociation`)
     call' (AtomSymbol sym) =
       lookupVar sym >>= \case
         AtomSymbol s -> call' $ AtomSymbol s
-        x            -> return x
+        --TODO: Currently, sym is regarded to the string value. Because the string literal is not implemented at now. Don't regard to the string value, throw the exception with the cause of "the symbol is not found".
+        x -> return x
 
-    call' s@(Cons x _) = throwFail $ "expected a symbol, but '" <> showt x <> "' from '" <> showt s <> "'"
+    call' s@(Cons x _) = throwFail $ "got '" <> showt x <> "' in '" <> showt s <> "', but expected the symbol of the function or the macro"
     call' (AtomInt x)  = return $ AtomInt x
-    call' (AtomBool x)  = return $ AtomBool x
+    call' (AtomBool x) = return $ AtomBool x
     call' Nil          = return Nil
 
     -- Get the read body of `MaruFunc` from the symbol

@@ -5,10 +5,10 @@ module Steps.Step4Test where
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Maru.Type (readable, MaruSymbol(..), MaruEnv, SExpr(..))
-import MaruTest (runCodeInstantly, runCode)
+import MaruTest (runCodeInstantly, runCode, runCodeWithSteps, StoppedPoint(..))
 import Test.Tasty (TestTree)
-import Test.Tasty.HUnit (testCase, (@?=), Assertion)
-import qualified Data.Text as T
+import Test.Tasty.HUnit (testCase, (@?=), Assertion, assertFailure)
+import qualified Maru.Eval as E
 
 
 -- | 'code' can be evaluated to 'expected'
@@ -62,3 +62,13 @@ test_do_macro =
       -- She, her child, and all the families are so happy !
       return ()
       --NOTE: Don't afraid to delete these comment if these are obstacle :P
+
+
+test_my_another_things :: [TestTree]
+test_my_another_things =
+  [ testCase "`(x)` happens an exception (because the form of `(x)` expects `x` is the symbol of the function or the macro)" $ do
+      point <- runCodeWithSteps E.initialEnv "(10)"
+      case point of
+        EvalError _ -> return ()
+        x           -> assertFailure $ "expected a `EvalError`, but got `" ++ show x ++ "`"
+  ]
