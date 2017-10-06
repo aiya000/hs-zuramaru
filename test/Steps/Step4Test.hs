@@ -30,6 +30,15 @@ test_boolean_literals =
 
 
 -- | My additional test
+test_integral_positive_literals :: [TestTree]
+test_integral_positive_literals =
+  [ testCase "can be evaluated" $ do
+      "+1"       `shouldBeEvaluatedTo` "1"
+      "(+ +1 2)" `shouldBeEvaluatedTo` "3"
+      "(+ 2 +1)" `shouldBeEvaluatedTo` "3"
+  ]
+
+-- | My additional test
 test_integral_negative_literals :: [TestTree]
 test_integral_negative_literals =
   [ testCase "can be evaluated" $ do
