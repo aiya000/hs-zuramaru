@@ -51,13 +51,19 @@ executables:
     dependencies: zuramaru
 
 tests:
-  maru-test:
-    main: Tasty.hs
+  unit-test:
+    main: DocTest.hs
     source-dirs:
-      - test
+      - test/doctest
       - src
     dependencies:
       - doctest
+  integrate-test:
+    main: Tasty.hs
+    source-dirs:
+      - test/tasty
+      - src
+    dependencies:
       - silently
       - tasty
       - tasty-discover
