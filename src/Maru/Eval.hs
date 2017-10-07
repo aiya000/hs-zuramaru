@@ -23,6 +23,7 @@ import Control.Exception.Throwable.TH (declareException)
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
 import Data.Semigroup ((<>))
+import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Maru.Type
 import Prelude hiding (fail)
@@ -52,6 +53,14 @@ declareException "EvalException" ["EvalException"]
 -- This is the empty.
 initialEnv :: MaruEnv
 initialEnv = [M.empty]
+
+
+-- |
+-- Make the failure context with the message,
+-- like "funcName: an invalid condition is detected `{invalidTerm}`"
+-- ('return with the invalid term')
+returnInvalid :: Text -> SExpr -> MaruEvaluator a
+returnInvalid funcName invalidTerm = throwFail $ funcName <> ": an invalid condition is detected `" <> showt invalidTerm <> "`"
 
 
 -- |
@@ -99,6 +108,7 @@ execute :: SExpr -> MaruEvaluator SExpr
 execute (Cons (AtomSymbol "def!") s) = execMacro defBang s
 execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
+execute (Cons (AtomSymbol "if") s) = execMacro if_ s
 execute sexpr = execMacro call sexpr
 
 
@@ -219,6 +229,7 @@ defBang = MaruMacro $ \case
   Cons (AtomSymbol sym) s -> case s of
     Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
     _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
+  --TODO: Use returnInvalid
   s -> throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
   where
     -- Calculate `SExpr`,
@@ -231,7 +242,7 @@ defBang = MaruMacro $ \case
 
 
 -- |
--- 'do' macro evaluates all the taken arguments sequentially
+-- 'do' macro evaluates all the taken arguments sequentially.
 --
 -- `
 -- (do
@@ -239,7 +250,7 @@ defBang = MaruMacro $ \case
 --  (def! y (+ x 1))
 --  (def! z (+ y 1)))
 -- `
--- returns 12
+-- returns 12.
 --
 -- >>> let sexpr = Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "y") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomInt 1) Nil))) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "z") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomInt 1) Nil))) Nil))) Nil))
 -- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro do_ sexpr
@@ -250,6 +261,7 @@ do_ = MaruMacro $ \case
   -- The calculation for `()` is not needed
   Cons Nil Nil -> return Nil
   -- Don't evaluate `(x)` to `x`
+  --TODO: Use returnInvalid
   s@(Cons _ Nil) -> throwFail $ "do: an invalid condition is detected `" <> showt s <> "`"
   sexpr -> do
     let evaluatees = flatten sexpr
@@ -257,3 +269,22 @@ do_ = MaruMacro $ \case
     if null xs
       then throwFail "do: fatal error !!" -- This case is already avoided by the above `Cons Nil Nil` pattern
       else return $ last xs
+
+
+-- |
+-- 'if' macro branches to the arguments by the condition.
+--
+-- `(if true 10 20)` returns 10.
+--
+-- `(if false 10 20)` returns 20.
+--
+-- otherwise, the exception is thrown.
+if_ :: MaruMacro
+if_ = MaruMacro $ \case
+  Cons cond (Cons x (Cons y Nil)) -> do
+    cond' <- execute cond
+    case cond' of
+      AtomBool False -> execute y
+      Nil            -> execute y
+      _              -> execute x
+  w -> throwFail $ "if: an invalid condition is detected `" <> showt w <> "`"
