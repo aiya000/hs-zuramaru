@@ -4,6 +4,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
+--TODO: Introduce LiquidHaskell
+
 -- |
 -- Define functions and macros, these are used in the runtime,
 --
@@ -24,9 +26,11 @@ import Control.Monad.Fail (fail)
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (maybeToList)
+import Data.Semigroup ((<>))
 import Maru.Type
 import Numeric.Extra (intToDouble)
 import Prelude hiding (div, fail)
+import TextShow (showt)
 import qualified Data.List.NonEmpty as NE
 import qualified Maru.Type as MT
 
@@ -79,12 +83,22 @@ sub :: MaruFunc
 sub = MaruFunc $ \case
   [] -> fail "sub: takes a list of integer values, but took list is empty"
   w@(x:xs) -> case ignoreAtomInt w of
-    [] -> return $ negativeSumOfAtomInt (x:|xs)
+    [] -> do
+      let cause  = "sub: fatal error! with `" <> showt w <> "`"
+      let result = negativeSumOfAtomInt (x:|xs)
+      includeFail cause $ return result
     invalidArgs -> fail $ "sub: invalid arguments are given to (-): " ++ show invalidArgs
   where
     -- head - tail
-    negativeSumOfAtomInt :: NonEmpty SExpr -> SExpr
-    negativeSumOfAtomInt (x:|xs) = sumOfAtomInt . (x:) . flip map xs $ MT.intBullet negate
+    {-@ negativeSumOfAtomInt :: {(x:|xs):NonEmpty SExpr | null $ ignoreAtomInt (x:xs) } -> SExpr @-}
+    negativeSumOfAtomInt :: NonEmpty SExpr -> Maybe SExpr
+    negativeSumOfAtomInt (AtomInt x:|[]) = Just $ AtomInt (-x)
+    negativeSumOfAtomInt (x:|xs) = foldl' subSExpr (Just x) xs
+
+    subSExpr :: Maybe SExpr -> SExpr -> Maybe SExpr
+    subSExpr Nothing _                      = Nothing
+    subSExpr (Just (AtomInt x)) (AtomInt y) = Just . AtomInt $ x - y
+    subSExpr _ _                            = Nothing
 
 
 -- |
