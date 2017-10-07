@@ -65,3 +65,26 @@ test_lexical_scope =
       E.lookup "x" env ^? _Just
         @?= Nothing
   ]
+
+
+test_four_arith_operations :: [TestTree]
+test_four_arith_operations =
+  [ testCase "`+` adds the tail numeric elements to the head numeric element" $ do
+      (sexpr, _, _) <- runCodeInstantly "(+ 1 2 3)"
+      sexpr @?= AtomInt 6
+      (sexpr, _, _) <- runCodeInstantly "(+ 1)"
+      sexpr @?= AtomInt 1
+  , testCase "`-` substracts the tail numeric elements from the head numeric element" $ do
+      (sexpr, _, _) <- runCodeInstantly "(- 10 2 3)"
+      sexpr @?= AtomInt 5
+      (sexpr, _, _) <- runCodeInstantly "(- 0 2 3)"
+      sexpr @?= AtomInt (-5)
+      (sexpr, _, _) <- runCodeInstantly "(- 10)"
+      sexpr @?= AtomInt (-10)
+  , testCase "`*` adds the numeric element to itself the {element} times foldly" $ do
+      (sexpr, _, _) <- runCodeInstantly "(* 2 3 4)"
+      sexpr @?= AtomInt 24
+  , testCase "`/` gets the inverse value of the integral element foldly" $ do
+      (sexpr, _, _) <- runCodeInstantly "(/ 4 2 2)"
+      sexpr @?= AtomInt 1
+  ]
