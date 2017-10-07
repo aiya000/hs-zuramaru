@@ -69,6 +69,8 @@ add = MaruFunc $ \xs -> case ignoreAtomInt xs of
 -- |
 -- >>> runMaruCalculator $ execFunc sub [AtomInt 3, AtomInt 1]
 -- Right (AtomInt 2)
+-- >>> runMaruCalculator $ execFunc sub [AtomInt 1]
+-- Right (AtomInt (-1))
 -- >>> isLeft . runMaruCalculator $ execFunc sub []
 -- True
 -- >>> isLeft . runMaruCalculator $ execFunc sub [AtomSymbol "xD"]
