@@ -118,7 +118,10 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
-  deriving (IsString, Semigroup, Monoid, Show, Eq, Ord)
+  deriving (IsString, Semigroup, Monoid, Eq, Ord)
+
+instance Show MaruSymbol where
+  show x = show $ unpack x
 
 -- |
 -- Wrap `String`.
