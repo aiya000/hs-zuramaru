@@ -23,6 +23,7 @@ import Data.Text (Text)
 import Maru.Type.SExpr
 import Text.Megaparsec (ParsecT, ParseError, Dec, runParserT)
 import Text.Megaparsec.Prim (MonadParsec)
+import qualified Data.Text as T
 import qualified GHC.Exts as L
 
 -- | The parse result of the failure
@@ -31,6 +32,9 @@ type ParseErrorResult = ParseError MaruToken Dec
 -- | A log message of the parsing, for debug
 newtype ParseLog = ParseLog { unParseLog :: Text }
   deriving (IsString, Monoid)
+
+instance Show ParseLog where
+  show = show . T.unpack . unParseLog
 
 type ParseLogs = Seq ParseLog
 
