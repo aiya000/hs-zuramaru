@@ -20,7 +20,7 @@ module Maru.Main
   ) where
 
 import Control.Exception.Safe (SomeException)
-import Control.Lens ((<&>), view, (%=), (.=), Iso', iso)
+import Control.Lens (view, (%=), (.=), Iso', iso, _1)
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
@@ -35,7 +35,7 @@ import System.Console.CmdArgs (cmdArgs, summary, program, help, name, explicit, 
 import TextShow (showt)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Maru.Eval as Eval
+import qualified Maru.Eval as E
 import qualified Maru.Parser as Parser
 import qualified Maru.Type as MT
 import qualified System.Console.Readline as R
@@ -48,7 +48,7 @@ data CliOptions = CliOptions
 
 makeLensesA ''CliOptions
 
--- | Default of @CliOptions@
+-- | Default of `CliOptions`
 cliOptions :: CliOptions
 cliOptions = CliOptions
   { debugMode = False &= name "debug"
@@ -74,6 +74,7 @@ data DebugLogs = DebugLogs
 
 makeLensesA ''DebugLogs
 
+-- | An empty value of `DebugLogs`
 emptyDebugLog :: DebugLogs
 emptyDebugLog = DebugLogs [] []
 
@@ -86,6 +87,11 @@ data ReplState = ReplState
   }
 
 makeLensesA ''ReplState
+
+-- | Make an empty value of `ReplState`
+makeInitialReplState :: CliOptions -> ReplState
+makeInitialReplState opt = ReplState opt E.initialEnv emptyDebugLog
+
 
 -- | For Lens Accessors
 instance Associate "stateRepl" (State ReplState) xs => MonadState ReplState (Eff xs) where
@@ -105,20 +111,21 @@ type Evaluator = MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv, S
 
 -- | Run REPL of zuramaru
 runRepl :: IO ()
-runRepl = do
-  options <- cmdArgs cliOptions
-  let initialState = ReplState options Eval.initialEnv emptyDebugLog
-  void . retractEff @ IOEffKey $ runStateEff @ "stateRepl" repl initialState
+runRepl = void $ retractEff @ IOEffKey repl
 
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
 -- with the startup options.
 --
+-- The state of `ReplState` is initialized before the one of "READ-EVAL-PRINT" of the "LOOP" is ran.
+--
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: Eff '["stateRepl" >: State ReplState, IOEff] ()
+repl :: Eff '[IOEff] ()
 repl = do
-  loopIsRequired <- runMaybeEff @ "maybe" rep <&> view _iso
+  options <- liftIOEff $ cmdArgs cliOptions
+  let initialState = makeInitialReplState options
+  loopIsRequired <- view (_1 . _iso) <$> runStateEff @ "stateRepl" (runMaybeEff @ "maybe" rep) initialState
   when loopIsRequired repl
 
 -- |
@@ -166,7 +173,7 @@ evalPhase code = do
   evalIsNeeded <- gets $ doEval . replOpts
   -- Get a real evaluator or an empty evaluator.
   -- The empty evaluator doesn't touch any arguments.
-  let eval' = if evalIsNeeded then Eval.eval
+  let eval' = if evalIsNeeded then E.eval
                               else fakeEval
   case Parser.debugParse code of
     (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
