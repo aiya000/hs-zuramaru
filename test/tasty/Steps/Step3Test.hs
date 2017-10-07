@@ -55,8 +55,8 @@ test_call =
                      ]]
 
 
-addtional_test :: [TestTree]
-addtional_test =
+test_lexical_scope :: [TestTree]
+test_lexical_scope =
   [ testCase "The lexical scope behavior is correct" $ do
       (result, env, _) <- runCodeInstantly "(let* (x 10) x)"
       -- the internal operation takes "x" well
