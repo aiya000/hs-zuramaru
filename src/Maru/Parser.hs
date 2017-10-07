@@ -4,7 +4,7 @@
 module Maru.Parser
   ( parseTest
   , prettyPrint
-  , P.parseErrorPretty
+  , parseErrorPretty
   , parse
   , debugParse
   , ParseResult
@@ -16,8 +16,9 @@ import Control.Monad.Fail (fail)
 import Maru.Type.Parser (ParseLog(..), ParseErrorResult, MaruParser, runMaruParser)
 import Maru.Type.SExpr
 import Prelude hiding (fail)
-import qualified Data.Text as T
+import Safe (readMay)
 import qualified Data.Text.IO as TIO
+import qualified Maru.Type.SExpr as MTS
 import qualified Text.Megaparsec as P
 
 type ParseResult = Either ParseErrorResult SExpr
@@ -44,6 +45,9 @@ parse = fst . debugParse
 debugParse :: SourceCode -> (ParseResult, [ParseLog])
 debugParse = runMaruParser sexprParser
 
+parseErrorPretty :: ParseErrorResult -> String
+parseErrorPretty = P.parseErrorPretty
+
 
 sexprParser :: MaruParser SExpr
 sexprParser = do
@@ -51,7 +55,7 @@ sexprParser = do
   atomParser <|> listParser
   where
     atomParser :: MaruParser SExpr
-    atomParser = (numberParser <|> boolParser <|> symbolParser) <* P.space
+    atomParser = (P.try (numberParser) <|> P.try (boolParser) <|> symbolParser) <* P.space
 
     listParser :: MaruParser SExpr
     listParser = do
@@ -64,16 +68,28 @@ sexprParser = do
       return $ scottEncode xs
 
     numberParser :: MaruParser SExpr
-    numberParser = intParser
+    numberParser = P.try (naturalNumberParser) <|> P.try (positiveNumberParser) <|> negativeNumberParser
 
     boolParser :: MaruParser SExpr
     boolParser = return . AtomBool =<< judgeBool =<< P.string "true" <|> P.string "false"
 
     symbolParser :: MaruParser SExpr
-    symbolParser = AtomSymbol . MaruSymbol . T.pack <$> (P.some $ P.noneOf ['\'', '(', ')', ' '])
+    symbolParser = return . AtomSymbol . MTS.pack =<< P.some (P.noneOf ['\'', '(', ')', ' '])
 
-    intParser :: MaruParser SExpr
-    intParser = AtomInt . read <$> P.some P.digitChar
+    naturalNumberParser :: MaruParser SExpr
+    naturalNumberParser = return . AtomInt =<< read' =<< P.some P.digitChar
+
+    positiveNumberParser :: MaruParser SExpr
+    positiveNumberParser = do
+      P.char '+'
+      numberParser
+
+    negativeNumberParser :: MaruParser SExpr
+    negativeNumberParser = do
+      P.char '-'
+      txt <- P.some P.digitChar
+      AtomInt . negate <$> read' txt
+
 
 -- |
 -- Return the constant successive parser for `Bool` if the string is "true" or "false".
@@ -82,3 +98,13 @@ judgeBool :: String -> MaruParser Bool
 judgeBool "true"  = return True
 judgeBool "false" = return False
 judgeBool _       = fail "boolParser is failed"
+
+-- |
+-- Read it,
+-- but if the reading is failed, the whole of `MaruParser` context to be failure.
+-- Otherwise, the result into the context and Return it.
+read' :: Read a => String -> MaruParser a
+read' x =
+  case readMay x of
+    Nothing -> fail "read': fatal error! a reading the `String` to the `Read` value is failed"
+    Just x' -> return x'
