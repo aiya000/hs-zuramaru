@@ -2,6 +2,8 @@
 
 module Steps.Step4Test where
 
+import Control.Lens (view, _2)
+import Control.Monad (void)
 import Data.Semigroup ((<>))
 import Maru.Type (SExpr(..))
 import MaruTest
@@ -82,6 +84,21 @@ test_if_macro =
       (_, env, _) <- runCodeInstantly "(def! x true)"
       (sexpr, _, _) <- runCode env "(if x 9 0)"
       sexpr @?= AtomInt 9
+  ]
+
+
+test_fn_macro :: [TestTree]
+test_fn_macro =
+  [ testCase "binds the variables of the outer scope" $ do
+      (sexpr, env, _) <- runCodeInstantly "(let* (x 10) (def! *f* (fn* (_) x)))"
+                         >>= flip runCode "(*f* 0)" . view _2
+      sexpr @?= AtomInt 10
+      -- Don't waste the global scope
+      "x" `isNotExistedIn` env
+  , testCase "can take zero arguments" $
+      void $ runCodeInstantly "((fn* () 10) 0)"
+  , testCase "can take multi arguments" $
+      void $ runCodeInstantly "((fn* (x y z) 10) 0 1 2)"
   ]
 
 
