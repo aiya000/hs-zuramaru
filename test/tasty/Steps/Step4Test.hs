@@ -29,6 +29,13 @@ test_boolean_literals =
   ]
 
 
+test_nil_literal :: [TestTree]
+test_nil_literal =
+  [ testCase "`nil` equals `()`" $
+      "nil" `shouldBeEvaluatedTo` "()"
+  ]
+
+
 -- | My additional test
 test_integral_positive_literals :: [TestTree]
 test_integral_positive_literals =
