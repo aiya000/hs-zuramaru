@@ -55,7 +55,7 @@ sexprParser = do
   atomParser <|> listParser
   where
     atomParser :: MaruParser SExpr
-    atomParser = (P.try (numberParser) <|> P.try (boolParser) <|> symbolParser) <* P.space
+    atomParser = (numberParser <<> boolParser <<> symbolParser) <* P.space
 
     listParser :: MaruParser SExpr
     listParser = do
@@ -68,7 +68,7 @@ sexprParser = do
       return $ scottEncode xs
 
     numberParser :: MaruParser SExpr
-    numberParser = P.try (naturalNumberParser) <|> P.try (positiveNumberParser) <|> negativeNumberParser
+    numberParser = naturalNumberParser <<> positiveNumberParser <<> negativeNumberParser
 
     boolParser :: MaruParser SExpr
     boolParser = return . AtomBool =<< judgeBool =<< P.string "true" <|> P.string "false"
@@ -108,3 +108,9 @@ read' x =
   case readMay x of
     Nothing -> fail "read': fatal error! a reading the `String` to the `Read` value is failed"
     Just x' -> return x'
+
+
+infixr 5 <<>
+-- | Don't consume the tokens if the left parser is failed
+(<<>) :: MaruParser a -> MaruParser a -> MaruParser a
+x <<> y = P.try x <|> y
