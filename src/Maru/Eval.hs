@@ -28,7 +28,6 @@ import Data.Typeable (Typeable)
 import Maru.Type
 import Prelude hiding (fail)
 import TextShow (showt)
-import qualified Data.Map.Lazy as M
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
 
@@ -52,7 +51,7 @@ declareException "EvalException" ["EvalException"]
 -- An initial value of the runtime.
 -- This is the empty.
 initialEnv :: MaruEnv
-initialEnv = [M.empty]
+initialEnv = [[("nil", Nil)]]
 
 
 -- |
