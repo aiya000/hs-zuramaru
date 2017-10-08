@@ -27,6 +27,7 @@ module Maru.Type.Eval
   , FailAssociation
   , throwFail
   , includeFail
+  , includeFail'
   , SimplificationSteps
   , reportSteps
   , SimplifSteps
@@ -113,6 +114,14 @@ includeFail cause mm = do
   case maybeIt of
     Nothing -> throwFail cause
     Just x  -> return x
+
+-- | Same as `includeFail`
+includeFail' :: FailAssociation xs => Eff xs (Either ExceptionCause a) -> Eff xs a
+includeFail' e = do
+  maybeIt <- e
+  case maybeIt of
+    Left  c -> throwFail c
+    Right x -> return x
 
 
 -- | A log for 簡約s
