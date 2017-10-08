@@ -229,8 +229,7 @@ defBang = MaruMacro $ \case
   Cons (AtomSymbol sym) s -> case s of
     Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
     _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
-  --TODO: Use returnInvalid
-  s -> throwFail $ "def!: an invalid condition is detected `" <> showt s <> "`"
+  s -> returnInvalid "def!" s
   where
     -- Calculate `SExpr`,
     -- and Set `MaruSymbol`
@@ -261,8 +260,7 @@ do_ = MaruMacro $ \case
   -- The calculation for `()` is not needed
   Cons Nil Nil -> return Nil
   -- Don't evaluate `(x)` to `x`
-  --TODO: Use returnInvalid
-  s@(Cons _ Nil) -> throwFail $ "do: an invalid condition is detected `" <> showt s <> "`"
+  s@(Cons _ Nil) -> returnInvalid "do" s
   sexpr -> do
     let evaluatees = flatten sexpr
     xs <- mapM execute evaluatees
@@ -287,4 +285,4 @@ if_ = MaruMacro $ \case
       AtomBool False -> execute y
       Nil            -> execute y
       _              -> execute x
-  w -> throwFail $ "if: an invalid condition is detected `" <> showt w <> "`"
+  s -> returnInvalid "if" s
