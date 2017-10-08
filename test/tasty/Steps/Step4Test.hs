@@ -3,19 +3,11 @@
 module Steps.Step4Test where
 
 import Data.Semigroup ((<>))
-import Data.Text (Text)
-import Maru.Type (readable, MaruSymbol(..), MaruEnv, SExpr(..))
-import MaruTest (runCodeInstantly, runCode, runCodeWithSteps, StoppedPoint(..))
+import Maru.Type (SExpr(..))
+import MaruTest
 import Test.Tasty (TestTree)
-import Test.Tasty.HUnit (testCase, (@?=), Assertion, assertFailure)
+import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
 import qualified Maru.Eval as E
-
-
--- | 'code' can be evaluated to 'expected'
-shouldBeEvaluatedTo :: Text -> Text -> Assertion
-shouldBeEvaluatedTo code expected = do
-  (sexpr, _, _) <- runCodeInstantly code
-  readable sexpr @?= expected
 
 
 test_boolean_literals :: [TestTree]
@@ -62,22 +54,10 @@ test_do_macro =
                                             "    (def! y (+ x 1))" <>
                                             "    (def! z (+ y 1)))"
       sexpr @?= AtomInt 12
-      "x" `existedIn` env
-      "y" `existedIn` env
-      "z" `existedIn` env
+      "x" `isExistedIn` env
+      "y" `isExistedIn` env
+      "z" `isExistedIn` env
   ]
-  where
-    -- She lives in the world
-    existedIn :: MaruSymbol -> MaruEnv -> Assertion
-    she `existedIn` world = do
-      -- She undressed her dress.
-      -- Her bareness was so mysterious...
-      let nakedGoddess = unMaruSymbol she
-      -- Also, her child was birthed.
-      runCode world nakedGoddess
-      -- She, her child, and all the families are so happy !
-      return ()
-      --NOTE: Don't afraid to delete these comment if these are obstacle :P
 
 
 test_if_macro :: [TestTree]

@@ -5,10 +5,15 @@ module MaruTest
   , runCode
   , runCodeWithSteps
   , prettyAssertFailure
+  , shouldBeEvaluatedTo
+  , isExistedIn
+  , isNotExistedIn
   ) where
 
-import Maru.Type (SExpr(..), MaruEnv, SimplificationSteps, SourceCode, reportSteps)
-import Test.Tasty.HUnit (Assertion, assertFailure)
+import Control.Monad (void)
+import Data.Text (Text)
+import Maru.Type
+import Test.Tasty.HUnit (Assertion, assertFailure, (@?=))
 import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as E
 import qualified Maru.Parser as P
@@ -69,3 +74,24 @@ prettyAssertFailure sexpr env steps msg = do
   putStrLn "got logs:"
   mapM_ TIO.putStrLn $ reportSteps steps
   assertFailure ""
+
+
+-- | 'code' can be evaluated to 'expected'
+shouldBeEvaluatedTo :: Text -> Text -> Assertion
+shouldBeEvaluatedTo code expected = do
+  (sexpr, _, _) <- runCodeInstantly code
+  readable sexpr @?= expected
+
+
+-- | 'var' is existed in 'env'
+isExistedIn :: MaruSymbol -> MaruEnv -> Assertion
+var `isExistedIn` env = void . runCode env $ unMaruSymbol var
+
+
+-- | 'var' is not existed in 'env'
+isNotExistedIn :: MaruSymbol -> MaruEnv -> Assertion
+var `isNotExistedIn` env = do
+  point <- runCodeWithSteps env $ unMaruSymbol var
+  case point of
+    EvalError _ -> return ()
+    x           -> assertFailure $ show x
