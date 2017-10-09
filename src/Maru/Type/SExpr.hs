@@ -12,11 +12,13 @@ module Maru.Type.SExpr
   , isAtomInt
   , unAtomInt
   , isAtomSymbol
+  , unAtomSymbol
   , SExprLike(..)
   , readable
   , MaruSymbol(..)
   , pack
   , unpack
+  , asSymbolList
   , scottEncode
   , scottDecode
   , _Cons
@@ -27,7 +29,7 @@ module Maru.Type.SExpr
   , intBullet
   ) where
 
-import Control.Lens (makePrisms)
+import Control.Lens (makePrisms, Prism', prism)
 import Data.List (foldl')
 import Data.MonoTraversable (MonoFunctor(..), Element)
 import Data.Monoid ((<>))
@@ -96,6 +98,11 @@ isAtomSymbol :: SExpr -> Bool
 isAtomSymbol (AtomSymbol _) = True
 isAtomSymbol _              = False
 
+-- | Similar to `unAtomInt`
+unAtomSymbol :: SExpr -> Maybe MaruSymbol
+unAtomSymbol (AtomSymbol x) = Just x
+unAtomSymbol _              = Nothing
+
 -- | Same as Show
 instance TextShow SExpr where
   showb = TS.fromString . show
@@ -133,7 +140,24 @@ pack = MaruSymbol . T.pack
 unpack :: MaruSymbol -> String
 unpack = T.unpack . unMaruSymbol
 
+-- |
+-- A `Prism` accessor.
+--
+-- Get `Nothing` if [`SExpr`] includes non `AtomSymbol`.
+-- Get all `AtomSymbol` otherwise.
+asSymbolList :: Prism' [SExpr] [MaruSymbol]
+asSymbolList = prism from to
+  where
+    from :: [MaruSymbol] -> [SExpr]
+    from = map AtomSymbol
+    to :: [SExpr] -> Either [SExpr] [MaruSymbol]
+    to xs = case (filter (not . isAtomSymbol) xs, mapM unAtomSymbol xs) of
+                 ([], _)       -> Left xs
+                 (_, Nothing)  -> Left xs
+                 (_, Just xs') -> Right xs'
 
+
+--TODO: this maybe not needed
 -- | 'a' can be represented as `SExpr`
 class SExprLike a where
   -- | 'a' can be converted as `SExpr`
