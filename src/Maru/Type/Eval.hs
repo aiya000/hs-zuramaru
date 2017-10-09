@@ -64,6 +64,8 @@ module Maru.Type.Eval
   , runMaruCalculator
   , First' (..)
   , first'
+  , expandVars
+  , substituteVar
   ) where
 
 import Control.Lens hiding ((<|))
@@ -86,7 +88,9 @@ import qualified Data.Text as T
 import qualified Maru.Type.SExpr as MTS
 
 -- $setup
+-- >>> :set -XOverloadedStrings
 -- >>> import Data.Either
+-- >>> import qualified Maru.Eval as E
 
 -- | A message of @Fail@
 type ExceptionCause = Text
@@ -351,3 +355,58 @@ lookupVar sym = do
   env <- getMaruEnv
   let cause = "A symbol '" <> unMaruSymbol sym <> "' is not found"
   includeFail cause . return $ lookup sym env
+
+
+-- |
+-- Expand the value of the variables, but these are not evaluated.
+--
+-- And +, -, *, and / are not expanded
+-- (because it is regarded as like the axioms)
+--
+-- simply expanding
+--
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> expandVars (AtomSymbol "x")
+-- >>> sexpr
+-- Right (AtomInt 10)
+--
+-- multi variables
+--
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomBool True) >> expandVars (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
+-- >>> sexpr
+-- Right (Cons (AtomInt 10) (Cons (AtomBool True) Nil))
+--
+-- nested expanding
+--
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomSymbol "x") >> expandVars (AtomSymbol "y")
+-- >>> sexpr
+-- Right (AtomInt 10)
+expandVars :: (MaruScopesAssociation xs, FailAssociation xs) => SExpr -> Eff xs SExpr
+expandVars (AtomSymbol "+") = return $ AtomSymbol "+"
+expandVars (AtomSymbol "-") = return $ AtomSymbol "-"
+expandVars (AtomSymbol "*") = return $ AtomSymbol "*"
+expandVars (AtomSymbol "/") = return $ AtomSymbol "/"
+expandVars Nil = return Nil
+expandVars (AtomInt x) = return $ AtomInt x
+expandVars (AtomBool x) = return $ AtomBool x
+expandVars (Cons x y) = Cons <$> expandVars x <*> expandVars y
+expandVars (AtomSymbol var) = lookupVar var >>= expandVars
+
+
+-- |
+-- Substitute a value to a variable.
+--
+-- "x" is substituted by `AtomInt 10` in `Cons (AtomInt 1) (Cons (AtomSymbol "x") Nil)`.
+--
+-- >>> substituteVar "x" (AtomInt 10) $ Cons (AtomInt 1) (Cons (AtomSymbol "x") Nil)
+-- Cons (AtomInt 1) (Cons (AtomInt 10) Nil)
+--
+-- >>> substituteVar "x" (AtomInt 10) $ Cons (AtomSymbol "x") (Cons (AtomSymbol "x") Nil)
+-- Cons (AtomInt 10) (Cons (AtomInt 10) Nil)
+substituteVar :: MaruSymbol -> SExpr -> SExpr -> SExpr
+substituteVar var val (AtomSymbol var') =
+  if var == var' then val
+                 else AtomSymbol var'
+substituteVar _ _ Nil = Nil
+substituteVar _ _ (AtomInt x) = AtomInt x
+substituteVar _ _ (AtomBool x) = AtomBool x
+substituteVar var val (Cons x y) = Cons (substituteVar var val x) (substituteVar var val y)
