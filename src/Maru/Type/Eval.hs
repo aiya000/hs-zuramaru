@@ -241,7 +241,6 @@ instance MonadFail MaruEvaluator where
   fail = throwFail . T.pack
 
 
---NOTE: Why eff's runState's type sigunature is different with mtl runState ?
 -- | Run an evaluation of @MaruEvaluator a@
 runMaruEvaluator :: MaruEvaluator a -> MaruEnv -> IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
 runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
