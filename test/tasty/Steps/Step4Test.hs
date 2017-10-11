@@ -10,6 +10,7 @@ import MaruTest
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
 import qualified Maru.Eval as E
+import qualified Maru.Parser as P
 
 
 test_boolean_literals :: [TestTree]
@@ -89,16 +90,25 @@ test_if_macro =
 
 test_fn_macro :: [TestTree]
 test_fn_macro =
-  [ testCase "binds the variables of the outer scope" $ do
-      (sexpr, env, _) <- runCodeInstantly "(let* (x 10) (def! *f* (fn* (_) x)))"
-                         >>= flip runCode "(*f* 0)" . view _2
-      sexpr @?= AtomInt 10
-      -- Don't waste the global scope
-      "x" `isNotExistedIn` env
-  , testCase "can take zero arguments" $
-      void $ runCodeInstantly "((fn* () 10) 0)"
+  [ testCase "only expands a S expression of its body with `expanded-fn*`" $ do
+      (sexpr, _, _) <- runCodeInstantly "(def! z 1)"
+                       >>= flip runCode "(def! y (- 1 z))" . view _2
+                       >>= flip runCode "(def! x (+ y z))" . view _2
+                       >>= flip runCode "(fn* (a) x)" . view _2
+      --case P.parse "(expanded-fn* (a) (+ (- 1 1) 1))" of
+      --TODO: `x` is expanded to `1` (not `(+ (- 1 1) 1)`),
+      --      because `def!` evaluates terms at now (`fn*` doesn't evaluate terms).
+      --      Determine about do implement the lazy evaluation on `def!` (or don't)
+      case P.parse "(expanded-fn* (a) 1)" of
+        Left  e -> assertFailure $ show e
+        Right a -> sexpr @?= a
+  , testCase "cannot take zero arguments" $ do
+      point <- runCodeWithSteps E.initialEnv "((fn* () 10) 0)"
+      case point of
+        EvalError _ -> return ()
+        x           -> assertFailure $ "expected a `EvalError`, but got `" ++ show x ++ "`"
   , testCase "can take multi arguments" $
-      void $ runCodeInstantly "((fn* (x y z) 10) 0 1 2)"
+      void $ runCodeInstantly "(fn* (x y z) 0)"
   ]
 
 

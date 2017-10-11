@@ -31,6 +31,7 @@ import TextShow (showt)
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
 
+--TODO: Define an alias for `flip runMaruEvaluator initialEnv` to here, and use it in each doctest
 -- $setup
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XOverloadedLists
@@ -108,6 +109,7 @@ execute (Cons (AtomSymbol "def!") s) = execMacro defBang s
 execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute (Cons (AtomSymbol "if") s) = execMacro if_ s
+execute (Cons (AtomSymbol "fn*") s) = execMacro fnStar s
 execute sexpr = execMacro call sexpr
 
 
@@ -285,3 +287,46 @@ if_ = MaruMacro $ \case
       Nil            -> execute y
       _              -> execute x
   s -> returnInvalid "if" s
+
+
+-- |
+-- 'fn*' macro is a temporary function (it is often called 'lambda function').
+--
+-- Expand a S expression of its body (Make a 'expanded-fn*' expression).
+--
+-- If the conversion of S expression can be executed in any time (or if the completely immutability is promised),
+-- this expansion can be the one of strategy in the real for the binding variables of the closure.
+--
+-- `
+-- (def! x 10)
+-- (fn* (a) x)
+-- `
+-- makes
+-- `(expanded-fn* (a) 10)`
+--
+--
+-- the expansion is recursively,
+-- but only the symbol of +, -, *, / are not expanded.
+-- `
+-- (def! z 1)
+-- (def! y (- 1 z)
+-- (def! x (+ y z))
+-- (fn* (a) x)
+-- `
+-- makes
+-- `(expanded-fn* (a) (+ (- 1 1) 1))`
+--
+-- >>> :{
+-- do
+--    let modifiedEnv = initialEnv <>
+--                            [[ ("z", AtomInt 1)
+--                             , ("y", Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomSymbol "z") Nil)))
+--                             , ("x", Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomSymbol "z") Nil)))
+--                             ]]
+--    let sexpr = Cons (Cons (AtomSymbol "a") Nil) (Cons (AtomSymbol "x") Nil)
+--    (result, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro fnStar sexpr
+--    return result
+-- :}
+-- Right (Cons (AtomSymbol "expanded-fn*") (Cons (Cons (AtomSymbol "a") Nil) (Cons (Cons (AtomSymbol "+") (Cons (Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomInt 1) Nil))) (Cons (AtomInt 1) Nil))) Nil)))
+fnStar :: MaruMacro
+fnStar = undefined
