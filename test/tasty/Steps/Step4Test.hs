@@ -112,6 +112,51 @@ test_fn_macro =
   ]
 
 
+-- |
+-- `expanded-fn*` is not used in the mostly cases (it is used via `fn*`),
+-- because it throws the exception if symbols are not found in its body.
+--
+-- e.g.
+-- `
+-- (let* (x 10)
+--    ((expanded-fn* (a) x) 0))
+-- `
+-- ,
+-- `
+-- (let* (x 10)
+--    (let* (f (expanded-fn* (a) x))
+--        (f 0)))
+-- `
+-- and
+-- `
+-- (let* (x 10)
+--    (def! f (fn* (a) x))) ; x is expanded by fn*
+-- (f 0)
+-- `
+-- to be success, but
+-- `
+-- (let* (x 10)
+--    (def! f (expanded-fn* (a) x))) ; expanded-fn* doesn't expand x
+-- (f 0)
+-- `
+-- to be failure.
+test_expanded_fn_macro :: [TestTree]
+test_expanded_fn_macro =
+  [ testCase "is applied with arguments as a function without any binding" $ do
+      "((expanded-fn* (x) x) 10)" `shouldBeEvaluatedTo` "10"
+
+  , testCase "is applied with arguments as a function with any binding" $ do
+      ( "(let* (x 10)" <>
+          "(let* (f (expanded-fn* (a) x))" <>
+            "(f 0)))" ) `shouldBeEvaluatedTo` "10"
+
+  , testCase "can include variables of outer scopes with `fn*` (the behavior of closure)" $ do
+      (sexpr, _, _) <- runCodeInstantly "(let* (x 10) (def! f (fn* (a) x)))"
+                       >>= flip runCode "(f 0)" . view _2
+      sexpr @?= AtomInt 10
+  ]
+
+
 test_my_another_things :: [TestTree]
 test_my_another_things =
   [ testCase "`(x)` happens an exception (because the form of `(x)` expects `x` is the symbol of the function or the macro)" $ do
