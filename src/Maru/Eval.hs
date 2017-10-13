@@ -329,4 +329,8 @@ if_ = MaruMacro $ \case
 -- :}
 -- Right (Cons (AtomSymbol "expanded-fn*") (Cons (Cons (AtomSymbol "a") Nil) (Cons (Cons (AtomSymbol "+") (Cons (Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomInt 1) Nil))) (Cons (AtomInt 1) Nil))) Nil)))
 fnStar :: MaruMacro
-fnStar = undefined
+fnStar = MaruMacro $ \case
+  Cons params body -> do
+    expandedBody <- expandVars body
+    return $ Cons (AtomSymbol "expanded-fn*") (Cons params expandedBody)
+  s -> returnInvalid "fn*" s
