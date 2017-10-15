@@ -20,6 +20,7 @@ module Maru.Eval
 
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
+import Control.Lens ((^?))
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
 import Data.Semigroup ((<>))
@@ -35,7 +36,7 @@ import qualified Maru.Eval.RuntimeOperation as OP
 -- $setup
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XOverloadedLists
--- >>> import Control.Lens ((^?), _Just)
+-- >>> import Control.Lens (_Just)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
 -- >>> import qualified Maru.Type.Eval as TE
 -- >>> :{
@@ -110,6 +111,7 @@ execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute (Cons (AtomSymbol "if") s) = execMacro if_ s
 execute (Cons (AtomSymbol "fn*") s) = execMacro fnStar s
+execute (Cons (Cons (AtomSymbol "expanded-fn*") (Cons params body)) args) = execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
 execute sexpr = execMacro call sexpr
 
 
@@ -334,3 +336,21 @@ fnStar = MaruMacro $ \case
     expandedBody <- expandVars body
     return $ Cons (AtomSymbol "expanded-fn*") (Cons params expandedBody)
   s -> returnInvalid "fn*" s
+
+
+--NOTE: 'params' means dummy arguments, 'args' means real arguments
+-- |
+-- This is made by `fn, the form to apply of S expression.
+--
+-- Apply 'args' to 'params' with 'body' as a function body.
+--
+-- `((expanded-fn* (x y) (+ x y)) 1 2)`
+--
+-- >>> let args = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
+-- >>> let params = Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil)
+-- >>> let body = Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
+-- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro expandedFnStar (Cons params (Cons body (Cons args Nil)))
+-- >>> result
+-- Right (AtomInt 3)
+expandedFnStar :: MaruMacro
+expandedFnStar = undefined
