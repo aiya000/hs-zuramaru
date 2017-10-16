@@ -108,7 +108,7 @@ test_fn_macro =
         EvalError _ -> return ()
         x           -> assertFailure $ "expected a `EvalError`, but got `" ++ show x ++ "`"
   , testCase "can take multi arguments" $
-      void $ runCodeInstantly "(fn* (x y z) 0)"
+      "(fn* (x y z) 0)" `shouldBeEvaluatedTo` "(expanded-fn* (x y z) 0)"
   ]
 
 
