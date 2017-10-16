@@ -21,8 +21,11 @@ module Maru.Eval
 import Control.Exception.Safe (Exception, SomeException, toException)
 import Control.Exception.Throwable.TH (declareException)
 import Control.Lens ((^?))
+import Control.Monad (when)
 import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
+import Data.Function ((&))
+import Data.List (foldl')
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
@@ -111,7 +114,7 @@ execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute (Cons (AtomSymbol "if") s) = execMacro if_ s
 execute (Cons (AtomSymbol "fn*") s) = execMacro fnStar s
-execute (Cons (Cons (AtomSymbol "expanded-fn*") (Cons params body)) args) = execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
+execute (Cons (Cons (AtomSymbol "expanded-fn*") (Cons params (Cons body Nil))) args) = execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
 execute sexpr = execMacro call sexpr
 
 
@@ -167,37 +170,30 @@ call :: MaruMacro
 call = MaruMacro call'
   where
     call' :: SExpr -> MaruEvaluator SExpr
-    -- `()` is evaluted to `()`
-    call' (Cons Nil Nil) = return Nil
+    call' (AtomInt x)    = return $ AtomInt x
+    call' (AtomBool x)   = return $ AtomBool x
+    call' Nil            = return Nil
 
-    -- `(func {zero or more arguments})` is evaluated to its result.
-    -- `func` is the symbol for the function.
-    call' (Cons (AtomSymbol sym) y) = do
-      args <- mapM execute $ flatten y
-      let maybeCalculator = realBody sym -- 「そうか、リアルボディ！！」
-      case maybeCalculator of
-        Just calc -> castEff $ execFunc calc args
-        Nothing   -> error "TODO: implement SExpr behabior of a function"
-
-    -- `x` is looked up from the current environment (the `Eff`'s context with `MaruScopesAssociation`)
+    -- Look up the value from the current environment
     call' (AtomSymbol sym) =
       lookupVar sym >>= \case
         AtomSymbol s -> call' $ AtomSymbol s
         --TODO: Currently, sym is regarded to the string value. Because the string literal is not implemented at now. Don't regard to the string value, throw the exception with the cause of "the symbol is not found".
         x -> return x
 
-    call' s@(Cons x _) = throwFail $ "got '" <> showt x <> "' in '" <> showt s <> "', but expected the symbol of the function or the macro"
-    call' (AtomInt x)  = return $ AtomInt x
-    call' (AtomBool x) = return $ AtomBool x
-    call' Nil          = return Nil
+    call' (Cons Nil Nil) = return Nil -- `()` is evaluted to `()`
 
-    -- Get the read body of `MaruFunc` from the symbol
-    realBody :: MaruSymbol -> Maybe MaruFunc
-    realBody "+" = Just OP.add
-    realBody "-" = Just OP.sub
-    realBody "*" = Just OP.times
-    realBody "/" = Just OP.div
-    realBody _   = Nothing
+    -- The axiomly functions
+    call' (Cons (AtomSymbol "+") args) = mapM execute (flatten args) >>= castEff . execFunc OP.add
+    call' (Cons (AtomSymbol "-") args) = mapM execute (flatten args) >>= castEff . execFunc OP.sub
+    call' (Cons (AtomSymbol "*") args) = mapM execute (flatten args) >>= castEff . execFunc OP.times
+    call' (Cons (AtomSymbol "/") args) = mapM execute (flatten args) >>= castEff . execFunc OP.div
+
+    call' (Cons (AtomSymbol sym) args) = lookupVar sym >>= \case
+      Cons (AtomSymbol "expanded-fn*") (Cons params (Cons body Nil)) ->
+        execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
+      _ -> undefined
+    call' s@(Cons x _) = throwFail $ "got '" <> showt x <> "' in '" <> showt s <> "', but expected the symbol of the function or the macro"
 
 
 -- |
@@ -353,4 +349,14 @@ fnStar = MaruMacro $ \case
 -- >>> result
 -- Right (AtomInt 3)
 expandedFnStar :: MaruMacro
-expandedFnStar = undefined
+expandedFnStar = MaruMacro $ \s -> case flatten s of
+  [] -> returnInvalid "expanded-fn*" s
+  [params, body, args] -> do
+    let cause = "expanded-fn*: the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    mappee <- includeFail cause . return $ flatten params ^? asSymbolList
+    mapper <- mapM execute $ flatten args
+    when (length mappee /= length mapper) .
+      throwFail $ "expanded-fn*: the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
+    let mapping = map (uncurry substituteVar) $ zip mappee mapper
+    execute $ foldl' (&) body mapping
+  _  -> returnInvalid "expanded-fn*" s

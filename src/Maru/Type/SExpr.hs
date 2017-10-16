@@ -132,6 +132,9 @@ newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
 instance Show MaruSymbol where
   show x = show $ unpack x
 
+instance TextShow MaruSymbol where
+  showb = TS.fromString . show
+
 -- |
 -- Wrap `String`.
 -- If you want to wrap `Text`, please use `MaruSymbol` value constructor instead.
