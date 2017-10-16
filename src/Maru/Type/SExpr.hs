@@ -44,6 +44,7 @@ import qualified TextShow as TS
 
 -- $setup
 -- >>> :set -XOverloadedStrings
+-- >>> import Control.Lens ((^?))
 -- >>> import Maru.Parser (parse)
 
 -- |
@@ -127,6 +128,7 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
   deriving (IsString, Semigroup, Monoid, Eq, Ord)
 
+--TODO: `show x` should be `"MaruSymbol " ++ show (unpack x)`
 instance Show MaruSymbol where
   show x = show $ unpack x
 
@@ -145,6 +147,12 @@ unpack = T.unpack . unMaruSymbol
 --
 -- Get `Nothing` if [`SExpr`] includes non `AtomSymbol`.
 -- Get all `AtomSymbol` otherwise.
+--
+-- >>> [AtomSymbol "x", AtomSymbol "y"] ^? asSymbolList
+-- Just ["x","y"]
+--
+-- >>> [AtomInt 1, AtomSymbol "y"] ^? asSymbolList
+-- Nothing
 asSymbolList :: Prism' [SExpr] [MaruSymbol]
 asSymbolList = prism from to
   where
@@ -152,9 +160,8 @@ asSymbolList = prism from to
     from = map AtomSymbol
     to :: [SExpr] -> Either [SExpr] [MaruSymbol]
     to xs = case (filter (not . isAtomSymbol) xs, mapM unAtomSymbol xs) of
-                 ([], _)       -> Left xs
-                 (_, Nothing)  -> Left xs
-                 (_, Just xs') -> Right xs'
+                 ([], Just xs') -> Right xs'
+                 (_, _)         -> Left xs
 
 
 --TODO: this maybe not needed
