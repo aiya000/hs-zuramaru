@@ -3,7 +3,6 @@
 module Steps.Step4Test where
 
 import Control.Lens (view, _2)
-import Control.Monad (void)
 import Data.Semigroup ((<>))
 import Maru.Type (SExpr(..))
 import MaruTest
@@ -109,6 +108,8 @@ test_fn_macro =
         x           -> assertFailure $ "expected a `EvalError`, but got `" ++ show x ++ "`"
   , testCase "can take multi arguments" $
       "(fn* (x y z) 0)" `shouldBeEvaluatedTo` "(expanded-fn* (x y z) 0)"
+  , testCase "can be applied with arguments" $
+      "((fn* (a) 10) 0)" `shouldBeEvaluatedTo` "10"
   ]
 
 
