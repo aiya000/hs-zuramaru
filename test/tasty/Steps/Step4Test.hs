@@ -94,7 +94,10 @@ test_fn_macro =
       "((fn* (x y z) y) 1 2 3)" `shouldBeEvaluatedTo` "2" -- multi arguments
 
   , testCase "can be bound as the variable" $ do
-      runCorretly "(let* (f (fn* (x) x)) 0)"
+      -- united
+      "(let* (f (fn* (x) x)) (f 10))" `shouldBeEvaluatedTo` "10"
+      -- devided
+      ["(def! f (fn* (x) x))", "(f 10)"] `shouldBeEvaluatedTo'` "10"
       -- nested
       runCorretly $ "(let* (x 10)" <>
                       "(let* (f (fn* (a) x))" <>
