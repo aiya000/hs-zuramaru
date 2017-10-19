@@ -1,16 +1,25 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | The functions for help tests
 module MaruTest
   ( StoppedPoint (..)
   , runCodeInstantly
   , runCode
+  , runCodes
   , runCodeWithSteps
   , prettyAssertFailure
   , shouldBeEvaluatedTo
+  , shouldBeEvaluatedTo'
   , isExistedIn
   , isNotExistedIn
+  , runCorretly
+  , runCodesCorrectly
   ) where
 
-import Control.Monad (void)
+import Control.Lens (_1, _2, view, to, (<&>))
+import Control.Monad (void, (>=>))
+import Data.List (foldl')
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import Maru.Type
 import Test.Tasty.HUnit (Assertion, assertFailure, (@?=))
@@ -49,6 +58,15 @@ runCode env code = do
     Succeed x y z -> return (x, y, z)
 
 -- |
+-- Similar to 'runCode', but multi expressions are taken.
+-- And the previous result is continued.
+runCodes :: MaruEnv -> NonEmpty SourceCode -> IO (SExpr, MaruEnv, SimplificationSteps)
+runCodes env (code:|codes) = do
+  let runners = flip map codes $ \x -> flip runCode x . view _2
+  let tailExecutor = foldl' (>=>) (flip runCode code . view _2) runners
+  runCode env "()" >>= tailExecutor
+
+-- |
 -- Run maru's source code in the specified `MaruEnv`.
 --
 -- If the parsing is failed, return `ParseError` .
@@ -77,16 +95,21 @@ prettyAssertFailure sexpr env steps msg = do
 
 
 -- | 'code' can be evaluated to 'expected'
-shouldBeEvaluatedTo :: Text -> Text -> Assertion
+shouldBeEvaluatedTo :: SourceCode -> SourceCode -> Assertion
 shouldBeEvaluatedTo code expected = do
   (sexpr, _, _) <- runCodeInstantly code
   readable sexpr @?= expected
+
+-- | Similar to 'shouldBeEvaluatedTo' (comparison) and 'runCodes' (multi codes)
+shouldBeEvaluatedTo' :: NonEmpty SourceCode -> SourceCode -> Assertion
+shouldBeEvaluatedTo' codes expected = do
+  actual <- runCodes E.initialEnv codes <&> view (_1 . to readable)
+  actual @?= expected
 
 
 -- | 'var' is existed in 'env'
 isExistedIn :: MaruSymbol -> MaruEnv -> Assertion
 var `isExistedIn` env = void . runCode env $ unMaruSymbol var
-
 
 -- | 'var' is not existed in 'env'
 isNotExistedIn :: MaruSymbol -> MaruEnv -> Assertion
@@ -95,3 +118,12 @@ var `isNotExistedIn` env = do
   case point of
     EvalError _ -> return ()
     x           -> assertFailure $ show x
+
+
+-- | Mean that it returns something without the result
+runCorretly :: Text -> Assertion
+runCorretly = void . runCodeInstantly
+
+-- | Similar to 'runCorretly' and 'shouldBeEvaluatedTo'`
+runCodesCorrectly :: NonEmpty Text -> Assertion
+runCodesCorrectly = void . runCodes E.initialEnv
