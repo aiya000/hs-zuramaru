@@ -1,15 +1,14 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Steps.Step4Test where
 
-import Control.Lens (view, _2)
 import Data.Semigroup ((<>))
 import Maru.Type (SExpr(..))
 import MaruTest
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
 import qualified Maru.Eval as E
-import qualified Maru.Parser as P
 
 
 test_boolean_literals :: [TestTree]
@@ -89,72 +88,22 @@ test_if_macro =
 
 test_fn_macro :: [TestTree]
 test_fn_macro =
-  [ testCase "only expands a S expression of its body with `expanded-fn*`" $ do
-      (sexpr, _, _) <- runCodeInstantly "(def! z 1)"
-                       >>= flip runCode "(def! y (- 1 z))" . view _2
-                       >>= flip runCode "(def! x (+ y z))" . view _2
-                       >>= flip runCode "(fn* (a) x)" . view _2
-      --case P.parse "(expanded-fn* (a) (+ (- 1 1) 1))" of
-      --TODO: `x` is expanded to `1` (not `(+ (- 1 1) 1)`),
-      --      because `def!` evaluates terms at now (`fn*` doesn't evaluate terms).
-      --      Determine about do implement the lazy evaluation on `def!` (or don't)
-      case P.parse "(expanded-fn* (a) 1)" of
-        Left  e -> assertFailure $ show e
-        Right a -> sexpr @?= a
-  , testCase "cannot take zero arguments" $ do
-      point <- runCodeWithSteps E.initialEnv "((fn* () 10) 0)"
-      case point of
-        EvalError _ -> return ()
-        x           -> assertFailure $ "expected a `EvalError`, but got `" ++ show x ++ "`"
-  , testCase "can take multi arguments" $
-      "(fn* (x y z) 0)" `shouldBeEvaluatedTo` "(expanded-fn* (x y z) 0)"
-  , testCase "can be applied with arguments" $
-      "((fn* (a) 10) 0)" `shouldBeEvaluatedTo` "10"
-  ]
+  [ testCase "can be applied with arguments" $ do
+      "((fn* (a) 10) 0)" `shouldBeEvaluatedTo` "10" -- an argument
+      "((fn* () 10))" `shouldBeEvaluatedTo` "10" -- zero arguments
+      "((fn* (x y z) y) 1 2 3)" `shouldBeEvaluatedTo` "2" -- multi arguments
 
+  , testCase "can be bound as the variable" $ do
+      runCorretly "(let* (f (fn* (x) x)) 0)"
+      -- nested
+      runCorretly $ "(let* (x 10)" <>
+                      "(let* (f (fn* (a) x))" <>
+                        "(f 0)))"
 
--- |
--- `expanded-fn*` is not used in the mostly cases (it is used via `fn*`),
--- because it throws the exception if symbols are not found in its body.
---
--- e.g.
--- `
--- (let* (x 10)
---    ((expanded-fn* (a) x) 0))
--- `
--- ,
--- `
--- (let* (x 10)
---    (let* (f (expanded-fn* (a) x))
---        (f 0)))
--- `
--- and
--- `
--- (let* (x 10)
---    (def! f (fn* (a) x))) ; x is expanded by fn*
--- (f 0)
--- `
--- to be success, but
--- `
--- (let* (x 10)
---    (def! f (expanded-fn* (a) x))) ; expanded-fn* doesn't expand x
--- (f 0)
--- `
--- to be failure.
-test_expanded_fn_macro :: [TestTree]
-test_expanded_fn_macro =
-  [ testCase "is applied with arguments as a function without any binding" $ do
-      "((expanded-fn* (x) x) 10)" `shouldBeEvaluatedTo` "10"
-
-  , testCase "is applied with arguments as a function with any binding" $ do
-      ( "(let* (x 10)" <>
-          "(let* (f (expanded-fn* (a) x))" <>
-            "(f 0)))" ) `shouldBeEvaluatedTo` "10"
-
-  , testCase "can include variables of outer scopes with `fn*` (the behavior of closure)" $ do
-      (sexpr, _, _) <- runCodeInstantly "(let* (x 10) (def! f (fn* (a) x)))"
-                       >>= flip runCode "(f 0)" . view _2
-      sexpr @?= AtomInt 10
+  , testCase "can include the outer scopes variables (the behavior of closure)" $
+      [ "(let* (x 10) (def! f (fn* (a) x)))"
+      , "(f 0)"
+      ] `shouldBeEvaluatedTo'` "10"
   ]
 
 
