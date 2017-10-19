@@ -12,6 +12,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
+--TODO: Organize document comments
+
 -- | @MaruEvaluator@ evaluates @SEexpr@.
 module Maru.Eval
   ( initialEnv
@@ -113,8 +115,10 @@ execute (Cons (AtomSymbol "def!") s) = execMacro defBang s
 execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute (Cons (AtomSymbol "if") s) = execMacro if_ s
-execute (Cons (AtomSymbol "fn*") s) = execMacro fnStar s
-execute (Cons (Cons (AtomSymbol "expanded-fn*") (Cons params (Cons body Nil))) args) = execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
+-- the forms of '((fn* xxx yyy) z)' are applied as a function
+execute (Cons (Cons (AtomSymbol "fn*") (Cons params (Cons body Nil))) args) = execMacro funcall $ Cons params (Cons body (Cons args Nil))
+-- the forms of '(fn* xxx yyy)' of '(let* (f (fn* xxx yyy)))' are evaluated
+execute (Cons (AtomSymbol "fn*") s) = execMacro binding s
 execute sexpr = execMacro call sexpr
 
 
@@ -188,12 +192,12 @@ call = MaruMacro call'
     call' (Cons (AtomSymbol "-") args) = mapM execute (flatten args) >>= castEff . execFunc OP.sub
     call' (Cons (AtomSymbol "*") args) = mapM execute (flatten args) >>= castEff . execFunc OP.times
     call' (Cons (AtomSymbol "/") args) = mapM execute (flatten args) >>= castEff . execFunc OP.div
+    --
+    call' (Cons (AtomSymbol sym) args) = do
+      val <- lookupVar sym
+      execute $ Cons val args
 
-    call' (Cons (AtomSymbol sym) args) = lookupVar sym >>= \case
-      Cons (AtomSymbol "expanded-fn*") (Cons params (Cons body Nil)) ->
-        execMacro expandedFnStar $ Cons params (Cons body (Cons args Nil))
-      _ -> undefined
-    call' s@(Cons x _) = throwFail $ "got '" <> showt x <> "' in '" <> showt s <> "', but expected the symbol of the function or the macro"
+    call' s@(Cons x _) = throwFail $ "expected the symbol of the function or the macro, but got `" <> showt x <> "` (in `" <> showt s <> "`)"
 
 
 -- |
@@ -287,20 +291,12 @@ if_ = MaruMacro $ \case
   s -> returnInvalid "if" s
 
 
--- |
--- 'fn*' macro is a temporary function (it is often called 'lambda function').
---
--- Expand a S expression of its body (Make a 'expanded-fn*' expression).
---
--- If the conversion of S expression can be executed in any time (or if the completely immutability is promised),
--- this expansion can be the one of strategy in the real for the binding variables of the closure.
---
 -- `
 -- (def! x 10)
 -- (fn* (a) x)
 -- `
 -- makes
--- `(expanded-fn* (a) 10)`
+-- `(fn* (a) 10)`
 --
 --
 -- the expansion is recursively,
@@ -312,7 +308,20 @@ if_ = MaruMacro $ \case
 -- (fn* (a) x)
 -- `
 -- makes
--- `(expanded-fn* (a) (+ (- 1 1) 1))`
+-- `(fn* (a) (+ (- 1 1) 1))`
+--TODO: ^^^ Think about this behavior and Add this to below (funcall's) doc comment if it is correct
+
+-- |
+-- Make a temporary function (it is often called 'lambda function').
+--
+-- fn* macro is made up by this and `funcall` macro.
+--
+-- This is the caller, 'binding' is the callee.
+--
+-- Expand a S expression of its body (Make a closure expression).
+--
+-- If the conversion of S expression can be executed in any time (or if the completely immutability is promised),
+-- this expansion can be the one of strategy in the real for the binding variables of the closure.
 --
 -- >>> :{
 -- do
@@ -322,41 +331,40 @@ if_ = MaruMacro $ \case
 --                             , ("x", Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomSymbol "z") Nil)))
 --                             ]]
 --    let sexpr = Cons (Cons (AtomSymbol "a") Nil) (Cons (AtomSymbol "x") Nil)
---    (result, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro fnStar sexpr
+--    (result, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro binding sexpr
 --    return result
 -- :}
--- Right (Cons (AtomSymbol "expanded-fn*") (Cons (Cons (AtomSymbol "a") Nil) (Cons (Cons (AtomSymbol "+") (Cons (Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomInt 1) Nil))) (Cons (AtomInt 1) Nil))) Nil)))
-fnStar :: MaruMacro
-fnStar = MaruMacro $ \case
+-- Right (Cons (AtomSymbol "fn*") (Cons (Cons (AtomSymbol "a") Nil) (Cons (Cons (AtomSymbol "+") (Cons (Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomInt 1) Nil))) (Cons (AtomInt 1) Nil))) Nil)))
+binding :: MaruMacro
+binding = MaruMacro $ \case
   Cons params body -> do
     expandedBody <- expandVars body
-    return $ Cons (AtomSymbol "expanded-fn*") (Cons params expandedBody)
-  s -> returnInvalid "fn*" s
+    return $ Cons (AtomSymbol "fn*") (Cons params expandedBody)
+  s -> returnInvalid "fn* (caller)" s
 
 
 --NOTE: 'params' means dummy arguments, 'args' means real arguments
 -- |
--- This is made by `fn, the form to apply of S expression.
---
 -- Apply 'args' to 'params' with 'body' as a function body.
 --
--- `((expanded-fn* (x y) (+ x y)) 1 2)`
+-- fn* macro is made up by this and `binding` macro.
+--
+-- `((fn* (x y) (+ x y)) 1 2)`
 --
 -- >>> let args = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
 -- >>> let params = Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil)
 -- >>> let body = Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
--- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro expandedFnStar (Cons params (Cons body (Cons args Nil)))
+-- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro funcall (Cons params (Cons body (Cons args Nil)))
 -- >>> result
 -- Right (AtomInt 3)
-expandedFnStar :: MaruMacro
-expandedFnStar = MaruMacro $ \s -> case flatten s of
-  [] -> returnInvalid "expanded-fn*" s
+funcall :: MaruMacro
+funcall = MaruMacro $ \s -> case flatten s of
   [params, body, args] -> do
-    let cause = "expanded-fn*: the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    let cause = "fn* (callee): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
     mappee <- includeFail cause . return $ flatten params ^? asSymbolList
     mapper <- mapM execute $ flatten args
     when (length mappee /= length mapper) .
-      throwFail $ "expanded-fn*: the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
+      throwFail $ "fn* (callee): the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
     let mapping = map (uncurry substituteVar) $ zip mappee mapper
     execute $ foldl' (&) body mapping
-  _  -> returnInvalid "expanded-fn*" s
+  _  -> returnInvalid "fn* (callee)" s
