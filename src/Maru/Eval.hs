@@ -229,18 +229,11 @@ call = MaruMacro call'
 -- Just (AtomInt 3)
 defBang :: MaruMacro
 defBang = MaruMacro $ \case
-  Cons (AtomSymbol sym) s -> case s of
-    Cons x Nil -> defineSymToItsResult sym x -- (def! x (+ 1 2)) should sets x to 3
-    _          -> defineSymToItsResult sym s -- (def! x 10) should sets x to 10
+  Cons (AtomSymbol sym) (Cons val Nil) -> do
+    val' <- execute val
+    insertGlobalVar sym val'
+    return val'
   s -> returnInvalid "def!" s
-  where
-    -- Calculate `SExpr`,
-    -- and Set `MaruSymbol`
-    defineSymToItsResult :: MaruSymbol -> SExpr -> MaruEvaluator SExpr
-    defineSymToItsResult sym sexpr = do
-      sexpr' <- execute sexpr
-      insertGlobalVar sym sexpr'
-      return sexpr'
 
 
 -- |
