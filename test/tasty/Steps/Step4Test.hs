@@ -65,7 +65,7 @@ test_if_macro :: [TestTree]
 test_if_macro =
   [ testCase "evaluates the third argument and returns the result, if the first argument is evaluated to `false` or `nil`" $ do
       "(if false 0 1)" `shouldBeEvaluatedTo` "1"
-      "(if () 0 3)"    `shouldBeEvaluatedTo` "3"
+      "(if nil 0 3)"    `shouldBeEvaluatedTo` "3"
 
       (_, env, _) <- runCodeInstantly "(def! x false)"
       (sexpr, _, _) <- runCode env "(if x 0 5)"
