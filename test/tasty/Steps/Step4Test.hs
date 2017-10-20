@@ -4,7 +4,7 @@
 module Steps.Step4Test where
 
 import Data.Semigroup ((<>))
-import Maru.Type (SExpr(..))
+import Maru.Type (SExpr(..), readable)
 import MaruTest
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
@@ -14,17 +14,17 @@ import qualified Maru.Eval as E
 test_boolean_literals :: [TestTree]
 test_boolean_literals =
   [ testCase "`true` literal is printable" $ do
-      "true"          `shouldBeEvaluatedTo` "true"
+      "true" `shouldBeEvaluatedTo` "true"
       "(def! x true)" `shouldBeEvaluatedTo` "true"
   , testCase "`false` literal is printable" $ do
-      "false"          `shouldBeEvaluatedTo` "false"
+      "false" `shouldBeEvaluatedTo` "false"
       "(def! x false)" `shouldBeEvaluatedTo` "false"
   ]
 
 
 test_nil_literal :: [TestTree]
 test_nil_literal =
-  [ testCase "`nil` equals `()`" $
+  [ testCase "`nil` is evaluated to `()`" $
       "nil" `shouldBeEvaluatedTo` "()"
   ]
 
@@ -33,7 +33,7 @@ test_nil_literal =
 test_integral_positive_literals :: [TestTree]
 test_integral_positive_literals =
   [ testCase "can be evaluated" $ do
-      "+1"       `shouldBeEvaluatedTo` "1"
+      "+1" `shouldBeEvaluatedTo` "1"
       "(+ +1 2)" `shouldBeEvaluatedTo` "3"
       "(+ 2 +1)" `shouldBeEvaluatedTo` "3"
   ]
@@ -42,7 +42,7 @@ test_integral_positive_literals =
 test_integral_negative_literals :: [TestTree]
 test_integral_negative_literals =
   [ testCase "can be evaluated" $ do
-      "-1"       `shouldBeEvaluatedTo` "-1"
+      "-1" `shouldBeEvaluatedTo` "-1"
       "(+ -1 2)" `shouldBeEvaluatedTo` "1"
       "(+ 2 -1)" `shouldBeEvaluatedTo` "1"
   ]
@@ -52,9 +52,9 @@ test_do_macro :: [TestTree]
 test_do_macro =
   [ testCase "evaluates taken arguments" $ do
       (sexpr, env, _) <- runCodeInstantly $ "(do (def! x 10)" <>
-                                            "    (def! y (+ x 1))" <>
-                                            "    (def! z (+ y 1)))"
-      sexpr @?= AtomInt 12
+                                              "(def! y (+ x 1))" <>
+                                              "(def! z (+ y 1)))"
+      readable sexpr @?= "12"
       "x" `isExistedIn` env
       "y" `isExistedIn` env
       "z" `isExistedIn` env
@@ -65,20 +65,20 @@ test_if_macro :: [TestTree]
 test_if_macro =
   [ testCase "evaluates the third argument and returns the result, if the first argument is evaluated to `false` or `nil`" $ do
       "(if false 0 1)" `shouldBeEvaluatedTo` "1"
-      "(if nil 0 3)"    `shouldBeEvaluatedTo` "3"
+      "(if nil 0 3)" `shouldBeEvaluatedTo` "3"
 
-      (_, env, _) <- runCodeInstantly "(def! x false)"
-      (sexpr, _, _) <- runCode env "(if x 0 5)"
-      sexpr @?= AtomInt 5
+      [ "(def! x false)"
+       ,"(if x 0 5)"
+       ] `shouldBeEvaluatedTo'` "5"
 
-      (_, env, _) <- runCodeInstantly "(def! x ())"
-      (sexpr, _, _) <- runCode env "(if x 0 7)"
-      sexpr @?= AtomInt 7
+      [ "(def! x ())"
+       ,"(if x 0 7)"
+       ] `shouldBeEvaluatedTo'` "7"
 
   , testCase "evaluates the second argument and returns the result, if the first argument is evaluated to neither `false` nor `nil`" $ do
       "(if true 1 0)" `shouldBeEvaluatedTo` "1"
-      "(if 0 5 0)"    `shouldBeEvaluatedTo` "5"
-      "(if 10 7 0)"   `shouldBeEvaluatedTo` "7"
+      "(if 0 5 0)" `shouldBeEvaluatedTo` "5"
+      "(if 10 7 0)" `shouldBeEvaluatedTo` "7"
 
       (_, env, _) <- runCodeInstantly "(def! x true)"
       (sexpr, _, _) <- runCode env "(if x 9 0)"
@@ -97,7 +97,9 @@ test_fn_macro =
       -- united
       "(let* (f (fn* (x) x)) (f 10))" `shouldBeEvaluatedTo` "10"
       -- devided
-      ["(def! f (fn* (x) x))", "(f 10)"] `shouldBeEvaluatedTo'` "10"
+      [ "(def! f (fn* (x) x))"
+       ,"(f 10)"
+       ] `shouldBeEvaluatedTo'` "10"
       -- nested
       runCorretly $ "(let* (x 10)" <>
                       "(let* (f (fn* (a) x))" <>
