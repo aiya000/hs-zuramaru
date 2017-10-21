@@ -55,11 +55,18 @@ import qualified Maru.Type.SExpr as MSym (pack)
 declareException "EvalException" ["EvalException"]
 
 
+--TODO: AtomSymbol is not the string literal !
 -- |
 -- An initial value of the runtime.
 -- This is the empty.
 initialEnv :: MaruEnv
-initialEnv = [[("nil", Nil)]]
+initialEnv = [[ ("nil", Nil)
+              , ("def!", AtomSymbol "#core-macro")
+              , ("let*", AtomSymbol "#core-macro")
+              , ("do", AtomSymbol "#core-macro")
+              , ("if", AtomSymbol "#core-macro")
+              , ("fn*", AtomSymbol "#core-macro")
+              ]]
 
 
 -- |
