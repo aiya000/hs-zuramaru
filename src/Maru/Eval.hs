@@ -28,6 +28,7 @@ import Control.Monad.Fail (fail)
 import Data.Extensible (castEff)
 import Data.Function ((&))
 import Data.List (foldl')
+import Data.List.NonEmpty (NonEmpty(..), nonEmpty)
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
@@ -407,8 +408,15 @@ hiMaruEnv = MaruMacro $ \_ ->
 print_ :: MaruMacro
 print_ = MaruMacro $ nilOf . \case
   Nil -> liftIOEff $ putStr ""
-  Cons s Nil -> liftIOEff . T.putStr . readable =<< execute s
+  sexpr@(Cons _ _) -> do
+    sexprs <- mapM ((readable <$>) . execute) $ flatten sexpr
+    liftIOEff $ case nonEmpty sexprs of
+                     Nothing      -> putStr ""
+                     Just (x:|xs) -> T.putStr $ foldl' (<<>>) x xs
   x -> returnInvalid "print" x
   where
     nilOf :: MaruEvaluator a -> MaruEvaluator SExpr
     nilOf x = x >> return Nil
+
+    (<<>>) :: Text -> Text -> Text
+    x <<>> y = x <> "\n" <> y
