@@ -115,7 +115,7 @@ test_fn_macro =
 
 test_print_macro :: [TestTree]
 test_print_macro =
-  [ testCase "prints a S expression on th screen" $ do
+  [ testCase "prints a S expression on the screen" $ do
       captured <- capture_ $ runCodeInstantly "(print 10)"
       captured @?= "10"
 
@@ -123,6 +123,9 @@ test_print_macro =
                                                    , "(print x)"
                                                    ]
       captured @?= "10"
+  , testCase "prints S expressions on the screen" $ do
+      captured <- capture_ $ runCodeInstantly "(print 1 2 3)"
+      captured @?= "1\n2\n3"
   , testCase "returns ()" $
       "(print 10)" `shouldBeEvaluatedTo` "()"
   , testCase "prints nothing if anything are not taken" $ do
