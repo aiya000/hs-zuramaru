@@ -331,9 +331,27 @@ if_ = MaruMacro $ \case
 binding :: MaruMacro
 binding = MaruMacro $ \case
   Cons params body -> do
-    expandedBody <- expandVars body
+    let cause = "fn* (caller): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    params' <- includeFail cause . return $ flatten params ^? asSymbolList
+    expandedBody <- expandVarsWihtoutParams params' body
     return $ Cons (AtomSymbol "fn*") (Cons params expandedBody)
   s -> returnInvalid "fn* (caller)" s
+  where
+    -- Similar to 'expandVars',
+    -- but if the 'MaruSymbol' is included in taken ['MaruSymbol'],
+    -- it is not expanded
+    expandVarsWihtoutParams :: [MaruSymbol] -> SExpr -> MaruEvaluator SExpr
+    expandVarsWihtoutParams _ (AtomSymbol "+") = return $ AtomSymbol "+"
+    expandVarsWihtoutParams _ (AtomSymbol "-") = return $ AtomSymbol "-"
+    expandVarsWihtoutParams _ (AtomSymbol "*") = return $ AtomSymbol "*"
+    expandVarsWihtoutParams _ (AtomSymbol "/") = return $ AtomSymbol "/"
+    expandVarsWihtoutParams _ Nil = return Nil
+    expandVarsWihtoutParams _ (AtomInt x) = return $ AtomInt x
+    expandVarsWihtoutParams _ (AtomBool x) = return $ AtomBool x
+    expandVarsWihtoutParams params' (Cons x y) = Cons <$> expandVarsWihtoutParams params' x <*> expandVarsWihtoutParams params' y
+    expandVarsWihtoutParams params' (AtomSymbol var) =
+      if var `elem` params' then return $ AtomSymbol var
+                            else lookupVar var >>= expandVarsWihtoutParams params'
 
 
 --NOTE: 'params' means dummy arguments, 'args' means real arguments
