@@ -172,7 +172,12 @@ type MaruScopesAssociation = Associate MaruScopesKey MaruScopesValue
 -- )
 type MaruEnv = NonEmpty MaruScope
 
--- | Insert a variable to the toplevel scope
+-- |
+-- Insert a variable to the toplevel scope
+--
+-- >>> (_, env, _) <- flip runMaruEvaluator E.initialEnv $ insertGlobalVar "x" (AtomInt 10)
+-- >>> lookup "x" env
+-- Just (AtomInt 10)
 insertGlobalVar :: MaruScopesAssociation xs => MaruSymbol -> SExpr -> Eff xs ()
 insertGlobalVar sym val = do
   env <- getMaruEnv
