@@ -6,6 +6,7 @@ module Steps.Step4Test where
 import Data.Semigroup ((<>))
 import Maru.Type (SExpr(..), readable)
 import MaruTest
+import System.IO.Silently (capture_)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=), assertFailure)
 import qualified Maru.Eval as E
@@ -109,6 +110,24 @@ test_fn_macro =
       [ "(let* (x 10) (def! f (fn* (a) x)))"
       , "(f 0)"
       ] `shouldBeEvaluatedTo'` "10"
+  ]
+
+
+test_print_macro :: [TestTree]
+test_print_macro =
+  [ testCase "prints a S expression on th screen" $ do
+      captured <- capture_ $ runCodeInstantly "(print 10)"
+      captured @?= "10"
+
+      captured <- capture_ $ runCodes E.initialEnv [ "(def! x 10)"
+                                                   , "(print x)"
+                                                   ]
+      captured @?= "10"
+  , testCase "returns ()" $
+      "(print 10)" `shouldBeEvaluatedTo` "()"
+  , testCase "prints nothing if anything are not taken" $ do
+      captured <- capture_ $ runCodeInstantly "(print)"
+      captured @?= ""
   ]
 
 
