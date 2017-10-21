@@ -22,6 +22,7 @@ import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (Text)
 import Maru.Type
+import System.IO.Silently (silence)
 import Test.Tasty.HUnit (Assertion, assertFailure, (@?=))
 import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as E
@@ -103,7 +104,7 @@ shouldBeEvaluatedTo code expected = do
 -- | Similar to 'shouldBeEvaluatedTo' (comparison) and 'runCodes' (multi codes)
 shouldBeEvaluatedTo' :: NonEmpty SourceCode -> SourceCode -> Assertion
 shouldBeEvaluatedTo' codes expected = do
-  actual <- runCodes E.initialEnv codes <&> view (_1 . to readable)
+  actual <- silence $ runCodes E.initialEnv codes <&> view (_1 . to readable)
   actual @?= expected
 
 
