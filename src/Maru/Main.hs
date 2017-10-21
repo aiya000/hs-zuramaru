@@ -20,7 +20,7 @@ module Maru.Main
   ) where
 
 import Control.Exception.Safe (SomeException)
-import Control.Lens (view, (%=), (.=), Iso', iso, _1)
+import Control.Lens (view, (%=), (.=), Iso', iso)
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
@@ -88,10 +88,6 @@ data ReplState = ReplState
 
 makeLensesA ''ReplState
 
--- | Make an empty value of `ReplState`
-makeInitialReplState :: CliOptions -> ReplState
-makeInitialReplState opt = ReplState opt E.initialEnv emptyDebugLog
-
 
 -- | For Lens Accessors
 instance Associate "stateRepl" (State ReplState) xs => MonadState ReplState (Eff xs) where
@@ -111,7 +107,10 @@ type Evaluator = MaruEnv -> SExpr -> IO (Either SomeException (SExpr, MaruEnv, S
 
 -- | Run REPL of zuramaru
 runRepl :: IO ()
-runRepl = void $ retractEff @ IOEffKey repl
+runRepl = do
+  options <- cmdArgs cliOptions
+  let initialState = ReplState options E.initialEnv emptyDebugLog
+  void . retractEff @ IOEffKey $ runStateEff @ "stateRepl" repl initialState
 
 -- |
 -- Do 'Loop' of 'Read', 'eval', and 'Print',
@@ -121,11 +120,10 @@ runRepl = void $ retractEff @ IOEffKey repl
 --
 -- If some command line arguments are given, enable debug mode.
 -- Debug mode shows the parse and the evaluation's optionally result.
-repl :: Eff '[IOEff] ()
+repl :: Eff '["stateRepl" >: State ReplState, IOEff] ()
 repl = do
-  options <- liftIOEff $ cmdArgs cliOptions
-  let initialState = makeInitialReplState options
-  loopIsRequired <- view (_1 . _iso) <$> runStateEff @ "stateRepl" (runMaybeEff @ "maybe" rep) initialState
+  loopIsRequired <- view _iso <$> runMaybeEff @ "maybe" rep
+  modifyEff #stateRepl $ \x -> x { replLogs = emptyDebugLog }
   when loopIsRequired repl
 
 -- |
