@@ -1,5 +1,7 @@
 import Test.DocTest (doctest)
 
+--TODO: These test may return the correctly return code constantly. Return the failure result if it is failed
+
 main :: IO ()
 main = do
   doctestIt "src/Maru/Type/SExpr.hs" ["src/Maru/Parser.hs"]
@@ -9,4 +11,7 @@ main = do
 
 
 doctestIt :: FilePath -> [FilePath] -> IO ()
-doctestIt path dependencies = doctest $ dependencies ++ [path]
+doctestIt path dependencies = do
+  putStrLn $ path ++ ":"
+  doctest $ dependencies ++ [path]
+  putStrLn ""
