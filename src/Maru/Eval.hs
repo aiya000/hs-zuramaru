@@ -35,6 +35,7 @@ import Maru.Type
 import Prelude hiding (fail)
 import TextShow (showt)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import qualified Maru.Eval.RuntimeOperation as OP
 import qualified Maru.Type.SExpr as MSym (pack)
 
@@ -66,6 +67,7 @@ initialEnv = [[ ("nil", Nil)
               , ("do", AtomSymbol "#core-macro")
               , ("if", AtomSymbol "#core-macro")
               , ("fn*", AtomSymbol "#core-macro")
+              , ("print", AtomSymbol "#core-macro")
               ]]
 
 
@@ -129,6 +131,7 @@ execute (Cons (Cons (AtomSymbol "fn*") (Cons params (Cons body Nil))) args) = ex
 execute (Cons (AtomSymbol "fn*") s) = execMacro binding s
 -- `hi-maru-env` for debug
 execute (Cons (AtomSymbol "hi-maru-env") Nil) = execMacro hiMaruEnv Nil
+execute (Cons (AtomSymbol "print") s) = execMacro print_ s
 execute sexpr = execMacro call sexpr
 
 
@@ -398,3 +401,14 @@ hiMaruEnv :: MaruMacro
 hiMaruEnv = MaruMacro $ \_ ->
   --TODO: AtomSymbol is not the string literal !! Implement string literal
   AtomSymbol . MSym.pack . show <$> getMaruEnv
+
+
+-- | Print nothing or a S expression on the screen
+print_ :: MaruMacro
+print_ = MaruMacro $ nilOf . \case
+  Nil -> liftIOEff $ putStr ""
+  Cons s Nil -> liftIOEff . T.putStr . readable =<< execute s
+  x -> returnInvalid "print" x
+  where
+    nilOf :: MaruEvaluator a -> MaruEvaluator SExpr
+    nilOf x = x >> return Nil
