@@ -36,6 +36,7 @@ import Prelude hiding (fail)
 import TextShow (showt)
 import qualified Data.Text as T
 import qualified Maru.Eval.RuntimeOperation as OP
+import qualified Maru.Type.SExpr as MSym (pack)
 
 --TODO: Define an alias for `flip runMaruEvaluator initialEnv` to here, and use it in each doctest
 -- $setup
@@ -119,6 +120,8 @@ execute (Cons (AtomSymbol "if") s) = execMacro if_ s
 execute (Cons (Cons (AtomSymbol "fn*") (Cons params (Cons body Nil))) args) = execMacro funcall $ Cons params (Cons body (Cons args Nil))
 -- the forms of '(fn* xxx yyy)' of '(let* (f (fn* xxx yyy)))' are evaluated
 execute (Cons (AtomSymbol "fn*") s) = execMacro binding s
+-- `hi-maru-env` for debug
+execute (Cons (AtomSymbol "hi-maru-env") Nil) = execMacro hiMaruEnv Nil
 execute sexpr = execMacro call sexpr
 
 
@@ -379,3 +382,12 @@ funcall = MaruMacro $ \s -> case flatten s of
     let mapping = map (uncurry substituteVar) $ zip mappee mapper
     execute $ foldl' (&) body mapping
   _  -> returnInvalid "fn* (callee)" s
+
+
+-- |
+-- For debug.
+-- Take out 'MaruEnv' of 'MaruScopes' as the list of cons.
+hiMaruEnv :: MaruMacro
+hiMaruEnv = MaruMacro $ \_ ->
+  --TODO: AtomSymbol is not the string literal !! Implement string literal
+  AtomSymbol . MSym.pack . show <$> getMaruEnv
