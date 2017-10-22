@@ -134,6 +134,14 @@ test_print_macro =
   ]
 
 
+test_list_macro :: [TestTree]
+test_list_macro =
+  [ testCase "makes a list with the taken arguments" $ do
+      "(list)" `shouldBeEvaluatedTo` "()"
+      "(list 1 2 3)" `shouldBeEvaluatedTo` "(1 2 3)"
+  ]
+
+
 test_my_another_things :: [TestTree]
 test_my_another_things =
   [ testCase "`(x)` happens an exception (because the form of `(x)` expects `x` is the symbol of the function or the macro)" $ do
