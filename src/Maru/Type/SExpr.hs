@@ -62,6 +62,7 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
            | AtomInt Int      -- ^ A pattern of the atom for `Int`
            | AtomBool Bool    -- ^ A pattern of the atom for `Bool`
            | AtomSymbol MaruSymbol -- ^ A pattern of the atom for `MaruSymbol`
+           | Quote SExpr -- ^ Delays the evaluation of a 'SExpr'
   deriving (Show, Eq)
 
 -- |
