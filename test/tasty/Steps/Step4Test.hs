@@ -139,6 +139,8 @@ test_list_macro =
   [ testCase "makes a list with the taken arguments" $ do
       "(list)" `shouldBeEvaluatedTo` "()"
       "(list 1 2 3)" `shouldBeEvaluatedTo` "(1 2 3)"
+  , testCase "evaluates each arguments" $
+      "(list (+ 1 2) (+ 3 4))" `shouldBeEvaluatedTo` "(3 7)"
   ]
 
 
