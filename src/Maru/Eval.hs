@@ -69,6 +69,7 @@ initialEnv = [[ ("nil", Nil)
               , ("if", AtomSymbol "#core-macro")
               , ("fn*", AtomSymbol "#core-macro")
               , ("print", AtomSymbol "#core-macro")
+              , ("list", AtomSymbol "#core-macro")
               ]]
 
 
@@ -133,6 +134,7 @@ execute (Cons (AtomSymbol "fn*") s) = execMacro binding s
 -- `hi-maru-env` for debug
 execute (Cons (AtomSymbol "hi-maru-env") Nil) = execMacro hiMaruEnv Nil
 execute (Cons (AtomSymbol "print") s) = execMacro print_ s
+execute (Cons (AtomSymbol "list") s) = execMacro list s
 execute sexpr = execMacro call sexpr
 
 
@@ -420,3 +422,8 @@ print_ = MaruMacro $ nilOf . \case
 
     (<<>>) :: Text -> Text -> Text
     x <<>> y = x <> "\n" <> y
+
+
+-- | Make a list with arguments
+list :: MaruMacro
+list = MaruMacro $ fmap scottEncode . mapM execute . flatten
