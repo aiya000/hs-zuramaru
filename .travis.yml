@@ -17,4 +17,5 @@ before_install:
  - stack setup
 
 script:
- - stack test
+  - stack test :unit-test
+  - stack test :integrate-test
