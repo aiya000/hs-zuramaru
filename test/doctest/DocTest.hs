@@ -1,5 +1,6 @@
 import Test.DocTest (doctest)
 
+--TODO: Find all .hs in ./src, and doctest it
 
 main :: IO ()
 main = do
