@@ -28,6 +28,7 @@ import Data.Extensible
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
+import Maru.Preprocessor (preprocess)
 import Maru.TH (makeLensesA)
 import Maru.Type
 import Safe (tailMay)
@@ -175,12 +176,12 @@ evalPhase code = do
                               else fakeEval
   case Parser.debugParse code of
     (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
-    (Right sexpr, logs) -> do
+    (Right cSexpr, logs) -> do
       let logs'  = map unParseLog logs
-          newLog = "parse result: " <> showt sexpr
+          newLog = "parse result: " <> showt cSexpr
       replLogsA . evalLogsA %= (++ newLog : logs')
       env        <- gets replEnv
-      evalResult <- liftIOEff $ eval' env sexpr
+      evalResult <- liftIOEff . eval' env $ preprocess cSexpr
       case evalResult of
         Left evalErrorResult -> return $ EvalError evalErrorResult
         Right (result, newEnv, steps) -> do

@@ -1,13 +1,22 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 
 
 -- | Common types for zuramaru
 module Maru.Type.SExpr
   ( SourceCode
   , MaruToken
+  , CallowSExpr(..)
+  , pattern Cons'
+  , pattern Nil'
+  , pattern AtomInt'
+  , pattern AtomBool'
+  , pattern AtomSymbol'
+  , pattern Quote'
   , SExpr(..)
   , isAtomInt
   , unAtomInt
@@ -21,6 +30,7 @@ module Maru.Type.SExpr
   , asSymbolList
   , scottEncode
   , scottDecode
+  , scottEncode'
   , _Cons
   , _Nil
   , _AtomInt
@@ -29,7 +39,7 @@ module Maru.Type.SExpr
   , intBullet
   ) where
 
-import Control.Lens (makePrisms, Prism', prism)
+import Control.Lens hiding (_Cons)
 import Data.List (foldl')
 import Data.MonoTraversable (MonoFunctor(..), Element)
 import Data.Monoid ((<>))
@@ -46,6 +56,7 @@ import qualified TextShow as TS
 -- >>> :set -XOverloadedStrings
 -- >>> import Control.Lens ((^?))
 -- >>> import Maru.Parser (parse)
+-- >>> import Maru.Preprocessor (preprocess)
 
 -- |
 -- The format for the code of maru.
@@ -54,6 +65,43 @@ type SourceCode = Text
 
 -- | The format for the token of `MaruParser`
 type MaruToken = P.Token Text
+
+
+-- |
+-- Never preprocessed ('Maru.Preprocessor.preprocess') 'SExpr',
+-- this is used only between the parser and the preprocessor.
+--
+-- This should not be used in the evaluator,
+-- and use 'SExpr' instead of this in the evaluator.
+--
+-- This is simply isomorphic with 'SExpr', please see 'SExpr' the about of this.
+data CallowSExpr = CallowSExpr { growUp :: SExpr }
+  deriving (Show, Eq)
+
+pattern Cons' :: CallowSExpr -> CallowSExpr -> CallowSExpr
+pattern Cons' x y <- CallowSExpr (Cons (CallowSExpr -> x) (CallowSExpr -> y))
+  where
+    Cons' x y = CallowSExpr (Cons (growUp x) (growUp y))
+
+pattern Nil' :: CallowSExpr
+pattern Nil' = CallowSExpr Nil
+
+pattern AtomInt' :: Int -> CallowSExpr
+pattern AtomInt' x = CallowSExpr (AtomInt x)
+
+pattern AtomBool' :: Bool -> CallowSExpr
+pattern AtomBool' x = CallowSExpr (AtomBool x)
+
+pattern AtomSymbol' :: MaruSymbol -> CallowSExpr
+pattern AtomSymbol' x = CallowSExpr (AtomSymbol x)
+
+pattern Quote' :: CallowSExpr -> CallowSExpr
+pattern Quote' x <- x
+  where
+    Quote' (CallowSExpr x) = CallowSExpr (Quote x)
+
+instance TextShow CallowSExpr where
+  showb = showb . growUp
 
 
 -- | n-ary tree and terms
@@ -184,23 +232,25 @@ instance SExprLike Text where
 
 
 -- |
--- Show `SExpr` as the human readable syntax.
+-- Show 'SExpr' as the human readable syntax.
 -- This is the inverse function of the parser,
 -- if the format is ignored (e.g. '( +  1 2)` =~ '(+ 1 2)').
 --
--- >>> readable <$> parse "10"
+-- vvv invertibilities for 'SExpr' vvv
+--
+-- >>> readable . preprocess <$> parse "10"
 -- Right "10"
--- >>> parse . readable $ AtomInt 10
+-- >>> (preprocess <$>) . parse . readable $ AtomInt 10
 -- Right (AtomInt 10)
 --
--- >>> readable <$> parse "true"
+-- >>> readable . preprocess <$> parse "true"
 -- Right "true"
--- >>> parse . readable $ AtomBool True
+-- >>> (preprocess <$>) . parse . readable $ AtomBool True
 -- Right (AtomBool True)
 --
--- >>> readable <$> parse "(+ 1 2)"
+-- >>> readable . preprocess <$> parse "(+ 1 2)"
 -- Right "(+ 1 2)"
--- >>> let result = parse . readable $ Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))
+-- >>> let result = (preprocess <$>) . parse . readable $ Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))
 -- >>> result == Right (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
 -- True
 readable :: SExpr -> Text
@@ -235,7 +285,8 @@ scottEncode :: [SExpr] -> SExpr
 scottEncode [] = Nil
 scottEncode (x:xs) = Cons x $ scottEncode xs
 
--- | The inverse function of `scottEncode`
+-- |
+-- The inverse function of `scottEncode`
 --
 -- >>> let xs = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
 -- >>> scottDecode xs
@@ -250,6 +301,11 @@ scottDecode Nil = []
 scottDecode (AtomSymbol x) = [AtomSymbol x]
 scottDecode (AtomInt x) = [AtomInt x]
 scottDecode (AtomBool x) = [AtomBool x]
+scottDecode (Quote x) = [Quote x]
+
+-- | Same as 'scottEncode' but for 'CallowSExpr'
+scottEncode' :: [CallowSExpr] -> CallowSExpr
+scottEncode' = dimap (map growUp) CallowSExpr scottEncode
 
 
 makePrisms ''SExpr

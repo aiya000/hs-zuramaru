@@ -27,6 +27,7 @@ import Test.Tasty.HUnit (Assertion, assertFailure, (@?=))
 import qualified Data.Text.IO as TIO
 import qualified Maru.Eval as E
 import qualified Maru.Parser as P
+import qualified Maru.Preprocessor as Pr
 
 -- |
 -- `ParseError` gives a cause of the parse error.
@@ -75,7 +76,7 @@ runCodes env (code:|codes) = do
 -- If all procedure is succeed, return `Succeed`.
 runCodeWithSteps :: MaruEnv -> SourceCode -> IO StoppedPoint
 runCodeWithSteps env code = do
-  result <- mapM (E.eval env) $ P.parse code
+  result <- mapM (E.eval env . Pr.preprocess) $ P.parse code
   case result of
     Left e                  -> return . ParseError $ show e
     Right (Left e)          -> return . EvalError $ show e

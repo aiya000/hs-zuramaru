@@ -2,7 +2,7 @@
 
 module Steps.Step7Test where
 
-import Maru.Type (SExpr(..))
+import Maru.Type
 import MaruTest
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -12,18 +12,20 @@ import qualified Maru.Preprocessor as Pre
 test_quote_prefix :: [TestTree]
 test_quote_prefix =
   [ testCase "(e.g. `'1') is parsed to 'Quote (AtomInt 1)`" $ do
-      P.parse "'1" @?= Right (Quote (AtomInt 1))
-      P.parse "'a" @?= Right (Quote (AtomSymbol "a"))
-      P.parse "'(1 2)" @?= Right (Quote (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+      P.parse "'1" @?= Right (Quote' (AtomInt' 1))
+      P.parse "'a" @?= Right (Quote' (AtomSymbol' "a"))
+      P.parse "'(1 2)" @?= Right (Quote' (Cons' (AtomInt' 1) (Cons' (AtomInt' 2) Nil')))
   ]
 
 test_quote_symbol :: [TestTree]
 test_quote_symbol =
   [ testCase "(e.g. 'Cons (AtomSymbol \"quote\") (Cons x Nil)') is preprocessed to 'Quote x'" $ do
-      let x = AtomInt 1
-      Pre.preprocess (Cons (AtomSymbol "quote") (Cons x Nil)) @?= Quote x
-      let xs = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
-      Pre.preprocess (Cons (AtomSymbol "quote") (Cons xs Nil)) @?= Quote xs
+      let x  = AtomInt 1
+          x' = CallowSExpr x
+      Pre.preprocess (Cons' (AtomSymbol' "quote") (Cons' x' Nil')) @?= Quote x
+      let xs  = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
+          xs' = CallowSExpr xs
+      Pre.preprocess (Cons' (AtomSymbol' "quote") (Cons' xs' Nil')) @?= Quote xs
   ]
 
 test_quote_macro :: [TestTree]

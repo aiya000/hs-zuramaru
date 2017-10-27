@@ -4,14 +4,15 @@
 module Steps.Step1Test where
 
 import Data.Text (Text)
+import Maru.Parser (parse, parseErrorPretty)
+import Maru.Preprocessor (preprocess)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, assertFailure, (@?=), Assertion)
-import qualified Maru.Parser as Parser
 import qualified Maru.Type as MT
 
 -- | See https://github.com/kanaka/mal/blob/master/process/guide.md#step-1-read-and-print
-test_parser_and_printer_converts_left_to_right :: [TestTree]
-test_parser_and_printer_converts_left_to_right =
+test_parser_and_preprocessor_and_printer_converts_left_to_right :: [TestTree]
+test_parser_and_preprocessor_and_printer_converts_left_to_right =
   [ testCase "'123' -> '123'" $ "123" `isConvertedTo` "123"
   , testCase "'abc' -> 'abc'" $ "abc" `isConvertedTo` "abc"
   , testCase "'(123 456)' -> '(123 456)'" $ "(123 456)" `isConvertedTo` "(123 456)"
@@ -21,8 +22,8 @@ test_parser_and_printer_converts_left_to_right =
   where
     isConvertedTo :: Text -> Text -> Assertion
     isConvertedTo code expected =
-      case Parser.parse code of
-        Left  e     -> assertFailure $ "The parse is failed: " ++ Parser.parseErrorPretty e
+      case preprocess <$> parse code of
+        Left  e     -> assertFailure $ "The parse is failed: " ++ parseErrorPretty e
         Right sexpr -> MT.readable sexpr @?= expected
 
     myAddtionalTest :: [TestTree]

@@ -21,7 +21,7 @@ import qualified Data.Text.IO as TIO
 import qualified Maru.Type.SExpr as MTS
 import qualified Text.Megaparsec as P
 
-type ParseResult = Either ParseErrorResult SExpr
+type ParseResult = Either ParseErrorResult CallowSExpr
 
 
 -- | Parse code to AST, and show AST and logs
@@ -49,15 +49,23 @@ parseErrorPretty :: ParseErrorResult -> String
 parseErrorPretty = P.parseErrorPretty
 
 
-sexprParser :: MaruParser SExpr
+sexprParser :: MaruParser CallowSExpr
 sexprParser = do
   P.space
-  atomParser <|> listParser
+  quoteParser <<> atomParser <<> listParser
   where
-    atomParser :: MaruParser SExpr
+    -- but "(quote x)" is not parsed to `Quote (AtomSymbol "x")` in here,
+    -- it is parsed to `Cons (AtomSymbol "quote") (Cons (AtomSymbol "x") Nil)`
+    -- in the outer of here
+    quoteParser :: MaruParser CallowSExpr
+    quoteParser = do
+      P.char '\''
+      Quote' <$> sexprParser
+
+    atomParser :: MaruParser CallowSExpr
     atomParser = (numberParser <<> boolParser <<> symbolParser) <* P.space
 
-    listParser :: MaruParser SExpr
+    listParser :: MaruParser CallowSExpr
     listParser = do
       P.char '('
       P.space
@@ -65,30 +73,30 @@ sexprParser = do
       P.space
       P.char ')'
       P.space
-      return $ scottEncode xs
+      return $ scottEncode' xs
 
-    numberParser :: MaruParser SExpr
+    numberParser :: MaruParser CallowSExpr
     numberParser = naturalNumberParser <<> positiveNumberParser <<> negativeNumberParser
 
-    boolParser :: MaruParser SExpr
-    boolParser = return . AtomBool =<< judgeBool =<< P.string "true" <|> P.string "false"
+    boolParser :: MaruParser CallowSExpr
+    boolParser = return . AtomBool' =<< judgeBool =<< P.string "true" <|> P.string "false"
 
-    symbolParser :: MaruParser SExpr
-    symbolParser = return . AtomSymbol . MTS.pack =<< P.some (P.noneOf ['\'', '(', ')', ' '])
+    symbolParser :: MaruParser CallowSExpr
+    symbolParser = return . AtomSymbol' . MTS.pack =<< P.some (P.noneOf ['\'', '(', ')', ' '])
 
-    naturalNumberParser :: MaruParser SExpr
-    naturalNumberParser = return . AtomInt =<< read' =<< P.some P.digitChar
+    naturalNumberParser :: MaruParser CallowSExpr
+    naturalNumberParser = return . AtomInt' =<< read' =<< P.some P.digitChar
 
-    positiveNumberParser :: MaruParser SExpr
+    positiveNumberParser :: MaruParser CallowSExpr
     positiveNumberParser = do
       P.char '+'
       numberParser
 
-    negativeNumberParser :: MaruParser SExpr
+    negativeNumberParser :: MaruParser CallowSExpr
     negativeNumberParser = do
       P.char '-'
       txt <- P.some P.digitChar
-      AtomInt . negate <$> read' txt
+      AtomInt' . negate <$> read' txt
 
 
 -- |

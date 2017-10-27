@@ -1,10 +1,10 @@
--- | 'SExpr' preprocessor
+-- | The preprocessor between 'CallowSExpr' and 'SExpr'
 module Maru.Preprocessor
   ( preprocess
   ) where
 
-import Maru.Type (SExpr(..))
+import Maru.Type (CallowSExpr(..), SExpr(..))
 
 -- | Process a 'SExpr' to the desired form before 'Maru.Eval.eval'
-preprocess :: SExpr -> SExpr
+preprocess :: CallowSExpr -> SExpr
 preprocess = undefined
