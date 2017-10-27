@@ -114,6 +114,7 @@ flatten (AtomInt x)    = [AtomInt x]
 flatten (AtomBool x)   = [AtomBool x]
 flatten (AtomSymbol x) = [AtomSymbol x]
 flatten (Cons x y)     = [x] ++ flatten y
+flatten (Quote x)      = [Quote x]
 
 
 -- |
@@ -185,6 +186,16 @@ letStar = MaruMacro $ \case
 -- >>> (result', _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro call (AtomSymbol "*y*")
 -- >>> result' == result
 -- True
+--
+-- the quote
+--
+-- >>> (of10, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro call (Quote (AtomInt 10))
+-- >>> of10
+-- Right (AtomInt 10)
+--
+-- >>> (ofSym, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro call (Quote (AtomSymbol "some---symbol"))
+-- >>> ofSym
+-- Right (AtomSymbol "some---symbol")
 call :: MaruMacro
 -- Extract a value
 call = MaruMacro call'
@@ -193,6 +204,7 @@ call = MaruMacro call'
     call' (AtomInt x)    = return $ AtomInt x
     call' (AtomBool x)   = return $ AtomBool x
     call' Nil            = return Nil
+    call' (Quote x)      = return x
 
     -- Look up the value from the current environment
     call' (AtomSymbol sym) =
@@ -364,6 +376,7 @@ binding = MaruMacro $ \case
     expandVarsWihtoutParams _ Nil = return Nil
     expandVarsWihtoutParams _ (AtomInt x) = return $ AtomInt x
     expandVarsWihtoutParams _ (AtomBool x) = return $ AtomBool x
+    expandVarsWihtoutParams _ (Quote x) = return $ Quote x
     expandVarsWihtoutParams params' (Cons x y) = Cons <$> expandVarsWihtoutParams params' x <*> expandVarsWihtoutParams params' y
     expandVarsWihtoutParams params' (AtomSymbol var) =
       if var `elem` params' then return $ AtomSymbol var

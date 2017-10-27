@@ -216,6 +216,7 @@ readable (AtomSymbol (MaruSymbol x)) = x
 readable (AtomInt x) = showt x
 readable (AtomBool True) = "true"
 readable (AtomBool False) = "false"
+readable (Quote x) = "(quote " <> showt x <> ")"
 
 
 -- |

@@ -385,6 +385,12 @@ lookupVar sym = do
 -- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomSymbol "x") >> expandVars (AtomSymbol "y")
 -- >>> sexpr
 -- Right (AtomInt 10)
+--
+-- the quote is kept
+--
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ expandVars (Quote (AtomSymbol "xxx"))
+-- >>> sexpr
+-- Right (Quote (AtomSymbol "xxx"))
 expandVars :: (MaruScopesAssociation xs, FailAssociation xs) => SExpr -> Eff xs SExpr
 expandVars (AtomSymbol "+") = return $ AtomSymbol "+"
 expandVars (AtomSymbol "-") = return $ AtomSymbol "-"
@@ -395,6 +401,7 @@ expandVars (AtomInt x) = return $ AtomInt x
 expandVars (AtomBool x) = return $ AtomBool x
 expandVars (Cons x y) = Cons <$> expandVars x <*> expandVars y
 expandVars (AtomSymbol var) = lookupVar var >>= expandVars
+expandVars (Quote x) = return $ Quote x
 
 
 -- |
@@ -414,4 +421,5 @@ substituteVar var val (AtomSymbol var') =
 substituteVar _ _ Nil = Nil
 substituteVar _ _ (AtomInt x) = AtomInt x
 substituteVar _ _ (AtomBool x) = AtomBool x
+substituteVar _ _ (Quote x) = Quote x
 substituteVar var val (Cons x y) = Cons (substituteVar var val x) (substituteVar var val y)
