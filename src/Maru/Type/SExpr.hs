@@ -272,13 +272,21 @@ readable (Quote x) = "(quote " <> showt x <> ")"
 -- |
 -- Concatenate `SExpr` by `Cons`
 --
--- >>> let xs = [(AtomInt 1), (Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil)] -- [1, (2 3)]
+-- [1, (2 3)]
+--
+-- >>> xs = [AtomInt 1, Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil] :: [SExpr]
 -- >>> scottEncode xs
 -- Cons (AtomInt 1) (Cons (Cons (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)) Nil) Nil)
--- >>> let ys = [AtomInt 1, AtomInt 2, AtomInt 3] -- [1, 2, 3]
+--
+-- [1, 2, 3]
+--
+-- >>> ys = [AtomInt 1, AtomInt 2, AtomInt 3] :: [SExpr]
 -- >>> scottEncode ys
 -- Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
--- >>> let zs = [AtomInt 1, Nil] -- [1, ()]
+--
+-- [1, ()]
+--
+-- >>> zs = [AtomInt 1, Nil] :: [SExpr]
 -- >>> scottEncode zs
 -- Cons (AtomInt 1) (Cons Nil Nil)
 scottEncode :: [SExpr] -> SExpr
