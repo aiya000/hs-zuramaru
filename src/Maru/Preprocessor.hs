@@ -12,7 +12,7 @@ import Maru.Type
 --
 -- Regard the symbol of "quote" to a quote macro
 --
--- >>> preprocess $ Cons' (AtomSymbol' "quote") (Cons' (AtomInt 10) Nil')
+-- >>> preprocess $ Cons' (AtomSymbol' "quote") (Cons' (AtomInt' 10) Nil')
 -- Quote (AtomInt 10)
 preprocess :: CallowSExpr -> SExpr
 preprocess (Cons' (AtomSymbol' "quote") (Cons' x Nil')) = Quote $ growUp x
