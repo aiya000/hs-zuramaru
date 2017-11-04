@@ -20,7 +20,7 @@ module Maru.Main
   ) where
 
 import Control.Exception.Safe (SomeException)
-import Control.Lens (view, (%=), (.=), Iso', iso)
+import Control.Lens (view, (%=), (<>=), (.=), Iso', iso)
 import Control.Monad (mapM, when, void, forM_)
 import Control.Monad.State.Class (MonadState(..), gets)
 import Data.Data (Data)
@@ -176,12 +176,15 @@ evalPhase code = do
                               else fakeEval
   case Parser.debugParse code of
     (Left parseErrorResult, _) -> return $ ParseError parseErrorResult
-    (Right cSexpr, logs) -> do
-      let logs'  = map unParseLog logs
-          newLog = "parse result: " <> showt cSexpr
-      replLogsA . evalLogsA %= (++ newLog : logs')
+    (Right sexpr', xs) -> do
+      let parseLogs = map unParseLog xs
+          parseLog = "parse result: " <> showt sexpr'
+      let sexpr    = preprocess sexpr'
+          preprLog = "preprocess result: " <> showt sexpr
+      replLogsA . evalLogsA <>= (parseLog : parseLogs)
+      replLogsA . evalLogsA <>= [preprLog]
       env        <- gets replEnv
-      evalResult <- liftIOEff . eval' env $ preprocess cSexpr
+      evalResult <- liftIOEff $ eval' env sexpr
       case evalResult of
         Left evalErrorResult -> return $ EvalError evalErrorResult
         Right (result, newEnv, steps) -> do
