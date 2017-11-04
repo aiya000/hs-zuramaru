@@ -34,8 +34,8 @@ test_quote_macro =
       "(quote (1 2 3))" `shouldBeEvaluatedTo` "(1 2 3)"
       "(quote (quote 2))" `shouldBeEvaluatedTo` "(quote 2)"
       "(quote (10 (quote 20)))" `shouldBeEvaluatedTo` "(10 (quote 20))"
-  , testCase "is meant by `'` prefix" $ do
+  , testCase "can be meant by `'` prefix" $ do
       "'(1 2 3)" `shouldBeEvaluatedTo` "(1 2 3)"
-      "'1" `shouldBeEvaluatedTo` "(quote 1)"
-      "''2" `shouldBeEvaluatedTo` "(quote (quote 2))"
+      "''2" `shouldBeEvaluatedTo` "(quote 2)"
+      "'(10 '20)" `shouldBeEvaluatedTo` "(10 (quote 20))"
   ]
