@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,1)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-7"></a><span class="hs-comment">{-|
+Module:      TextShow.GHC.Stack
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for 'CallStack' and 'SrcLoc' values.
+Only provided if using @base-4.8.1.0@ or later.
+
+/Since: 3.0.1/
+-}</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stack</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,1)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stack</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">CallStack</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-cpp"># if MIN_VERSION_base(4,9,0)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stack</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">SrcLoc</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">getCallStack</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">SrcLoc</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">SrcLoc</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Char.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.List.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Tuple.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Tuple</span></a><span>    </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-cpp"># if MIN_VERSION_base(4,9,0)</span><span>
+</span><a name="line-38"></a><span class="hs-comment">-- | /Since: 3.0.1/</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CallStack</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-40"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showb"><span class="hs-identifier hs-var">showb</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">getCallStack</span><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-42"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-43"></a><span class="hs-comment">-- | /Since: 3.0.1/</span><span>
+</span><a name="line-44"></a><span class="hs-operator">$</span><span class="hs-special">(</span><span class="hs-identifier">deriveTextShow</span><span> </span><span class="hs-char">''CallStack)
+# endif
+
+-- | /Since: 3.0.1/
+$(deriveTextShow ''SrcLoc)
+#endif
+</span></pre></body></html>

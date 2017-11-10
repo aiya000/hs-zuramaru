@@ -1,0 +1,370 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP                      #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE ForeignFunctionInterface #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings        #-}</span><span>
+</span><a name="line-4"></a><span class="hs-comment">{-|
+Module:      TextShow.Debug.Trace
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Functions for tracing and monitoring execution.
+
+These can be useful for investigating bugs or performance problems.
+They should /not/ be used in production code.
+
+If you do not wish to require 'TextShow' instances for your @trace@ functions,
+the &quot;TextShow.Debug.Trace.TH&quot; and &quot;Text.Show.Text.Debug.Trace.Generic&quot; modules
+exist to convert the input to a debug message using Template Haskell or generics,
+respectively.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Debug</span><span class="hs-operator">.</span><span class="hs-identifier">Trace</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-25"></a><span>      </span><span class="hs-comment">-- * Tracing</span><span>
+</span><a name="line-26"></a><span>      </span><span class="hs-comment">-- $tracing</span><span>
+</span><a name="line-27"></a><span>      </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span>
+</span><a name="line-28"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetl"><span class="hs-identifier hs-var">tracetl</span></a><span>
+</span><a name="line-29"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetId"><span class="hs-identifier hs-var">tracetId</span></a><span>
+</span><a name="line-30"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlId"><span class="hs-identifier hs-var">tracetlId</span></a><span>
+</span><a name="line-31"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#traceTextShow"><span class="hs-identifier hs-var">traceTextShow</span></a><span>
+</span><a name="line-32"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#traceTextShowId"><span class="hs-identifier hs-var">traceTextShowId</span></a><span>
+</span><a name="line-33"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-34"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetStack"><span class="hs-identifier hs-var">tracetStack</span></a><span>
+</span><a name="line-35"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlStack"><span class="hs-identifier hs-var">tracetlStack</span></a><span>
+</span><a name="line-36"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-37"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetIO"><span class="hs-identifier hs-var">tracetIO</span></a><span>
+</span><a name="line-38"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlIO"><span class="hs-identifier hs-var">tracetlIO</span></a><span>
+</span><a name="line-39"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetM"><span class="hs-identifier hs-var">tracetM</span></a><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlM"><span class="hs-identifier hs-var">tracetlM</span></a><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#traceTextShowM"><span class="hs-identifier hs-var">traceTextShowM</span></a><span>
+</span><a name="line-42"></a><span>
+</span><a name="line-43"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-44"></a><span>      </span><span class="hs-comment">-- * Eventlog tracing</span><span>
+</span><a name="line-45"></a><span>      </span><span class="hs-comment">-- $eventlog_tracing</span><span>
+</span><a name="line-46"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetEvent"><span class="hs-identifier hs-var">tracetEvent</span></a><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlEvent"><span class="hs-identifier hs-var">tracetlEvent</span></a><span>
+</span><a name="line-48"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetEventIO"><span class="hs-identifier hs-var">tracetEventIO</span></a><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlEventIO"><span class="hs-identifier hs-var">tracetlEventIO</span></a><span>
+</span><a name="line-50"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-51"></a><span class="hs-cpp">#if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-52"></a><span>      </span><span class="hs-comment">-- * Execution phase markers</span><span>
+</span><a name="line-53"></a><span>      </span><span class="hs-comment">-- $markers</span><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetMarker"><span class="hs-identifier hs-var">tracetMarker</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlMarker"><span class="hs-identifier hs-var">tracetlMarker</span></a><span>
+</span><a name="line-56"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetMarkerIO"><span class="hs-identifier hs-var">tracetMarkerIO</span></a><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.html#tracetlMarkerIO"><span class="hs-identifier hs-var">tracetlMarkerIO</span></a><span>
+</span><a name="line-58"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-60"></a><span>
+</span><a name="line-61"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">unless</span><span class="hs-special">)</span><span>
+</span><a name="line-62"></a><span>
+</span><a name="line-63"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">BS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">null</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">partition</span><span class="hs-special">)</span><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">ByteString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">useAsCString</span><span class="hs-special">)</span><span>
+</span><a name="line-65"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">c2w</span><span class="hs-special">)</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">)</span><span>
+</span><a name="line-67"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">encodeUtf8</span><span class="hs-special">)</span><span>
+</span><a name="line-68"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">)</span><span>
+</span><a name="line-69"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">toStrict</span><span class="hs-special">)</span><span>
+</span><a name="line-70"></a><span>
+</span><a name="line-71"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">C</span><span class="hs-operator">.</span><span class="hs-identifier">String</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">CString</span><span class="hs-special">)</span><span>
+</span><a name="line-72"></a><span>
+</span><a name="line-73"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-74"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Char8</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">BS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">pack</span><span class="hs-special">)</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">unpack</span><span class="hs-special">)</span><span>
+</span><a name="line-76"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">unpack</span><span class="hs-special">)</span><span>
+</span><a name="line-77"></a><span>
+</span><a name="line-78"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Debug</span><span class="hs-operator">.</span><span class="hs-identifier">Trace</span><span>
+</span><a name="line-79"></a><span>
+</span><a name="line-80"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stack</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">currentCallStack</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">renderStack</span><span class="hs-special">)</span><span>
+</span><a name="line-81"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-82"></a><span>
+</span><a name="line-83"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-84"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span>
+</span><a name="line-85"></a><span>
+</span><a name="line-86"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Unsafe</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">unsafePerformIO</span><span class="hs-special">)</span><span>
+</span><a name="line-87"></a><span>
+</span><a name="line-88"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-89"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Instances.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Instances</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-90"></a><span>
+</span><a name="line-91"></a><span class="hs-comment">-- $tracing</span><span>
+</span><a name="line-92"></a><span class="hs-comment">--</span><span>
+</span><a name="line-93"></a><span class="hs-comment">-- The @tracet(l)@, @traceTextShow@ and @tracet(l)IO@ functions print messages to an</span><span>
+</span><a name="line-94"></a><span class="hs-comment">-- output stream. They are intended for \&quot;printf debugging\&quot;, that is: tracing the flow</span><span>
+</span><a name="line-95"></a><span class="hs-comment">-- of execution and printing interesting values.</span><span>
+</span><a name="line-96"></a><span class="hs-comment">--</span><span>
+</span><a name="line-97"></a><span class="hs-comment">-- All these functions evaluate the message completely before printing</span><span>
+</span><a name="line-98"></a><span class="hs-comment">-- it; so if the message is not fully defined, none of it will be</span><span>
+</span><a name="line-99"></a><span class="hs-comment">-- printed.</span><span>
+</span><a name="line-100"></a><span class="hs-comment">--</span><span>
+</span><a name="line-101"></a><span class="hs-comment">-- The usual output stream is 'System.IO.stderr'. For Windows GUI applications</span><span>
+</span><a name="line-102"></a><span class="hs-comment">-- (that have no stderr) the output is directed to the Windows debug console.</span><span>
+</span><a name="line-103"></a><span class="hs-comment">-- Some implementations of these functions may decorate the @Text@ that\'s</span><span>
+</span><a name="line-104"></a><span class="hs-comment">-- output to indicate that you\'re tracing.</span><span>
+</span><a name="line-105"></a><span>
+</span><a name="line-106"></a><span class="hs-comment">-- | The 'tracetIO' function outputs the trace message from the IO monad.</span><span>
+</span><a name="line-107"></a><span class="hs-comment">-- This sequences the output with respect to other IO actions.</span><span>
+</span><a name="line-108"></a><span class="hs-comment">--</span><span>
+</span><a name="line-109"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-110"></a><span class="hs-identifier">tracetIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-111"></a><a name="tracetIO"><a href="TextShow.Debug.Trace.html#tracetIO"><span class="hs-identifier">tracetIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#traceIOByteString"><span class="hs-identifier hs-var">traceIOByteString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">encodeUtf8</span><span>
+</span><a name="line-112"></a><span>
+</span><a name="line-113"></a><span class="hs-comment">-- | Like 'tracetIO' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-114"></a><span class="hs-comment">--</span><span>
+</span><a name="line-115"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-116"></a><span class="hs-identifier">tracetlIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-117"></a><a name="tracetlIO"><a href="TextShow.Debug.Trace.html#tracetlIO"><span class="hs-identifier">tracetlIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracetIO"><span class="hs-identifier hs-var">tracetIO</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">toStrict</span><span>
+</span><a name="line-118"></a><span>
+</span><a name="line-119"></a><span class="hs-identifier">traceIOByteString</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">ByteString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-120"></a><a name="traceIOByteString"><a href="TextShow.Debug.Trace.html#traceIOByteString"><span class="hs-identifier">traceIOByteString</span></a></a><span> </span><a name="local-6989586621681241631"><a href="#local-6989586621681241631"><span class="hs-identifier">msg</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">useAsCString</span><span> </span><span class="hs-string">&quot;%s\n&quot;</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621681241632"><a href="#local-6989586621681241632"><span class="hs-identifier">cfmt</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-121"></a><span>    </span><span class="hs-comment">-- NB: debugBelch can't deal with null bytes, so filter them</span><span>
+</span><a name="line-122"></a><span>    </span><span class="hs-comment">-- out so we don't accidentally truncate the message.  See Trac #9395</span><span>
+</span><a name="line-123"></a><span>    </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><a name="local-6989586621681241633"><a href="#local-6989586621681241633"><span class="hs-identifier">nulls</span></a></a><span class="hs-special">,</span><span> </span><a name="local-6989586621681241634"><a href="#local-6989586621681241634"><span class="hs-identifier">msg'</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">BS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">partition</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">==</span><span> </span><span class="hs-identifier hs-var">c2w</span><span> </span><span class="hs-char">'\0'</span><span class="hs-special">)</span><span> </span><a href="#local-6989586621681241631"><span class="hs-identifier hs-var">msg</span></a><span>
+</span><a name="line-124"></a><span>    </span><span class="hs-identifier hs-var">useAsCString</span><span> </span><a href="#local-6989586621681241634"><span class="hs-identifier hs-var">msg'</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621681241635"><a href="#local-6989586621681241635"><span class="hs-identifier">cmsg</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a name="line-125"></a><span>      </span><a href="TextShow.Debug.Trace.html#debugBelch"><span class="hs-identifier hs-var">debugBelch</span></a><span> </span><a href="#local-6989586621681241632"><span class="hs-identifier hs-var">cfmt</span></a><span> </span><a href="#local-6989586621681241635"><span class="hs-identifier hs-var">cmsg</span></a><span>
+</span><a name="line-126"></a><span>    </span><span class="hs-identifier hs-var">unless</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">BS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">null</span><span> </span><a href="#local-6989586621681241633"><span class="hs-identifier hs-var">nulls</span></a><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">$</span><span>
+</span><a name="line-127"></a><span>      </span><span class="hs-identifier hs-var">useAsCString</span><span> </span><span class="hs-string">&quot;WARNING: previous trace message had null bytes&quot;</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621681241636"><a href="#local-6989586621681241636"><span class="hs-identifier">cmsg</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a name="line-128"></a><span>        </span><a href="TextShow.Debug.Trace.html#debugBelch"><span class="hs-identifier hs-var">debugBelch</span></a><span> </span><a href="#local-6989586621681241632"><span class="hs-identifier hs-var">cfmt</span></a><span> </span><a href="#local-6989586621681241636"><span class="hs-identifier hs-var">cmsg</span></a><span>
+</span><a name="line-129"></a><span>
+</span><a name="line-130"></a><span class="hs-comment">-- don't use debugBelch() directly, because we cannot call varargs functions</span><span>
+</span><a name="line-131"></a><span class="hs-comment">-- using the FFI.</span><span>
+</span><a name="line-132"></a><span class="hs-identifier">foreign</span><span> </span><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">ccall</span><span> </span><span class="hs-identifier">unsafe</span><span> </span><span class="hs-string">&quot;HsBase.h debugBelch2&quot;</span><span>
+</span><a name="line-133"></a><span>    </span><span class="hs-identifier">debugBelch</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">CString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">CString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-134"></a><span>
+</span><a name="line-135"></a><span class="hs-comment">{-|
+The 'tracet' function outputs the trace message given as its first argument,
+before returning the second argument as its result.
+
+For example, this returns the value of @f x@ but first outputs the message.
+
+&gt; tracet (&quot;calling f with x = &quot; &lt;&gt; showt x) (f x)
+
+The 'tracet' function should /only/ be used for debugging, or for monitoring
+execution. The function is not referentially transparent: its type indicates
+that it is a pure function but it has the side effect of outputting the
+trace message.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-150"></a><span class="hs-identifier">tracet</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241630"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241630"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-151"></a><a name="tracet"><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier">tracet</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#traceByteString"><span class="hs-identifier hs-var">traceByteString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">encodeUtf8</span><span>
+</span><a name="line-152"></a><span>
+</span><a name="line-153"></a><span class="hs-comment">-- | Like 'tracet' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-154"></a><span class="hs-comment">--</span><span>
+</span><a name="line-155"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-156"></a><span class="hs-identifier">tracetl</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241629"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241629"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-157"></a><a name="tracetl"><a href="TextShow.Debug.Trace.html#tracetl"><span class="hs-identifier">tracetl</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">toStrict</span><span>
+</span><a name="line-158"></a><span>
+</span><a name="line-159"></a><span class="hs-pragma">{-# NOINLINE traceByteString #-}</span><span>
+</span><a name="line-160"></a><span class="hs-identifier">traceByteString</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">ByteString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241628"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241628"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-161"></a><a name="traceByteString"><a href="TextShow.Debug.Trace.html#traceByteString"><span class="hs-identifier">traceByteString</span></a></a><span> </span><a name="local-6989586621681241637"><a href="#local-6989586621681241637"><span class="hs-identifier">bs</span></a></a><span> </span><a name="local-6989586621681241638"><a href="#local-6989586621681241638"><span class="hs-identifier">expr</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafePerformIO</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-162"></a><span>    </span><a href="TextShow.Debug.Trace.html#traceIOByteString"><span class="hs-identifier hs-var">traceIOByteString</span></a><span> </span><a href="#local-6989586621681241637"><span class="hs-identifier hs-var">bs</span></a><span>
+</span><a name="line-163"></a><span>    </span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621681241638"><span class="hs-identifier hs-var">expr</span></a><span>
+</span><a name="line-164"></a><span>
+</span><a name="line-165"></a><span class="hs-comment">-- | Like 'tracet' but returns the message instead of a third value.</span><span>
+</span><a name="line-166"></a><span class="hs-comment">--</span><span>
+</span><a name="line-167"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-168"></a><span class="hs-identifier">tracetId</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-169"></a><a name="tracetId"><a href="TextShow.Debug.Trace.html#tracetId"><span class="hs-identifier">tracetId</span></a></a><span> </span><a name="local-6989586621681241652"><a href="#local-6989586621681241652"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><a href="#local-6989586621681241652"><span class="hs-identifier hs-var">a</span></a><span> </span><a href="#local-6989586621681241652"><span class="hs-identifier hs-var">a</span></a><span>
+</span><a name="line-170"></a><span>
+</span><a name="line-171"></a><span class="hs-comment">-- | Like 'tracetId' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-172"></a><span class="hs-comment">--</span><span>
+</span><a name="line-173"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-174"></a><span class="hs-identifier">tracetlId</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-175"></a><a name="tracetlId"><a href="TextShow.Debug.Trace.html#tracetlId"><span class="hs-identifier">tracetlId</span></a></a><span> </span><a name="local-6989586621681241653"><a href="#local-6989586621681241653"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracetl"><span class="hs-identifier hs-var">tracetl</span></a><span> </span><a href="#local-6989586621681241653"><span class="hs-identifier hs-var">a</span></a><span> </span><a href="#local-6989586621681241653"><span class="hs-identifier hs-var">a</span></a><span>
+</span><a name="line-176"></a><span>
+</span><a name="line-177"></a><span class="hs-comment">{-|
+Like 'tracet', but uses 'showt' on the argument to convert it to a 'TS.Text'.
+
+This makes it convenient for printing the values of interesting variables or
+expressions inside a function. For example here we print the value of the
+variables @x@ and @z@:
+
+&gt; f x y =
+&gt;     traceTextShow (x, z) $ result
+&gt;   where
+&gt;     z = ...
+&gt;     ...
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-192"></a><span class="hs-identifier">traceTextShow</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><a href="#local-6989586621681241626"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681241626"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241627"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241627"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-193"></a><a name="traceTextShow"><a href="TextShow.Debug.Trace.html#traceTextShow"><span class="hs-identifier">traceTextShow</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Classes.html#showt"><span class="hs-identifier hs-var">showt</span></a><span>
+</span><a name="line-194"></a><span>
+</span><a name="line-195"></a><span class="hs-comment">-- | Like 'traceTextShow' but returns the shown value instead of a third value.</span><span>
+</span><a name="line-196"></a><span class="hs-comment">--</span><span>
+</span><a name="line-197"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-198"></a><span class="hs-identifier">traceTextShowId</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><a href="#local-6989586621681241625"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681241625"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241625"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-199"></a><a name="traceTextShowId"><a href="TextShow.Debug.Trace.html#traceTextShowId"><span class="hs-identifier">traceTextShowId</span></a></a><span> </span><a name="local-6989586621681241654"><a href="#local-6989586621681241654"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#showt"><span class="hs-identifier hs-var">showt</span></a><span> </span><a href="#local-6989586621681241654"><span class="hs-identifier hs-var">a</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621681241654"><span class="hs-identifier hs-var">a</span></a><span>
+</span><a name="line-200"></a><span>
+</span><a name="line-201"></a><span class="hs-comment">{-|
+Like 'tracet' but returning unit in an arbitrary 'Applicative' context. Allows for
+convenient use in do-notation. Note that the application of 'tracet' is not an action
+in the 'Applicative' context, as 'tracetIO' is in the 'IO' type.
+
+&gt; ... = do
+&gt;   x &lt;- ...
+&gt;   tracetM $ &quot;x: &quot; &lt;&gt; showt x
+&gt;   y &lt;- ...
+&gt;   tracetM $ &quot;y: &quot; &lt;&gt; showt y
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-214"></a><span class="hs-identifier">tracetM</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621681241624"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241624"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-215"></a><a name="tracetM"><a href="TextShow.Debug.Trace.html#tracetM"><span class="hs-identifier">tracetM</span></a></a><span> </span><a name="local-6989586621681241655"><a href="#local-6989586621681241655"><span class="hs-identifier">text</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><a href="#local-6989586621681241655"><span class="hs-identifier hs-var">text</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">pure</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-216"></a><span>
+</span><a name="line-217"></a><span class="hs-comment">-- | Like 'tracetM' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-218"></a><span class="hs-identifier">tracetlM</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621681241623"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241623"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-219"></a><a name="tracetlM"><a href="TextShow.Debug.Trace.html#tracetlM"><span class="hs-identifier">tracetlM</span></a></a><span> </span><a name="local-6989586621681241656"><a href="#local-6989586621681241656"><span class="hs-identifier">text</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracetl"><span class="hs-identifier hs-var">tracetl</span></a><span> </span><a href="#local-6989586621681241656"><span class="hs-identifier hs-var">text</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">pure</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-220"></a><span>
+</span><a name="line-221"></a><span class="hs-comment">{-|
+Like 'tracetM', but uses 'showt' on the argument to convert it to a 'TS.Text'.
+
+&gt; ... = do
+&gt;   x &lt;- ...
+&gt;   traceTextShowM x
+&gt;   y &lt;- ...
+&gt;   traceTextShowM $ x + y
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-232"></a><span class="hs-identifier">traceTextShowM</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><a href="#local-6989586621681241621"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621681241622"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681241621"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241622"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-233"></a><a name="traceTextShowM"><a href="TextShow.Debug.Trace.html#traceTextShowM"><span class="hs-identifier">traceTextShowM</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracetM"><span class="hs-identifier hs-var">tracetM</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Classes.html#showt"><span class="hs-identifier hs-var">showt</span></a><span>
+</span><a name="line-234"></a><span>
+</span><a name="line-235"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-236"></a><span class="hs-comment">-- | Like 'tracet' but additionally prints a call stack if one is</span><span>
+</span><a name="line-237"></a><span class="hs-comment">-- available.</span><span>
+</span><a name="line-238"></a><span class="hs-comment">--</span><span>
+</span><a name="line-239"></a><span class="hs-comment">-- In the current GHC implementation, the call stack is only</span><span>
+</span><a name="line-240"></a><span class="hs-comment">-- availble if the program was compiled with @-prof@; otherwise</span><span>
+</span><a name="line-241"></a><span class="hs-comment">-- 'tracetStack' behaves exactly like 'tracet'.  Entries in the call</span><span>
+</span><a name="line-242"></a><span class="hs-comment">-- stack correspond to @SCC@ annotations, so it is a good idea to use</span><span>
+</span><a name="line-243"></a><span class="hs-comment">-- @-fprof-auto@ or @-fprof-auto-calls@ to add SCC annotations automatically.</span><span>
+</span><a name="line-244"></a><span class="hs-comment">--</span><span>
+</span><a name="line-245"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-246"></a><span class="hs-identifier">tracetStack</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241620"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241620"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-247"></a><a name="tracetStack"><a href="TextShow.Debug.Trace.html#tracetStack"><span class="hs-identifier">tracetStack</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#traceStackByteString"><span class="hs-identifier hs-var">traceStackByteString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">encodeUtf8</span><span>
+</span><a name="line-248"></a><span>
+</span><a name="line-249"></a><span class="hs-comment">-- | Like 'tracetStack' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-250"></a><span class="hs-comment">--</span><span>
+</span><a name="line-251"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-252"></a><span class="hs-identifier">tracetlStack</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241619"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241619"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-253"></a><a name="tracetlStack"><a href="TextShow.Debug.Trace.html#tracetlStack"><span class="hs-identifier">tracetlStack</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Debug.Trace.html#tracetStack"><span class="hs-identifier hs-var">tracetStack</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">toStrict</span><span>
+</span><a name="line-254"></a><span>
+</span><a name="line-255"></a><span class="hs-identifier">traceStackByteString</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">ByteString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241618"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241618"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-256"></a><a name="traceStackByteString"><a href="TextShow.Debug.Trace.html#traceStackByteString"><span class="hs-identifier">traceStackByteString</span></a></a><span> </span><a name="local-6989586621681241657"><a href="#local-6989586621681241657"><span class="hs-identifier">bs</span></a></a><span> </span><a name="local-6989586621681241658"><a href="#local-6989586621681241658"><span class="hs-identifier">expr</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafePerformIO</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-257"></a><span>    </span><a href="TextShow.Debug.Trace.html#traceIOByteString"><span class="hs-identifier hs-var">traceIOByteString</span></a><span> </span><a href="#local-6989586621681241657"><span class="hs-identifier hs-var">bs</span></a><span>
+</span><a name="line-258"></a><span>    </span><a name="local-6989586621681241712"><a href="#local-6989586621681241712"><span class="hs-identifier">stack</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-identifier hs-var">currentCallStack</span><span>
+</span><a name="line-259"></a><span>    </span><span class="hs-identifier hs-var">unless</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">null</span><span> </span><a href="#local-6989586621681241712"><span class="hs-identifier hs-var">stack</span></a><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Debug.Trace.html#traceIOByteString"><span class="hs-identifier hs-var">traceIOByteString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">BS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">pack</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">renderStack</span><span> </span><a href="#local-6989586621681241712"><span class="hs-identifier hs-var">stack</span></a><span>
+</span><a name="line-260"></a><span>    </span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621681241658"><span class="hs-identifier hs-var">expr</span></a><span>
+</span><a name="line-261"></a><span>
+</span><a name="line-262"></a><span class="hs-comment">-- $eventlog_tracing</span><span>
+</span><a name="line-263"></a><span class="hs-comment">--</span><span>
+</span><a name="line-264"></a><span class="hs-comment">-- Eventlog tracing is a performance profiling system. These functions emit</span><span>
+</span><a name="line-265"></a><span class="hs-comment">-- extra events into the eventlog. In combination with eventlog profiling</span><span>
+</span><a name="line-266"></a><span class="hs-comment">-- tools these functions can be used for monitoring execution and</span><span>
+</span><a name="line-267"></a><span class="hs-comment">-- investigating performance problems.</span><span>
+</span><a name="line-268"></a><span class="hs-comment">--</span><span>
+</span><a name="line-269"></a><span class="hs-comment">-- Currently only GHC provides eventlog profiling, see the GHC user guide for</span><span>
+</span><a name="line-270"></a><span class="hs-comment">-- details on how to use it. These function exists for other Haskell</span><span>
+</span><a name="line-271"></a><span class="hs-comment">-- implementations but no events are emitted. Note that the @Text@ message is</span><span>
+</span><a name="line-272"></a><span class="hs-comment">-- always evaluated, whether or not profiling is available or enabled.</span><span>
+</span><a name="line-273"></a><span>
+</span><a name="line-274"></a><span class="hs-comment">-- | The 'tracetEvent' function behaves like 'tracet' with the difference that</span><span>
+</span><a name="line-275"></a><span class="hs-comment">-- the message is emitted to the eventlog, if eventlog profiling is available</span><span>
+</span><a name="line-276"></a><span class="hs-comment">-- and enabled at runtime.</span><span>
+</span><a name="line-277"></a><span class="hs-comment">--</span><span>
+</span><a name="line-278"></a><span class="hs-comment">-- It is suitable for use in pure code. In an IO context use 'tracetEventIO'</span><span>
+</span><a name="line-279"></a><span class="hs-comment">-- instead.</span><span>
+</span><a name="line-280"></a><span class="hs-comment">--</span><span>
+</span><a name="line-281"></a><span class="hs-comment">-- Note that when using GHC's SMP runtime, it is possible (but rare) to get</span><span>
+</span><a name="line-282"></a><span class="hs-comment">-- duplicate events emitted if two CPUs simultaneously evaluate the same thunk</span><span>
+</span><a name="line-283"></a><span class="hs-comment">-- that uses 'traceEvent'.</span><span>
+</span><a name="line-284"></a><span class="hs-comment">--</span><span>
+</span><a name="line-285"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-286"></a><span class="hs-identifier">tracetEvent</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241617"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241617"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-287"></a><a name="tracetEvent"><a href="TextShow.Debug.Trace.html#tracetEvent"><span class="hs-identifier">tracetEvent</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceEvent</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-288"></a><span>
+</span><a name="line-289"></a><span class="hs-comment">-- | Like 'tracetEvent' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-290"></a><span class="hs-comment">--</span><span>
+</span><a name="line-291"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-292"></a><span class="hs-identifier">tracetlEvent</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241616"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241616"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-293"></a><a name="tracetlEvent"><a href="TextShow.Debug.Trace.html#tracetlEvent"><span class="hs-identifier">tracetlEvent</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceEvent</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-294"></a><span>
+</span><a name="line-295"></a><span class="hs-comment">-- | The 'tracetEventIO' function emits a message to the eventlog, if eventlog</span><span>
+</span><a name="line-296"></a><span class="hs-comment">-- profiling is available and enabled at runtime.</span><span>
+</span><a name="line-297"></a><span class="hs-comment">--</span><span>
+</span><a name="line-298"></a><span class="hs-comment">-- Compared to 'tracetEvent', 'tracetEventIO' sequences the event with respect to</span><span>
+</span><a name="line-299"></a><span class="hs-comment">-- other IO actions.</span><span>
+</span><a name="line-300"></a><span class="hs-comment">--</span><span>
+</span><a name="line-301"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-302"></a><span class="hs-identifier">tracetEventIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-303"></a><a name="tracetEventIO"><a href="TextShow.Debug.Trace.html#tracetEventIO"><span class="hs-identifier">tracetEventIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceEventIO</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-304"></a><span>
+</span><a name="line-305"></a><span class="hs-comment">-- | Like 'tracetEventIO' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-306"></a><span class="hs-comment">--</span><span>
+</span><a name="line-307"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-308"></a><span class="hs-identifier">tracetlEventIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-309"></a><a name="tracetlEventIO"><a href="TextShow.Debug.Trace.html#tracetlEventIO"><span class="hs-identifier">tracetlEventIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceEventIO</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-310"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-311"></a><span>
+</span><a name="line-312"></a><span class="hs-cpp">#if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-313"></a><span class="hs-comment">-- $markers</span><span>
+</span><a name="line-314"></a><span class="hs-comment">--</span><span>
+</span><a name="line-315"></a><span class="hs-comment">-- When looking at a profile for the execution of a program we often want to</span><span>
+</span><a name="line-316"></a><span class="hs-comment">-- be able to mark certain points or phases in the execution and see that</span><span>
+</span><a name="line-317"></a><span class="hs-comment">-- visually in the profile.</span><span>
+</span><a name="line-318"></a><span>
+</span><a name="line-319"></a><span class="hs-comment">-- For example, a program might have several distinct phases with different</span><span>
+</span><a name="line-320"></a><span class="hs-comment">-- performance or resource behaviour in each phase. To properly interpret the</span><span>
+</span><a name="line-321"></a><span class="hs-comment">-- profile graph we really want to see when each phase starts and ends.</span><span>
+</span><a name="line-322"></a><span class="hs-comment">--</span><span>
+</span><a name="line-323"></a><span class="hs-comment">-- Markers let us do this: we can annotate the program to emit a marker at</span><span>
+</span><a name="line-324"></a><span class="hs-comment">-- an appropriate point during execution and then see that in a profile.</span><span>
+</span><a name="line-325"></a><span class="hs-comment">--</span><span>
+</span><a name="line-326"></a><span class="hs-comment">-- Currently this feature is only supported in GHC by the eventlog tracing</span><span>
+</span><a name="line-327"></a><span class="hs-comment">-- system, but in future it may also be supported by the heap profiling or</span><span>
+</span><a name="line-328"></a><span class="hs-comment">-- other profiling tools. These function exists for other Haskell</span><span>
+</span><a name="line-329"></a><span class="hs-comment">-- implementations but they have no effect. Note that the @Text@ message is</span><span>
+</span><a name="line-330"></a><span class="hs-comment">-- always evaluated, whether or not profiling is available or enabled.</span><span>
+</span><a name="line-331"></a><span>
+</span><a name="line-332"></a><span class="hs-comment">-- | The 'tracetMarker' function emits a marker to the eventlog, if eventlog</span><span>
+</span><a name="line-333"></a><span class="hs-comment">-- profiling is available and enabled at runtime. The 'TS.Text' is the name of</span><span>
+</span><a name="line-334"></a><span class="hs-comment">-- the marker. The name is just used in the profiling tools to help you keep</span><span>
+</span><a name="line-335"></a><span class="hs-comment">-- clear which marker is which.</span><span>
+</span><a name="line-336"></a><span class="hs-comment">--</span><span>
+</span><a name="line-337"></a><span class="hs-comment">-- This function is suitable for use in pure code. In an IO context use</span><span>
+</span><a name="line-338"></a><span class="hs-comment">-- 'tracetMarkerIO' instead.</span><span>
+</span><a name="line-339"></a><span class="hs-comment">--</span><span>
+</span><a name="line-340"></a><span class="hs-comment">-- Note that when using GHC's SMP runtime, it is possible (but rare) to get</span><span>
+</span><a name="line-341"></a><span class="hs-comment">-- duplicate events emitted if two CPUs simultaneously evaluate the same thunk</span><span>
+</span><a name="line-342"></a><span class="hs-comment">-- that uses 'traceMarker'.</span><span>
+</span><a name="line-343"></a><span class="hs-comment">--</span><span>
+</span><a name="line-344"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-345"></a><span class="hs-identifier">tracetMarker</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241615"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241615"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-346"></a><a name="tracetMarker"><a href="TextShow.Debug.Trace.html#tracetMarker"><span class="hs-identifier">tracetMarker</span></a></a><span> </span><a name="local-6989586621681241713"><a href="#local-6989586621681241713"><span class="hs-identifier">msg</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceMarker</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span> </span><a href="#local-6989586621681241713"><span class="hs-identifier hs-var">msg</span></a><span>
+</span><a name="line-347"></a><span>
+</span><a name="line-348"></a><span class="hs-comment">-- | Like 'tracetMarker' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-349"></a><span class="hs-comment">--</span><span>
+</span><a name="line-350"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-351"></a><span class="hs-identifier">tracetlMarker</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241614"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681241614"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-352"></a><a name="tracetlMarker"><a href="TextShow.Debug.Trace.html#tracetlMarker"><span class="hs-identifier">tracetlMarker</span></a></a><span> </span><a name="local-6989586621681241714"><a href="#local-6989586621681241714"><span class="hs-identifier">msg</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceMarker</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span> </span><a href="#local-6989586621681241714"><span class="hs-identifier hs-var">msg</span></a><span>
+</span><a name="line-353"></a><span>
+</span><a name="line-354"></a><span class="hs-comment">-- | The 'tracetMarkerIO' function emits a marker to the eventlog, if eventlog</span><span>
+</span><a name="line-355"></a><span class="hs-comment">-- profiling is available and enabled at runtime.</span><span>
+</span><a name="line-356"></a><span class="hs-comment">--</span><span>
+</span><a name="line-357"></a><span class="hs-comment">-- Compared to 'tracetMarker', 'tracetMarkerIO' sequences the event with respect to</span><span>
+</span><a name="line-358"></a><span class="hs-comment">-- other IO actions.</span><span>
+</span><a name="line-359"></a><span class="hs-comment">--</span><span>
+</span><a name="line-360"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-361"></a><span class="hs-identifier">tracetMarkerIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-362"></a><a name="tracetMarkerIO"><a href="TextShow.Debug.Trace.html#tracetMarkerIO"><span class="hs-identifier">tracetMarkerIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceMarkerIO</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-363"></a><span>
+</span><a name="line-364"></a><span class="hs-comment">-- | Like 'tracetMarkerIO' but accepts a lazy 'TL.Text' argument.</span><span>
+</span><a name="line-365"></a><span class="hs-comment">--</span><span>
+</span><a name="line-366"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-367"></a><span class="hs-identifier">tracetlMarkerIO</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-368"></a><a name="tracetlMarkerIO"><a href="TextShow.Debug.Trace.html#tracetlMarkerIO"><span class="hs-identifier">tracetlMarkerIO</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">traceMarkerIO</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-369"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-370"></a></pre></body></html>

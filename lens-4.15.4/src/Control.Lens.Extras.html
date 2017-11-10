@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Data.List.Lens</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (C) 2012-16 Edward Kmett</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- A few extra names that didn't make it into Control.Lens.</span><span>
+</span><a name="line-11"></a><span class="hs-comment">--</span><span>
+</span><a name="line-12"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-13"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Extras</span><span>
+</span><a name="line-14"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Control.Lens.Extras.html#is"><span class="hs-identifier hs-var">is</span></a><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Data.Lens.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-20"></a><span>
+</span><a name="line-21"></a><span class="hs-comment">-- $setup</span><span>
+</span><a name="line-22"></a><span class="hs-comment">-- &gt;&gt;&gt; import Control.Lens</span><span>
+</span><a name="line-23"></a><span class="hs-comment">-- &gt;&gt;&gt; import Numeric.Lens (hex)</span><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-comment">-- | Check to see if this 'Prism' matches.</span><span>
+</span><a name="line-26"></a><span class="hs-comment">--</span><span>
+</span><a name="line-27"></a><span class="hs-comment">-- &gt;&gt;&gt; is _Left (Right 12)</span><span>
+</span><a name="line-28"></a><span class="hs-comment">-- False</span><span>
+</span><a name="line-29"></a><span class="hs-comment">--</span><span>
+</span><a name="line-30"></a><span class="hs-comment">-- &gt;&gt;&gt; is hex &quot;3f79&quot;</span><span>
+</span><a name="line-31"></a><span class="hs-comment">-- True</span><span>
+</span><a name="line-32"></a><span class="hs-identifier">is</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Control.Lens.Prism.html#APrism"><span class="hs-identifier hs-type">APrism</span></a><span> </span><a href="#local-6989586621679326695"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679326696"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679326697"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679326698"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679326695"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-33"></a><a name="is"><a href="Control.Lens.Extras.html#is"><span class="hs-identifier">is</span></a></a><span> </span><a name="local-6989586621679326699"><a href="#local-6989586621679326699"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">not</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="Control.Lens.Prism.html#isn%27t"><span class="hs-identifier hs-var">isn't</span></a><span> </span><a href="#local-6989586621679326699"><span class="hs-identifier hs-var">k</span></a><span>
+</span><a name="line-34"></a><span class="hs-pragma">{-# INLINE is #-}</span><span>
+</span><a name="line-35"></a></pre></body></html>

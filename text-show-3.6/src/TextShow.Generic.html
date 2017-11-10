@@ -1,0 +1,589 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns          #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE CPP                   #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable    #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE EmptyDataDecls        #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts      #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances     #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE GADTs                 #-}</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE MagicHash             #-}</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-10"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings     #-}</span><span>
+</span><a name="line-11"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables   #-}</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving    #-}</span><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE TypeOperators         #-}</span><span>
+</span><a name="line-14"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell       #-}</span><span>
+</span><a name="line-15"></a><span class="hs-pragma">{-# LANGUAGE TypeFamilies          #-}</span><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances  #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-19"></a><span class="hs-pragma">{-# LANGUAGE DeriveGeneric        #-}</span><span>
+</span><a name="line-20"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 706</span><span>
+</span><a name="line-23"></a><span class="hs-pragma">{-# LANGUAGE DataKinds            #-}</span><span>
+</span><a name="line-24"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds            #-}</span><span>
+</span><a name="line-25"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-28"></a><span class="hs-pragma">{-# LANGUAGE DeriveLift           #-}</span><span>
+</span><a name="line-29"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-comment">{-|
+Module:      TextShow.Generic
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Generic versions of 'TextShow' and 'TextShow1' class functions, as an alternative to
+&quot;TextShow.TH&quot;, which uses Template Haskell. Because there is no 'Generic2'
+class, 'TextShow2' cannot be implemented generically.
+
+This implementation is loosely based off of the @Generics.Deriving.Show@ module
+from the @generic-deriving@ library.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-48"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Generic</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-49"></a><span>      </span><span class="hs-comment">-- * Generic @show@ functions</span><span>
+</span><a name="line-50"></a><span>      </span><span class="hs-comment">-- $generics</span><span>
+</span><a name="line-51"></a><span>
+</span><a name="line-52"></a><span>      </span><span class="hs-comment">-- ** Understanding a compiler error</span><span>
+</span><a name="line-53"></a><span>      </span><span class="hs-comment">-- $generic_err</span><span>
+</span><a name="line-54"></a><span>      </span><a href="TextShow.Generic.html#genericShowt"><span class="hs-identifier hs-var">genericShowt</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowtl"><span class="hs-identifier hs-var">genericShowtl</span></a><span>
+</span><a name="line-56"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowtPrec"><span class="hs-identifier hs-var">genericShowtPrec</span></a><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowtlPrec"><span class="hs-identifier hs-var">genericShowtlPrec</span></a><span>
+</span><a name="line-58"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowtList"><span class="hs-identifier hs-var">genericShowtList</span></a><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowtlList"><span class="hs-identifier hs-var">genericShowtlList</span></a><span>
+</span><a name="line-60"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowb"><span class="hs-identifier hs-var">genericShowb</span></a><span>
+</span><a name="line-61"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowbPrec"><span class="hs-identifier hs-var">genericShowbPrec</span></a><span>
+</span><a name="line-62"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowbList"><span class="hs-identifier hs-var">genericShowbList</span></a><span>
+</span><a name="line-63"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericPrintT"><span class="hs-identifier hs-var">genericPrintT</span></a><span>
+</span><a name="line-64"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericPrintTL"><span class="hs-identifier hs-var">genericPrintTL</span></a><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericHPrintT"><span class="hs-identifier hs-var">genericHPrintT</span></a><span>
+</span><a name="line-66"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericHPrintTL"><span class="hs-identifier hs-var">genericHPrintTL</span></a><span>
+</span><a name="line-67"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericLiftShowbPrec"><span class="hs-identifier hs-var">genericLiftShowbPrec</span></a><span>
+</span><a name="line-68"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#genericShowbPrec1"><span class="hs-identifier hs-var">genericShowbPrec1</span></a><span>
+</span><a name="line-69"></a><span>      </span><span class="hs-comment">-- * Internals</span><span>
+</span><a name="line-70"></a><span>      </span><span class="hs-comment">-- ** 'Builder'</span><span>
+</span><a name="line-71"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowConB"><span class="hs-identifier hs-type">GTextShowConB</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-73"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#ShowFunsB"><span class="hs-identifier hs-type">ShowFunsB</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-74"></a><span>      </span><span class="hs-comment">-- ** Strict 'TS.Text'</span><span>
+</span><a name="line-75"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-76"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowConT"><span class="hs-identifier hs-type">GTextShowConT</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#ShowFunsT"><span class="hs-identifier hs-type">ShowFunsT</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-78"></a><span>      </span><span class="hs-comment">-- ** Lazy 'TL.Text'</span><span>
+</span><a name="line-79"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-80"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowConTL"><span class="hs-identifier hs-type">GTextShowConTL</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-81"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#ShowFunsTL"><span class="hs-identifier hs-type">ShowFunsTL</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-82"></a><span>      </span><span class="hs-comment">-- ** Other internals</span><span>
+</span><a name="line-83"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-84"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#ConType"><span class="hs-identifier hs-type">ConType</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span>
+</span><a name="line-86"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#One"><span class="hs-identifier hs-type">One</span></a><span>
+</span><a name="line-87"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-88"></a><span>
+</span><a name="line-89"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Data</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-90"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Functor</span><span class="hs-operator">.</span><span class="hs-identifier">Contravariant</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Contravariant</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-91"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-92"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span>    </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">pack</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-93"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">putStrLn</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">hPutStrLn</span><span class="hs-special">)</span><span>
+</span><a name="line-94"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span>    </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">pack</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-95"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">putStrLn</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">hPutStrLn</span><span class="hs-special">)</span><span>
+</span><a name="line-96"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TB</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">fromString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-97"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-98"></a><span>
+</span><a name="line-99"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Generics</span><span class="hs-operator">.</span><span class="hs-identifier">Deriving</span><span class="hs-operator">.</span><span class="hs-identifier">Base</span><span>
+</span><a name="line-100"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 702</span><span>
+</span><a name="line-101"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Generics</span><span class="hs-operator">.</span><span class="hs-identifier">Deriving</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Generics</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">deriveAll</span><span class="hs-special">)</span><span>
+</span><a name="line-102"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-103"></a><span>
+</span><a name="line-104"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-special">(</span><span class="hs-identifier hs-var">C</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Double</span><span class="hs-special">(</span><span class="hs-identifier hs-var">D</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Float</span><span class="hs-special">(</span><span class="hs-identifier hs-var">F</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">(</span><span class="hs-identifier hs-var">I</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word</span><span class="hs-special">(</span><span class="hs-identifier hs-var">W</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-105"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Show</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">appPrec</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">appPrec1</span><span class="hs-special">)</span><span>
+</span><a name="line-106"></a><span>
+</span><a name="line-107"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Lift</span><span>
+</span><a name="line-108"></a><span>
+</span><a name="line-109"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-110"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span>
+</span><a name="line-111"></a><span>
+</span><a name="line-112"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Handle</span><span class="hs-special">)</span><span>
+</span><a name="line-113"></a><span>
+</span><a name="line-114"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><a name="line-115"></a><span>                                   </span><a href="TextShow.Classes.html#showbListWith"><span class="hs-identifier hs-var">showbListWith</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbParen"><span class="hs-identifier hs-var">showbParen</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbSpace"><span class="hs-identifier hs-var">showbSpace</span></a><span class="hs-special">,</span><span>
+</span><a name="line-116"></a><span>                                   </span><a href="TextShow.Classes.html#showtListWith"><span class="hs-identifier hs-var">showtListWith</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtParen"><span class="hs-identifier hs-var">showtParen</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtSpace"><span class="hs-identifier hs-var">showtSpace</span></a><span class="hs-special">,</span><span>
+</span><a name="line-117"></a><span>                                   </span><a href="TextShow.Classes.html#showtlListWith"><span class="hs-identifier hs-var">showtlListWith</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlParen"><span class="hs-identifier hs-var">showtlParen</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlSpace"><span class="hs-identifier hs-var">showtlSpace</span></a><span class="hs-special">,</span><span>
+</span><a name="line-118"></a><span>                                   </span><a href="TextShow.Classes.html#liftShowtPrec"><span class="hs-identifier hs-var">liftShowtPrec</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#liftShowtlPrec"><span class="hs-identifier hs-var">liftShowtlPrec</span></a><span class="hs-special">)</span><span>
+</span><a name="line-119"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Instances.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Instances</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-120"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-121"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Utils.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Utils.html#isInfixDataCon"><span class="hs-identifier hs-var">isInfixDataCon</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#isSymVar"><span class="hs-identifier hs-var">isSymVar</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#isTupleString"><span class="hs-identifier hs-var">isTupleString</span></a><span class="hs-special">)</span><span>
+</span><a name="line-122"></a><span>
+</span><a name="line-123"></a><span class="hs-comment">{- $generics
+
+'TextShow' instances can be easily defined for data types that are 'Generic' instances.
+The easiest way to do this is to use the @DeriveGeneric@ extension.
+
+@
+&amp;#123;-&amp;#35; LANGUAGE DeriveGeneric &amp;#35;-&amp;#125;
+import GHC.Generics
+import TextShow
+import TextShow.Generic
+
+data D a = D a
+  deriving (Generic, Generic1)
+
+instance TextShow a =&gt; TextShow (D a) where
+    showbPrec = 'genericShowbPrec'
+
+instance TextShow1 D where
+    liftShowbPrec = 'genericLiftShowbPrec'
+@
+-}</span><span>
+</span><a name="line-144"></a><span>
+</span><a name="line-145"></a><span class="hs-comment">{- $generic_err
+
+Suppose you intend to use 'genericShowbPrec' to define a 'TextShow' instance.
+
+@
+data Oops = Oops
+    -- forgot to add \&quot;deriving Generic\&quot; here!
+
+instance TextShow Oops where
+    showbPrec = 'genericShowbPrec'
+@
+
+If you forget to add a @deriving 'Generic'@ clause to your data type, at
+compile-time, you might get an error message that begins roughly as follows:
+
+@
+No instance for ('GTextShowB' 'Zero' (Rep Oops))
+@
+
+This error can be confusing, but don't let it intimidate you. The correct fix is
+simply to add the missing \&quot;@deriving 'Generic'@\&quot; clause.
+
+Similarly, if the compiler complains about not having an instance for @('GTextShowB'
+'One' (Rep1 Oops1))@, add a \&quot;@deriving 'Generic1'@\&quot; clause.
+-}</span><span>
+</span><a name="line-170"></a><span>
+</span><a name="line-171"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showt'.</span><span>
+</span><a name="line-172"></a><span class="hs-comment">--</span><span>
+</span><a name="line-173"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-174"></a><span class="hs-identifier">genericShowt</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251196"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251196"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681251196"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-175"></a><a name="genericShowt"><a href="TextShow.Generic.html#genericShowt"><span class="hs-identifier">genericShowt</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#genericShowtPrec"><span class="hs-identifier hs-var">genericShowtPrec</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-176"></a><span>
+</span><a name="line-177"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showtl'.</span><span>
+</span><a name="line-178"></a><span class="hs-comment">--</span><span>
+</span><a name="line-179"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-180"></a><span class="hs-identifier">genericShowtl</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251195"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251195"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681251195"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-181"></a><a name="genericShowtl"><a href="TextShow.Generic.html#genericShowtl"><span class="hs-identifier">genericShowtl</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#genericShowtlPrec"><span class="hs-identifier hs-var">genericShowtlPrec</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-182"></a><span>
+</span><a name="line-183"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showPrect'.</span><span>
+</span><a name="line-184"></a><span class="hs-comment">--</span><span>
+</span><a name="line-185"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-186"></a><span class="hs-identifier">genericShowtPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251194"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251194"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251194"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-187"></a><a name="genericShowtPrec"><a href="TextShow.Generic.html#genericShowtPrec"><span class="hs-identifier">genericShowtPrec</span></a></a><span> </span><a name="local-6989586621681251197"><a href="#local-6989586621681251197"><span class="hs-identifier">p</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#gShowtPrec"><span class="hs-identifier hs-var">gShowtPrec</span></a><span> </span><a href="TextShow.Generic.html#NoShowFunsT"><span class="hs-identifier hs-var">NoShowFunsT</span></a><span> </span><a href="#local-6989586621681251197"><span class="hs-identifier hs-var">p</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">from</span><span>
+</span><a name="line-188"></a><span>
+</span><a name="line-189"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showtlPrec'.</span><span>
+</span><a name="line-190"></a><span class="hs-comment">--</span><span>
+</span><a name="line-191"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-192"></a><span class="hs-identifier">genericShowtlPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251193"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251193"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251193"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-193"></a><a name="genericShowtlPrec"><a href="TextShow.Generic.html#genericShowtlPrec"><span class="hs-identifier">genericShowtlPrec</span></a></a><span> </span><a name="local-6989586621681251198"><a href="#local-6989586621681251198"><span class="hs-identifier">p</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#gShowtlPrec"><span class="hs-identifier hs-var">gShowtlPrec</span></a><span> </span><a href="TextShow.Generic.html#NoShowFunsTL"><span class="hs-identifier hs-var">NoShowFunsTL</span></a><span> </span><a href="#local-6989586621681251198"><span class="hs-identifier hs-var">p</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">from</span><span>
+</span><a name="line-194"></a><span>
+</span><a name="line-195"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showtList'.</span><span>
+</span><a name="line-196"></a><span class="hs-comment">--</span><span>
+</span><a name="line-197"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-198"></a><span class="hs-identifier">genericShowtList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251192"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251192"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621681251192"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-199"></a><a name="genericShowtList"><a href="TextShow.Generic.html#genericShowtList"><span class="hs-identifier">genericShowtList</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showtListWith"><span class="hs-identifier hs-var">showtListWith</span></a><span> </span><a href="TextShow.Generic.html#genericShowt"><span class="hs-identifier hs-var">genericShowt</span></a><span>
+</span><a name="line-200"></a><span>
+</span><a name="line-201"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showtlList'.</span><span>
+</span><a name="line-202"></a><span class="hs-comment">--</span><span>
+</span><a name="line-203"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-204"></a><span class="hs-identifier">genericShowtlList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251191"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251191"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621681251191"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-205"></a><a name="genericShowtlList"><a href="TextShow.Generic.html#genericShowtlList"><span class="hs-identifier">genericShowtlList</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showtlListWith"><span class="hs-identifier hs-var">showtlListWith</span></a><span> </span><a href="TextShow.Generic.html#genericShowtl"><span class="hs-identifier hs-var">genericShowtl</span></a><span>
+</span><a name="line-206"></a><span>
+</span><a name="line-207"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showb'.</span><span>
+</span><a name="line-208"></a><span class="hs-comment">--</span><span>
+</span><a name="line-209"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-210"></a><span class="hs-identifier">genericShowb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251190"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251190"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681251190"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-211"></a><a name="genericShowb"><a href="TextShow.Generic.html#genericShowb"><span class="hs-identifier">genericShowb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#genericShowbPrec"><span class="hs-identifier hs-var">genericShowbPrec</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-212"></a><span>
+</span><a name="line-213"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showbPrec'.</span><span>
+</span><a name="line-214"></a><span class="hs-comment">--</span><span>
+</span><a name="line-215"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-216"></a><span class="hs-identifier">genericShowbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251189"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251189"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251189"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-217"></a><a name="genericShowbPrec"><a href="TextShow.Generic.html#genericShowbPrec"><span class="hs-identifier">genericShowbPrec</span></a></a><span> </span><a name="local-6989586621681251199"><a href="#local-6989586621681251199"><span class="hs-identifier">p</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#gShowbPrec"><span class="hs-identifier hs-var">gShowbPrec</span></a><span> </span><a href="TextShow.Generic.html#NoShowFunsB"><span class="hs-identifier hs-var">NoShowFunsB</span></a><span> </span><a href="#local-6989586621681251199"><span class="hs-identifier hs-var">p</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">from</span><span>
+</span><a name="line-218"></a><span>
+</span><a name="line-219"></a><span class="hs-comment">-- | A 'Generic' implementation of 'showbList'.</span><span>
+</span><a name="line-220"></a><span class="hs-comment">--</span><span>
+</span><a name="line-221"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-222"></a><span class="hs-identifier">genericShowbList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251188"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251188"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621681251188"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-223"></a><a name="genericShowbList"><a href="TextShow.Generic.html#genericShowbList"><span class="hs-identifier">genericShowbList</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showbListWith"><span class="hs-identifier hs-var">showbListWith</span></a><span> </span><a href="TextShow.Generic.html#genericShowb"><span class="hs-identifier hs-var">genericShowb</span></a><span>
+</span><a name="line-224"></a><span>
+</span><a name="line-225"></a><span class="hs-comment">-- | A 'Generic' implementation of 'printT'.</span><span>
+</span><a name="line-226"></a><span class="hs-comment">--</span><span>
+</span><a name="line-227"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-228"></a><span class="hs-identifier">genericPrintT</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251187"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251187"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681251187"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-229"></a><a name="genericPrintT"><a href="TextShow.Generic.html#genericPrintT"><span class="hs-identifier">genericPrintT</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">putStrLn</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Generic.html#genericShowt"><span class="hs-identifier hs-var">genericShowt</span></a><span>
+</span><a name="line-230"></a><span>
+</span><a name="line-231"></a><span class="hs-comment">-- | A 'Generic' implementation of 'printTL'.</span><span>
+</span><a name="line-232"></a><span class="hs-comment">--</span><span>
+</span><a name="line-233"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-234"></a><span class="hs-identifier">genericPrintTL</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251186"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251186"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621681251186"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-235"></a><a name="genericPrintTL"><a href="TextShow.Generic.html#genericPrintTL"><span class="hs-identifier">genericPrintTL</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">putStrLn</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Generic.html#genericShowtl"><span class="hs-identifier hs-var">genericShowtl</span></a><span>
+</span><a name="line-236"></a><span>
+</span><a name="line-237"></a><span class="hs-comment">-- | A 'Generic' implementation of 'hPrintT'.</span><span>
+</span><a name="line-238"></a><span class="hs-comment">--</span><span>
+</span><a name="line-239"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-240"></a><span class="hs-identifier">genericHPrintT</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251185"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowT"><span class="hs-identifier hs-type">GTextShowT</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251185"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Handle</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251185"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-241"></a><a name="genericHPrintT"><a href="TextShow.Generic.html#genericHPrintT"><span class="hs-identifier">genericHPrintT</span></a></a><span> </span><a name="local-6989586621681251200"><a href="#local-6989586621681251200"><span class="hs-identifier">h</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">hPutStrLn</span><span> </span><a href="#local-6989586621681251200"><span class="hs-identifier hs-var">h</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Generic.html#genericShowt"><span class="hs-identifier hs-var">genericShowt</span></a><span>
+</span><a name="line-242"></a><span>
+</span><a name="line-243"></a><span class="hs-comment">-- | A 'Generic' implementation of 'hPrintTL'.</span><span>
+</span><a name="line-244"></a><span class="hs-comment">--</span><span>
+</span><a name="line-245"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-246"></a><span class="hs-identifier">genericHPrintTL</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251184"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowTL"><span class="hs-identifier hs-type">GTextShowTL</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span> </span><a href="#local-6989586621681251184"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Handle</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251184"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-247"></a><a name="genericHPrintTL"><a href="TextShow.Generic.html#genericHPrintTL"><span class="hs-identifier">genericHPrintTL</span></a></a><span> </span><a name="local-6989586621681251201"><a href="#local-6989586621681251201"><span class="hs-identifier">h</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">hPutStrLn</span><span> </span><a href="#local-6989586621681251201"><span class="hs-identifier hs-var">h</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="TextShow.Generic.html#genericShowtl"><span class="hs-identifier hs-var">genericShowtl</span></a><span>
+</span><a name="line-248"></a><span>
+</span><a name="line-249"></a><span class="hs-comment">-- | A 'Generic1' implementation of 'genericLiftShowbPrec'.</span><span>
+</span><a name="line-250"></a><span class="hs-comment">--</span><span>
+</span><a name="line-251"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-252"></a><span class="hs-identifier">genericLiftShowbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic1</span><span> </span><a href="#local-6989586621681251182"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#One"><span class="hs-identifier hs-type">One</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep1</span><span> </span><a href="#local-6989586621681251182"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-253"></a><span>                     </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251183"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><a href="#local-6989586621681251183"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-254"></a><span>                     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251182"><span class="hs-identifier hs-type">f</span></a><span> </span><a href="#local-6989586621681251183"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-255"></a><a name="genericLiftShowbPrec"><a href="TextShow.Generic.html#genericLiftShowbPrec"><span class="hs-identifier">genericLiftShowbPrec</span></a></a><span> </span><a name="local-6989586621681251202"><a href="#local-6989586621681251202"><span class="hs-identifier">sp</span></a></a><span> </span><a name="local-6989586621681251203"><a href="#local-6989586621681251203"><span class="hs-identifier">sl</span></a></a><span> </span><a name="local-6989586621681251204"><a href="#local-6989586621681251204"><span class="hs-identifier">p</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#gShowbPrec"><span class="hs-identifier hs-var">gShowbPrec</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Generic.html#Show1FunsB"><span class="hs-identifier hs-var">Show1FunsB</span></a><span> </span><a href="#local-6989586621681251202"><span class="hs-identifier hs-var">sp</span></a><span> </span><a href="#local-6989586621681251203"><span class="hs-identifier hs-var">sl</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621681251204"><span class="hs-identifier hs-var">p</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">from1</span><span>
+</span><a name="line-256"></a><span>
+</span><a name="line-257"></a><span class="hs-comment">-- | A 'Generic'/'Generic1' implementation of 'showbPrec1'.</span><span>
+</span><a name="line-258"></a><span class="hs-comment">--</span><span>
+</span><a name="line-259"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-260"></a><span class="hs-identifier">genericShowbPrec1</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">Generic</span><span> </span><a href="#local-6989586621681251180"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Generic1</span><span> </span><a href="#local-6989586621681251181"><span class="hs-identifier hs-type">f</span></a><span>
+</span><a name="line-261"></a><span>                     </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#Zero"><span class="hs-identifier hs-type">Zero</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep</span><span>  </span><a href="#local-6989586621681251180"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span>
+</span><a name="line-262"></a><span>                     </span><span class="hs-special">,</span><span> </span><a href="TextShow.Generic.html#GTextShowB"><span class="hs-identifier hs-type">GTextShowB</span></a><span> </span><a href="TextShow.Generic.html#One"><span class="hs-identifier hs-type">One</span></a><span>  </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rep1</span><span> </span><a href="#local-6989586621681251181"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">)</span><span>
+</span><a name="line-263"></a><span>                     </span><span class="hs-special">)</span><span>
+</span><a name="line-264"></a><span>                  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621681251181"><span class="hs-identifier hs-type">f</span></a><span> </span><a href="#local-6989586621681251180"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-265"></a><a name="genericShowbPrec1"><a href="TextShow.Generic.html#genericShowbPrec1"><span class="hs-identifier">genericShowbPrec1</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#genericLiftShowbPrec"><span class="hs-identifier hs-var">genericLiftShowbPrec</span></a><span> </span><a href="TextShow.Generic.html#genericShowbPrec"><span class="hs-identifier hs-var">genericShowbPrec</span></a><span> </span><a href="TextShow.Generic.html#genericShowbList"><span class="hs-identifier hs-var">genericShowbList</span></a><span>
+</span><a name="line-266"></a><span>
+</span><a name="line-267"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-268"></a><span>
+</span><a name="line-269"></a><span class="hs-comment">-- | Whether a constructor is a record ('Rec'), a tuple ('Tup'), is prefix ('Pref'),</span><span>
+</span><a name="line-270"></a><span class="hs-comment">-- or infix ('Inf').</span><span>
+</span><a name="line-271"></a><span class="hs-comment">--</span><span>
+</span><a name="line-272"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-273"></a><span class="hs-keyword">data</span><span> </span><a name="ConType"><a href="TextShow.Generic.html#ConType"><span class="hs-identifier">ConType</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="Rec"><a href="TextShow.Generic.html#Rec"><span class="hs-identifier">Rec</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><a name="Tup"><a href="TextShow.Generic.html#Tup"><span class="hs-identifier">Tup</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><a name="Pref"><a href="TextShow.Generic.html#Pref"><span class="hs-identifier">Pref</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><a name="Inf"><a href="TextShow.Generic.html#Inf"><span class="hs-identifier">Inf</span></a></a><span> </span><span class="hs-identifier hs-type">String</span><span>
+</span><a name="line-274"></a><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">Data</span><span>
+</span><a name="line-275"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Eq</span><span>
+</span><a name="line-276"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Ord</span><span>
+</span><a name="line-277"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Read</span><span>
+</span><a name="line-278"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Show</span><span>
+</span><a name="line-279"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span>
+</span><a name="line-280"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-281"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Generic</span><span>
+</span><a name="line-282"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-283"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-284"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Lift</span><span>
+</span><a name="line-285"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-286"></a><span>           </span><span class="hs-special">)</span><span>
+</span><a name="line-287"></a><span>
+</span><a name="line-288"></a><span class="hs-comment">-- | A type-level indicator that 'TextShow' is being derived generically.</span><span>
+</span><a name="line-289"></a><span class="hs-comment">--</span><span>
+</span><a name="line-290"></a><span class="hs-comment">-- /Since: 3.2/</span><span>
+</span><a name="line-291"></a><span class="hs-keyword">data</span><span> </span><a name="Zero"><a href="TextShow.Generic.html#Zero"><span class="hs-identifier">Zero</span></a></a><span>
+</span><a name="line-292"></a><span>
+</span><a name="line-293"></a><span class="hs-comment">-- | A type-level indicator that 'TextShow1' is being derived generically.</span><span>
+</span><a name="line-294"></a><span class="hs-comment">--</span><span>
+</span><a name="line-295"></a><span class="hs-comment">-- /Since: 3.2/</span><span>
+</span><a name="line-296"></a><span class="hs-keyword">data</span><span> </span><a name="One"><a href="TextShow.Generic.html#One"><span class="hs-identifier">One</span></a></a><span>
+</span><a name="line-297"></a><span>
+</span><a name="line-298"></a><span class="hs-comment">{-
+I'm not particularly proud of the code below. The issue is that we need to be able to
+generically work over Builders, strict Text, and lazy Text. We could just work
+generically over Builders only and then convert to Text after the fact, but that results
+in a drastic slowdown for certain datatypes (see GH-21 for an example).
+
+For the most part, the shared functionality could be abstracted with a subclass of
+Monoid that supports fromString, fromChar, etc. But there's a very small chance that
+the code below is ever going to inline properly, and the runtime cost of all those
+dictinary lookups is likely to be as bad as converting to Text at the end, if not worse.
+
+Therefore, I perform some ugly CPP hackery to copy-paste the generic functionality three
+times, once for each Text/Builder variant. I suppose I could use TH instead to make this
+look a little nicer, but I haven't attempted that.
+-}</span><span>
+</span><a name="line-313"></a><span>
+</span><a name="line-314"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 708</span><span>
+</span><a name="line-315"></a><span class="hs-cpp">#define DERIVE_TYPEABLE(name) deriving instance Typeable name</span><span>
+</span><a name="line-316"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-317"></a><span class="hs-cpp">#define DERIVE_TYPEABLE(name)</span><span>
+</span><a name="line-318"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-319"></a><span>
+</span><a name="line-320"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 711</span><span>
+</span><a name="line-321"></a><span class="hs-cpp">#define HASH_FUNS(text_type,one_hash,two_hash,hash_prec,from_char,from_string) \
+one_hash, two_hash :: text_type; \
+hash_prec :: Int -&gt; Int;         \
+one_hash  = from_char '#';       \
+two_hash  = from_string &quot;##&quot;;    \
+hash_prec = const 0</span><span>
+</span><a name="line-327"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-328"></a><span class="hs-cpp">#define HASH_FUNS(text_type,one_hash,two_hash,hash_prec,from_char,from_string) \
+one_hash, two_hash :: text_type; \
+hash_prec :: Int -&gt; Int;         \
+one_hash  = mempty;              \
+two_hash  = mempty;              \
+hash_prec = id</span><span>
+</span><a name="line-334"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-335"></a><span>
+</span><a name="line-336"></a><span class="hs-cpp">#define GTEXT_SHOW(text_type,show_funs,no_show_funs,show1_funs,one_hash,two_hash,hash_prec,gtext_show,gshow_prec,gtext_show_con,gshow_prec_con,show_prec,lift_show_prec,show_space,show_paren,show_list_with,from_char,from_string) \
+{- | A 'show_funs' value either stores nothing (for 'TextShow') or it stores            \
+the two function arguments that show occurrences of the type parameter (for             \
+'TextShow1').                                                                           \
+                                                                                        \
+/Since: 3.4/                                                                           \
+-};                                                                                     \
+data show_funs arity a where {                                                          \
+    no_show_funs :: show_funs Zero a                                                    \
+  ; show1_funs   :: (Int -&gt; a -&gt; text_type) -&gt; ([a] -&gt; text_type) -&gt; show_funs One a    \
+ } deriving Typeable;                                                                   \
+                                                                                        \
+instance Contravariant (show_funs arity) where {                                        \
+    contramap _ no_show_funs       = no_show_funs                                       \
+  ; contramap f (show1_funs sp sl) = show1_funs (\p -&gt; sp p . f) (sl . map f)           \
+ };                                                                                     \
+                                                                                        \
+{- | Class of generic representation types that can be converted to                     \
+a 'text_type'. The @arity@ type variable indicates which type class is                  \
+used. @'gtext_show' 'Zero'@ indicates 'TextShow' behavior, and                          \
+@'gtext_show' 'One'@ indicates 'TextShow1' behavior.                                    \
+                                                                                        \
+/Since: 3.4/                                                                           \
+-};                                                                                     \
+class gtext_show arity f where {                                                        \
+    {- | This is used as the default generic implementation of 'show_prec' (if the      \
+    @arity@ is 'Zero') or 'lift_show_prec' (if the @arity@ is 'One').                   \
+    -}                                                                                  \
+  ; gshow_prec :: show_funs arity a -&gt; Int -&gt; f a -&gt; text_type                          \
+ };                                                                                     \
+                                                                                        \
+DERIVE_TYPEABLE(gtext_show);                                                            \
+                                                                                        \
+instance gtext_show arity f =&gt; gtext_show arity (D1 d f) where {                        \
+    gshow_prec sfs p (M1 x) = gshow_prec sfs p x                                        \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show Zero V1 where {                                                     \
+    gshow_prec _ _ !_ = error &quot;Void show_prec&quot;                                          \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show One V1 where {                                                      \
+    gshow_prec _ _ !_ = error &quot;Void lift_show_prec&quot;                                     \
+ };                                                                                     \
+                                                                                        \
+instance (gtext_show arity f, gtext_show arity g) =&gt; gtext_show arity (f :+: g) where { \
+    gshow_prec sfs p (L1 x) = gshow_prec sfs p x                                        \
+  ; gshow_prec sfs p (R1 x) = gshow_prec sfs p x                                        \
+ };                                                                                     \
+                                                                                        \
+instance (Constructor c, gtext_show_con arity f, IsNullary f)                           \
+      =&gt; gtext_show arity (C1 c f) where {                                              \
+    gshow_prec sfs p c@(M1 x) = case fixity of {                                        \
+        Prefix -&gt; show_paren ( p &gt; appPrec                                              \
+                               &amp;&amp; not (isNullary x || conIsTuple c)                     \
+                             ) $                                                        \
+               (if conIsTuple c                                                         \
+                   then mempty                                                          \
+                   else let cn = conName c                                              \
+                        in show_paren (isInfixDataCon cn) $ from_string cn)             \
+            &lt;&gt; (if isNullary x || conIsTuple c                                          \
+                   then mempty                                                          \
+                   else from_char ' ')                                                  \
+            &lt;&gt; showbBraces t (gshow_prec_con t sfs appPrec1 x)                          \
+      ; Infix _ m -&gt; show_paren (p &gt; m) $ gshow_prec_con t sfs (m+1) x                  \
+      }                                                                                 \
+    where {                                                                             \
+        fixity :: Fixity                                                                \
+      ; fixity = conFixity c                                                            \
+                                                                                        \
+      ; t :: ConType                                                                    \
+      ; t = if conIsRecord c                                                            \
+            then Rec                                                                    \
+            else case conIsTuple c of {                                                 \
+                True  -&gt; Tup                                                            \
+              ; False -&gt; case fixity of {                                               \
+                    Prefix    -&gt; Pref                                                   \
+                  ; Infix _ _ -&gt; Inf $ conName c                                        \
+                };                                                                      \
+              }                                                                         \
+                                                                                        \
+      ; showbBraces :: ConType -&gt; text_type -&gt; text_type                                \
+      ; showbBraces Rec     b = from_char '{' &lt;&gt; b &lt;&gt; from_char '}'                     \
+      ; showbBraces Tup     b = from_char '(' &lt;&gt; b &lt;&gt; from_char ')'                     \
+      ; showbBraces Pref    b = b                                                       \
+      ; showbBraces (Inf _) b = b                                                       \
+                                                                                        \
+      ; conIsTuple :: C1 c f p -&gt; Bool                                                  \
+      ; conIsTuple = isTupleString . conName                                            \
+     };                                                                                 \
+ };                                                                                     \
+                                                                                        \
+{- | Class of generic representation types for which the 'ConType' has been             \
+determined. The @arity@ type variable indicates which type class is                     \
+used. @'gtext_show_con' 'Zero'@ indicates 'TextShow' behavior, and                      \
+@'gtext_show_con' 'One'@ indicates 'TextShow1' behavior.                                \
+-};                                                                                     \
+class gtext_show_con arity f where {                                                    \
+    {- | Convert value of a specific 'ConType' to a 'text_type' with the given          \
+    precedence.                                                                         \
+    -}                                                                                  \
+  ; gshow_prec_con :: ConType -&gt; show_funs arity a -&gt; Int -&gt; f a -&gt; text_type           \
+ };                                                                                     \
+                                                                                        \
+DERIVE_TYPEABLE(gtext_show_con);                                                        \
+                                                                                        \
+instance gtext_show_con arity U1 where {                                                \
+    gshow_prec_con _ _ _ U1 = mempty                                                    \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con One Par1 where {                                                \
+    gshow_prec_con _ (show1_funs sp _) p (Par1 x) = sp p x                              \
+ };                                                                                     \
+                                                                                        \
+instance TextShow c =&gt; gtext_show_con arity (K1 i c) where {                            \
+    gshow_prec_con _ _ p (K1 x) = show_prec p x                                         \
+ };                                                                                     \
+                                                                                        \
+instance TextShow1 f =&gt; gtext_show_con One (Rec1 f) where {                             \
+    gshow_prec_con _ (show1_funs sp sl) p (Rec1 x) = lift_show_prec sp sl p x           \
+ };                                                                                     \
+                                                                                        \
+instance (Selector s, gtext_show_con arity f) =&gt; gtext_show_con arity (S1 s f) where {  \
+    gshow_prec_con t sfs p sel@(M1 x)                                                   \
+      | selName sel == &quot;&quot; = gshow_prec_con t sfs p x                                    \
+      | otherwise         = infixRec                                                    \
+                            &lt;&gt; &quot; = &quot;                                                    \
+                            &lt;&gt; gshow_prec_con t sfs 0 x                                 \
+      where {                                                                           \
+        infixRec :: text_type                                                           \
+      ; infixRec | isSymVar selectorName                                                \
+                 = from_char '(' &lt;&gt; from_string selectorName &lt;&gt; from_char ')'           \
+                 | otherwise                                                            \
+                 = from_string selectorName                                             \
+                                                                                        \
+      ; selectorName :: String                                                          \
+      ; selectorName = selName sel                                                      \
+      }                                                                                 \
+ };                                                                                     \
+                                                                                        \
+instance (gtext_show_con arity f, gtext_show_con arity g)                               \
+      =&gt; gtext_show_con arity (f :*: g) where {                                         \
+    gshow_prec_con t@Rec sfs _ (a :*: b) =                                              \
+           gshow_prec_con t sfs 0 a                                                     \
+        &lt;&gt; &quot;, &quot;                                                                         \
+        &lt;&gt; gshow_prec_con t sfs 0 b                                                     \
+  ; gshow_prec_con t@(Inf o) sfs p (a :*: b) =                                          \
+           gshow_prec_con t sfs p a                                                     \
+        &lt;&gt; show_space                                                                   \
+        &lt;&gt; infixOp                                                                      \
+        &lt;&gt; show_space                                                                   \
+        &lt;&gt; gshow_prec_con t sfs p b                                                     \
+      where {                                                                           \
+        infixOp :: text_type                                                            \
+      ; infixOp = if isInfixDataCon o                                                   \
+                     then from_string o                                                 \
+                     else from_char '`' &lt;&gt; from_string o &lt;&gt; from_char '`'               \
+      }                                                                                 \
+  ; gshow_prec_con t@Tup sfs _ (a :*: b) =                                              \
+           gshow_prec_con t sfs 0 a                                                     \
+        &lt;&gt; from_char ','                                                                \
+        &lt;&gt; gshow_prec_con t sfs 0 b                                                     \
+  ; gshow_prec_con t@Pref sfs p (a :*: b) =                                             \
+           gshow_prec_con t sfs p a                                                     \
+        &lt;&gt; show_space                                                                   \
+        &lt;&gt; gshow_prec_con t sfs p b                                                     \
+ };                                                                                     \
+                                                                                        \
+instance (TextShow1 f, gtext_show_con One g) =&gt; gtext_show_con One (f :.: g) where {    \
+    gshow_prec_con t sfs p (Comp1 x) =                                                  \
+      let gspc = gshow_prec_con t sfs                                                   \
+      in lift_show_prec gspc (show_list_with (gspc 0)) p x                              \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con arity UChar where {                                             \
+    gshow_prec_con _ _ p (UChar c)   = show_prec (hash_prec p) (C# c) &lt;&gt; one_hash       \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con arity UDouble where {                                           \
+    gshow_prec_con _ _ p (UDouble d) = show_prec (hash_prec p) (D# d) &lt;&gt; two_hash       \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con arity UFloat where {                                            \
+    gshow_prec_con _ _ p (UFloat f)  = show_prec (hash_prec p) (F# f) &lt;&gt; one_hash       \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con arity UInt where {                                              \
+    gshow_prec_con _ _ p (UInt i)    = show_prec (hash_prec p) (I# i) &lt;&gt; one_hash       \
+ };                                                                                     \
+                                                                                        \
+instance gtext_show_con arity UWord where {                                             \
+    gshow_prec_con _ _ p (UWord w)   = show_prec (hash_prec p) (W# w) &lt;&gt; two_hash       \
+ };                                                                                     \
+                                                                                        \
+HASH_FUNS(text_type,one_hash,two_hash,hash_prec,from_char,from_string);</span><span>
+</span><a name="line-531"></a><span>
+</span><a name="line-532"></a><span class="hs-identifier">GTEXT_SHOW</span><span class="hs-special">(</span><span class="hs-identifier">Builder</span><span class="hs-special">,</span><span class="hs-identifier">ShowFunsB</span><span class="hs-special">,</span><span class="hs-identifier">NoShowFunsB</span><span class="hs-special">,</span><span class="hs-identifier">Show1FunsB</span><span class="hs-special">,</span><span class="hs-identifier">oneHashB</span><span class="hs-special">,</span><span class="hs-identifier">twoHashB</span><span class="hs-special">,</span><span class="hs-identifier">hashPrecB</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowB</span><span class="hs-special">,</span><span class="hs-identifier">gShowbPrec</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowConB</span><span class="hs-special">,</span><span class="hs-identifier">gShowbPrecCon</span><span class="hs-special">,</span><span class="hs-identifier">showbPrec</span><span class="hs-special">,</span><span class="hs-identifier">liftShowbPrec</span><span class="hs-special">,</span><span class="hs-identifier">showbSpace</span><span class="hs-special">,</span><span class="hs-identifier">showbParen</span><span class="hs-special">,</span><span class="hs-identifier">showbListWith</span><span class="hs-special">,</span><span class="hs-identifier">TB</span><span class="hs-operator">.</span><span class="hs-identifier">singleton</span><span class="hs-special">,</span><span class="hs-identifier">TB</span><span class="hs-operator">.</span><span class="hs-identifier">fromString</span><span class="hs-special">)</span><span>
+</span><a name="line-533"></a><span class="hs-identifier">GTEXT_SHOW</span><span class="hs-special">(</span><span class="hs-identifier">TS</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-special">,</span><span class="hs-identifier">ShowFunsT</span><span class="hs-special">,</span><span class="hs-identifier">NoShowFunsT</span><span class="hs-special">,</span><span class="hs-identifier">Show1FunsT</span><span class="hs-special">,</span><span class="hs-identifier">oneHashT</span><span class="hs-special">,</span><span class="hs-identifier">twoHashT</span><span class="hs-special">,</span><span class="hs-identifier">hashPrecT</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowT</span><span class="hs-special">,</span><span class="hs-identifier">gShowtPrec</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowConT</span><span class="hs-special">,</span><span class="hs-identifier">gShowtPrecCon</span><span class="hs-special">,</span><span class="hs-identifier">showtPrec</span><span class="hs-special">,</span><span class="hs-identifier">liftShowtPrec</span><span class="hs-special">,</span><span class="hs-identifier">showtSpace</span><span class="hs-special">,</span><span class="hs-identifier">showtParen</span><span class="hs-special">,</span><span class="hs-identifier">showtListWith</span><span class="hs-special">,</span><span class="hs-identifier">TS</span><span class="hs-operator">.</span><span class="hs-identifier">singleton</span><span class="hs-special">,</span><span class="hs-identifier">TS</span><span class="hs-operator">.</span><span class="hs-identifier">pack</span><span class="hs-special">)</span><span>
+</span><a name="line-534"></a><span class="hs-identifier">GTEXT_SHOW</span><span class="hs-special">(</span><span class="hs-identifier">TL</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-special">,</span><span class="hs-identifier">ShowFunsTL</span><span class="hs-special">,</span><span class="hs-identifier">NoShowFunsTL</span><span class="hs-special">,</span><span class="hs-identifier">Show1FunsTL</span><span class="hs-special">,</span><span class="hs-identifier">oneHashTL</span><span class="hs-special">,</span><span class="hs-identifier">twoHashTL</span><span class="hs-special">,</span><span class="hs-identifier">hashPrecTL</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowTL</span><span class="hs-special">,</span><span class="hs-identifier">gShowtlPrec</span><span class="hs-special">,</span><span class="hs-identifier">GTextShowConTL</span><span class="hs-special">,</span><span class="hs-identifier">gShowtlPrecCon</span><span class="hs-special">,</span><span class="hs-identifier">showtlPrec</span><span class="hs-special">,</span><span class="hs-identifier">liftShowtlPrec</span><span class="hs-special">,</span><span class="hs-identifier">showtlSpace</span><span class="hs-special">,</span><span class="hs-identifier">showtlParen</span><span class="hs-special">,</span><span class="hs-identifier">showtlListWith</span><span class="hs-special">,</span><span class="hs-identifier">TL</span><span class="hs-operator">.</span><span class="hs-identifier">singleton</span><span class="hs-special">,</span><span class="hs-identifier">TL</span><span class="hs-operator">.</span><span class="hs-identifier">pack</span><span class="hs-special">)</span><span>
+</span><a name="line-535"></a><span>
+</span><a name="line-536"></a><span class="hs-comment">-- | Class of generic representation types that represent a constructor with</span><span>
+</span><a name="line-537"></a><span class="hs-comment">-- zero or more fields.</span><span>
+</span><a name="line-538"></a><span class="hs-keyword">class</span><span> </span><a name="IsNullary"><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier">IsNullary</span></a></a><span> </span><a name="local-6989586621681251148"><a href="#local-6989586621681251148"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-539"></a><span>    </span><span class="hs-comment">-- Returns 'True' if the constructor has no fields.</span><span>
+</span><a name="line-540"></a><span>    </span><span class="hs-identifier">isNullary</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621681251148"><span class="hs-identifier hs-type">f</span></a><span> </span><a href="#local-6989586621681251149"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-541"></a><span>
+</span><a name="line-542"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">U1</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-543"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">True</span><span>
+</span><a name="line-544"></a><span>
+</span><a name="line-545"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">Par1</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-546"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-547"></a><span>
+</span><a name="line-548"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">K1</span><span> </span><a href="#local-6989586621681251213"><span class="hs-identifier hs-type">i</span></a><span> </span><a href="#local-6989586621681251214"><span class="hs-identifier hs-type">c</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-549"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-550"></a><span>
+</span><a name="line-551"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><a href="#local-6989586621681251210"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">S1</span><span> </span><a href="#local-6989586621681251211"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621681251210"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-552"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">M1</span><span> </span><a name="local-6989586621681251212"><a href="#local-6989586621681251212"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier hs-var">isNullary</span></a><span> </span><a href="#local-6989586621681251212"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-553"></a><span>
+</span><a name="line-554"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Rec1</span><span> </span><a href="#local-6989586621681251209"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-555"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-556"></a><span>
+</span><a name="line-557"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621681251207"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-operator">:*:</span><span> </span><a href="#local-6989586621681251208"><span class="hs-identifier hs-type">g</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-558"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-559"></a><span>
+</span><a name="line-560"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621681251205"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-operator">:.:</span><span> </span><a href="#local-6989586621681251206"><span class="hs-identifier hs-type">g</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-561"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-562"></a><span>
+</span><a name="line-563"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">UChar</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-564"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-565"></a><span>
+</span><a name="line-566"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">UDouble</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-567"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-568"></a><span>
+</span><a name="line-569"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">UFloat</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-570"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-571"></a><span>
+</span><a name="line-572"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">UInt</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-573"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-574"></a><span>
+</span><a name="line-575"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Generic.html#IsNullary"><span class="hs-identifier hs-type">IsNullary</span></a><span> </span><span class="hs-identifier hs-type">UWord</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-576"></a><span>    </span><a name="local-8214565720326026006"><a href="TextShow.Generic.html#isNullary"><span class="hs-identifier">isNullary</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-577"></a><span>
+</span><a name="line-578"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-579"></a><span>
+</span><a name="line-580"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''ConType)
+
+#if __GLASGOW_HASKELL__ &lt; 702
+$(Generics.deriveAll ''ConType)
+#endif
+
+#if __GLASGOW_HASKELL__ &lt; 800
+$(deriveLift ''ConType)
+#endif
+</span></pre></body></html>

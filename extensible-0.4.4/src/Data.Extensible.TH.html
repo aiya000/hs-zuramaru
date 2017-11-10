@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE Trustworthy, TemplateHaskell, LambdaCase, ViewPatterns #-}</span><span>
+</span><a name="line-2"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Module      :  Data.Extensible.TH</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-7"></a><span class="hs-comment">--</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-11"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.TH.html#mkField"><span class="hs-identifier hs-var">mkField</span></a><span>
+</span><a name="line-12"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.TH.html#mkFieldAs"><span class="hs-identifier hs-var">mkFieldAs</span></a><span>
+</span><a name="line-13"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.TH.html#decEffects"><span class="hs-identifier hs-var">decEffects</span></a><span>
+</span><a name="line-14"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.TH.html#decEffectSet"><span class="hs-identifier hs-var">decEffectSet</span></a><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.TH.html#decEffectSuite"><span class="hs-identifier hs-var">decEffectSuite</span></a><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.TH.html#customDecEffects"><span class="hs-identifier hs-var">customDecEffects</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Proxy</span><span>
+</span><a name="line-19"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Class.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span></a><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Class.html#itemAssoc"><span class="hs-identifier hs-var">itemAssoc</span></a><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Effect.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Effect</span></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Field.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Field</span></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">nub</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-cpp">#if !MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Foldable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">foldMap</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-comment">-- | Generate fields using 'itemAssoc'.</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- @'mkField' &quot;foo Bar&quot;@ defines:</span><span>
+</span><a name="line-34"></a><span class="hs-comment">--</span><span>
+</span><a name="line-35"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-36"></a><span class="hs-comment">-- foo :: FieldOptic &quot;foo&quot;</span><span>
+</span><a name="line-37"></a><span class="hs-comment">-- foo = itemAssoc (Proxy :: Proxy &quot;foo&quot;)</span><span>
+</span><a name="line-38"></a><span class="hs-comment">-- _Bar :: FieldOptic &quot;Bar&quot;</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- _Bar = itemAssoc (Proxy :: Proxy &quot;Bar&quot;)</span><span>
+</span><a name="line-40"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-41"></a><span class="hs-comment">--</span><span>
+</span><a name="line-42"></a><span class="hs-identifier">mkField</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">DecsQ</span><span>
+</span><a name="line-43"></a><a name="mkField"><a href="Data.Extensible.TH.html#mkField"><span class="hs-identifier">mkField</span></a></a><span> </span><a name="local-6989586621679241655"><a href="#local-6989586621679241655"><span class="hs-identifier">str</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">fmap</span><span> </span><span class="hs-identifier hs-var">concat</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">forM</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">words</span><span> </span><a href="#local-6989586621679241655"><span class="hs-identifier hs-var">str</span></a><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621679241785"><a href="#local-6989586621679241785"><span class="hs-identifier">s</span></a></a><span class="hs-glyph">@</span><span class="hs-special">(</span><a name="local-6989586621679241786"><a href="#local-6989586621679241786"><span class="hs-identifier">x</span></a></a><span class="hs-glyph">:</span><a name="local-6989586621679241787"><a href="#local-6989586621679241787"><span class="hs-identifier">xs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-keyword">let</span><span> </span><a name="local-6989586621679241788"><a href="#local-6989586621679241788"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mkName</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="hs-identifier hs-var">isLower</span><span> </span><a href="#local-6989586621679241786"><span class="hs-identifier hs-var">x</span></a><span> </span><span class="hs-keyword">then</span><span> </span><a href="#local-6989586621679241786"><span class="hs-identifier hs-var">x</span></a><span> </span><span class="hs-glyph">:</span><span> </span><a href="#local-6989586621679241787"><span class="hs-identifier hs-var">xs</span></a><span> </span><span class="hs-keyword">else</span><span> </span><span class="hs-char">'_'</span><span> </span><span class="hs-glyph">:</span><span> </span><a href="#local-6989586621679241786"><span class="hs-identifier hs-var">x</span></a><span> </span><span class="hs-glyph">:</span><span> </span><a href="#local-6989586621679241787"><span class="hs-identifier hs-var">xs</span></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-keyword">in</span><span> </span><a href="Data.Extensible.TH.html#mkFieldAs"><span class="hs-identifier hs-var">mkFieldAs</span></a><span> </span><a href="#local-6989586621679241788"><span class="hs-identifier hs-var">name</span></a><span> </span><a href="#local-6989586621679241785"><span class="hs-identifier hs-var">s</span></a><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span class="hs-identifier">mkFieldAs</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">DecsQ</span><span>
+</span><a name="line-48"></a><a name="mkFieldAs"><a href="Data.Extensible.TH.html#mkFieldAs"><span class="hs-identifier">mkFieldAs</span></a></a><span> </span><a name="local-6989586621679242066"><a href="#local-6989586621679242066"><span class="hs-identifier">name</span></a></a><span> </span><a name="local-6989586621679242067"><a href="#local-6989586621679242067"><span class="hs-identifier">s</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-keyword">let</span><span> </span><a name="local-6989586621679242068"><a href="#local-6989586621679242068"><span class="hs-identifier">st</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">litT</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">strTyLit</span><span> </span><a href="#local-6989586621679242067"><span class="hs-identifier hs-var">s</span></a><span class="hs-special">)</span><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-keyword">let</span><span> </span><a name="local-6989586621679242069"><a href="#local-6989586621679242069"><span class="hs-identifier">lbl</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">conE</span><span> </span><span class="hs-char">'Proxy `sigE` (conT ''Proxy `appT` st)
+  sequence [sigD name $ conT ''FieldOptic `appT` st
+    , valD (varP name) (normalB $ varE 'itemAssoc `appE` lbl) []
+    , return $ PragmaD $ InlineP name Inline FunLike AllPhases
+    ]
+
+-- | Generate named effects from a GADT declaration.
+--
+-- @
+-- decEffects [d|
+--  data Blah a b x where
+--    Blah :: Int -&gt; a -&gt; Blah a b b
+--  |]
+-- @
+--
+-- generates
+--
+-- @
+-- type Blah a b = \&quot;Blah\&quot; &gt;: Action '[Int, a] b
+-- blah :: forall xs a b
+--   . Associate \&quot;Blah\&quot; (Action '[Int, a] b) xs
+--   =&gt; Int -&gt; a -&gt; Eff xs b
+-- blah a0 a1
+--   = liftEff
+--     (Data.Proxy.Proxy :: Data.Proxy.Proxy \&quot;Blah\&quot;)
+--     (AArgument a0 (AArgument a1 AResult))
+-- @
+decEffects :: DecsQ -&gt; DecsQ
+decEffects = customDecEffects False True
+
+-- | Instead of making a type synonym for individual actions, it defines a list
+-- of actions.
+decEffectSet :: DecsQ -&gt; DecsQ
+decEffectSet = customDecEffects True False
+
+-- | Generates type synonyms for the set of actions and also individual actions.
+decEffectSuite :: DecsQ -&gt; DecsQ
+decEffectSuite = customDecEffects True True
+
+customDecEffects :: Bool -- ^ generate a synonym of the set of actions
+    -&gt; Bool -- ^ generate synonyms for individual actions
+    -&gt; DecsQ -&gt; DecsQ
+customDecEffects synSet synActions decs = decs &gt;&gt;= \ds -&gt; fmap concat $ forM ds $ \case
+#if MIN_VERSION_template_haskell(2,11,0)
+  DataD _ dataName tparams _ cs _
+#else
+  DataD _ dataName tparams cs _
+#endif
+    -&gt; do
+      (cxts, dcs) &lt;- fmap unzip $ traverse (con2Eff tparams) cs
+
+      let vars = map PlainTV $ nub $ concatMap (varsT . snd) cxts
+      return $ [TySynD dataName vars (typeListT $ map snd cxts) | synSet]
+          ++ [ TySynD k (map PlainTV $ nub $ varsT t) t | synActions, (k, t) &lt;- cxts]
+          ++ concat dcs
+  _ -&gt; fail &quot;mkEffects accepts GADT declaration&quot;
+
+con2Eff :: [TyVarBndr] -&gt; Con -&gt; Q ((Name, Type), [Dec])
+#if MIN_VERSION_template_haskell(2,11,0)
+con2Eff _ (GadtC [name] st (AppT _ resultT))
+  = return $ effectFunD name (map snd st) resultT
+#endif
+con2Eff tparams (ForallC _ eqs (NormalC name st))
+  = return $ fromMangledGADT tparams eqs name st
+con2Eff tparams (ForallC _ _ c) = con2Eff tparams c
+con2Eff _ p = do
+  runIO (print p)
+  fail &quot;Unsupported constructor&quot;
+
+fromMangledGADT :: [TyVarBndr] -&gt; [Type] -&gt; Name -&gt; [(Strict, Type)] -&gt; ((Name, Type), [Dec])
+fromMangledGADT tyvars_ eqs con fieldTypes
+  = effectFunD con argumentsT result
+  where
+    getTV (PlainTV n) = n
+    getTV (KindedTV n _) = n
+
+    tyvars = map getTV tyvars_
+
+    dic_ = [(v, t) | AppT (AppT EqualityT (VarT v)) t &lt;- eqs]
+    dic = dic_ ++ [(t, VarT v) | (v, VarT t) &lt;- dic_]
+
+    params' = do
+      (t, v) &lt;- zip tyvars uniqueNames
+      case lookup t dic of
+        Just (VarT p) -&gt; return (t, p)
+        _ -&gt; return (t, v)
+
+    argumentsT = map (\case
+      (_, VarT n) -&gt; maybe (VarT n) VarT $ lookup n params'
+      (_, x) -&gt; x) fieldTypes
+
+    result = case lookup (last tyvars) dic of
+      Just (VarT v) -&gt; case lookup v params' of
+        Just p -&gt; VarT p
+        Nothing -&gt; VarT v
+      Just t -&gt; t
+      Nothing -&gt; VarT $ mkName &quot;x&quot;
+
+varsT :: Type -&gt; [Name]
+varsT (VarT v) = [v]
+varsT (AppT s t) = varsT s ++ varsT t
+varsT _ = []
+
+effectFunD :: Name
+  -&gt; [Type]
+  -&gt; Type
+  -&gt; ((Name, Type), [Dec])
+effectFunD key argumentsT resultT = ((key, PromotedT '(:&gt;) `AppT` nameT `AppT` actionT)
+  , [SigD fName typ, FunD fName [effClause nameT (length argumentsT)]]) where
+
+    varList = mkName &quot;xs&quot;
+
+    fName = let (ch : rest) = nameBase key in mkName $ toLower ch : rest
+
+    typ = ForallT (map PlainTV $ varList : varsT resultT ++ concatMap varsT argumentsT)
+        [associateT nameT actionT varList]
+        $ effectFunT varList argumentsT resultT
+
+    -- Action [a, B, C] R
+    actionT = ConT ''Action `AppT` typeListT argumentsT `AppT` resultT
+
+    nameT = LitT $ StrTyLit $ nameBase key
+
+effectFunT :: Name
+  -&gt; [Type]
+  -&gt; Type
+  -&gt; Type
+effectFunT varList argumentsT resultT
+  = foldr (\x y -&gt; ArrowT `AppT` x `AppT` y) rt argumentsT where
+    rt = ConT ''Eff `AppT` VarT varList `AppT` resultT
+
+uniqueNames :: [Name]
+uniqueNames = map mkName $ concatMap (flip replicateM ['a'..'z']) [1..]
+
+typeListT :: [Type] -&gt; Type
+typeListT = foldr (\x y -&gt; PromotedConsT `AppT` x `AppT` y) PromotedNilT
+
+associateT :: Type -- key
+  -&gt; Type -- type
+  -&gt; Name -- variable
+  -&gt; Type
+associateT nameT t xs = ConT ''Associate `AppT` nameT `AppT` t `AppT` VarT xs
+
+effClause :: Type -- effect key
+  -&gt; Int -- number of arguments
+  -&gt; Clause
+effClause nameT n = Clause (map VarP argNames) (NormalB rhs) [] where
+  -- liftEff (Proxy :: Proxy &quot;Foo&quot;)
+  lifter = VarE 'liftEff `AppE` (ConE 'Proxy `SigE` AppT (ConT ''Proxy) nameT)
+
+  argNames = map (mkName . (&quot;a&quot; ++) . show) [0..n-1]
+
+  rhs = lifter `AppE` foldr (\x y -&gt; ConE 'AArgument `AppE` x `AppE` y)
+    (ConE 'AResult)
+    (map VarE argNames)
+</span></pre></body></html>

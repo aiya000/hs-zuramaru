@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP                        #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving         #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-comment">{-|
+Module:      TextShow.System.Posix.Types
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for Haskell equivalents of POSIX data types.
+Note that these are only available if the operating system supports them,
+so some OSes (e.g., Windows) will not be able to use all of the instances in this
+module.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-21"></a><span class="hs-cpp">#include &quot;HsBaseConfig.h&quot;</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">Posix</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">Posix</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span>   </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Foreign.C.Types.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">C</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Foreign.Ptr.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Ptr</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-cpp">#if !(MIN_VERSION_base(4,5,0))</span><span>
+</span><a name="line-33"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Int</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Word</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Unsafe</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">unsafeCoerce</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span>
+</span><a name="line-39"></a><span class="hs-cpp"># include &quot;HsBaseConfig.h&quot;</span><span>
+</span><a name="line-40"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-43"></a><span class="hs-cpp"># if defined(HTYPE_DEV_T)</span><span>
+</span><a name="line-44"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-45"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CDev</span><span>
+</span><a name="line-46"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-47"></a><span>
+</span><a name="line-48"></a><span class="hs-cpp"># if defined(HTYPE_INO_T)</span><span>
+</span><a name="line-49"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-50"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CIno</span><span>
+</span><a name="line-51"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-52"></a><span>
+</span><a name="line-53"></a><span class="hs-cpp"># if defined(HTYPE_MODE_T)</span><span>
+</span><a name="line-54"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-55"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CMode</span><span>
+</span><a name="line-56"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-57"></a><span>
+</span><a name="line-58"></a><span class="hs-cpp"># if defined(HTYPE_OFF_T)</span><span>
+</span><a name="line-59"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-60"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">COff</span><span>
+</span><a name="line-61"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-62"></a><span>
+</span><a name="line-63"></a><span class="hs-cpp"># if defined(HTYPE_PID_T)</span><span>
+</span><a name="line-64"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-65"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CPid</span><span>
+</span><a name="line-66"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-67"></a><span>
+</span><a name="line-68"></a><span class="hs-cpp"># if defined(HTYPE_SSIZE_T)</span><span>
+</span><a name="line-69"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-70"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CSsize</span><span>
+</span><a name="line-71"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-72"></a><span>
+</span><a name="line-73"></a><span class="hs-cpp"># if defined(HTYPE_GID_T)</span><span>
+</span><a name="line-74"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CGid</span><span>
+</span><a name="line-76"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-77"></a><span>
+</span><a name="line-78"></a><span class="hs-cpp"># if defined(HTYPE_NLINK_T)</span><span>
+</span><a name="line-79"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-80"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CNlink</span><span>
+</span><a name="line-81"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-82"></a><span>
+</span><a name="line-83"></a><span class="hs-cpp"># if defined(HTYPE_UID_T)</span><span>
+</span><a name="line-84"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-85"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CUid</span><span>
+</span><a name="line-86"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-87"></a><span>
+</span><a name="line-88"></a><span class="hs-cpp"># if defined(HTYPE_CC_T)</span><span>
+</span><a name="line-89"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-90"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CCc</span><span>
+</span><a name="line-91"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-92"></a><span>
+</span><a name="line-93"></a><span class="hs-cpp"># if defined(HTYPE_SPEED_T)</span><span>
+</span><a name="line-94"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-95"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CSpeed</span><span>
+</span><a name="line-96"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-97"></a><span>
+</span><a name="line-98"></a><span class="hs-cpp"># if defined(HTYPE_TCFLAG_T)</span><span>
+</span><a name="line-99"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-100"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CTcflag</span><span>
+</span><a name="line-101"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-102"></a><span>
+</span><a name="line-103"></a><span class="hs-cpp"># if defined(HTYPE_RLIM_T)</span><span>
+</span><a name="line-104"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-105"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">CRLim</span><span>
+</span><a name="line-106"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-107"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-108"></a><span class="hs-cpp"># if defined(HTYPE_DEV_T)</span><span>
+</span><a name="line-109"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-110"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CDev</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-111"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_DEV_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-112"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-113"></a><span>
+</span><a name="line-114"></a><span class="hs-cpp"># if defined(HTYPE_INO_T)</span><span>
+</span><a name="line-115"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-116"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CIno</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-117"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_INO_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-118"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-119"></a><span>
+</span><a name="line-120"></a><span class="hs-cpp"># if defined(HTYPE_MODE_T)</span><span>
+</span><a name="line-121"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-122"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CMode</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-123"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_MODE_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-124"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-125"></a><span>
+</span><a name="line-126"></a><span class="hs-cpp"># if defined(HTYPE_OFF_T)</span><span>
+</span><a name="line-127"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-128"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">COff</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-129"></a><span>    </span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">HTYPE_OFF_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-130"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-131"></a><span>
+</span><a name="line-132"></a><span class="hs-cpp"># if defined(HTYPE_PID_T)</span><span>
+</span><a name="line-133"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-134"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CPid</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-135"></a><span>    </span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">HTYPE_PID_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-136"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-137"></a><span>
+</span><a name="line-138"></a><span class="hs-cpp"># if defined(HTYPE_SSIZE_T)</span><span>
+</span><a name="line-139"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-140"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CSsize</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-141"></a><span>    </span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">HTYPE_SSIZE_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-142"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-143"></a><span>
+</span><a name="line-144"></a><span class="hs-cpp"># if defined(HTYPE_GID_T)</span><span>
+</span><a name="line-145"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-146"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CGid</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-147"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_GID_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-148"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-149"></a><span>
+</span><a name="line-150"></a><span class="hs-cpp"># if defined(HTYPE_NLINK_T)</span><span>
+</span><a name="line-151"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-152"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CNlink</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-153"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_NLINK_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-154"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-155"></a><span>
+</span><a name="line-156"></a><span class="hs-cpp"># if defined(HTYPE_UID_T)</span><span>
+</span><a name="line-157"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-158"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CUid</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-159"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_UID_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-160"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-161"></a><span>
+</span><a name="line-162"></a><span class="hs-cpp"># if defined(HTYPE_CC_T)</span><span>
+</span><a name="line-163"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-164"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CCc</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-165"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_CC_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-166"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-167"></a><span>
+</span><a name="line-168"></a><span class="hs-cpp"># if defined(HTYPE_SPEED_T)</span><span>
+</span><a name="line-169"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-170"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CSpeed</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-171"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_SPEED_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-172"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-173"></a><span>
+</span><a name="line-174"></a><span class="hs-cpp"># if defined(HTYPE_TCFLAG_T)</span><span>
+</span><a name="line-175"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-176"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CTcflag</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-177"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_TCFLAG_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-178"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-179"></a><span>
+</span><a name="line-180"></a><span class="hs-cpp"># if defined(HTYPE_RLIM_T)</span><span>
+</span><a name="line-181"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-182"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CRLim</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-183"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">HTYPE_RLIM_T</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-184"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-185"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-186"></a><span>
+</span><a name="line-187"></a><span class="hs-cpp">#if MIN_VERSION_base(4,10,0)</span><span>
+</span><a name="line-188"></a><span class="hs-cpp"># if defined(HTYPE_BLKSIZE_T)</span><span>
+</span><a name="line-189"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-190"></a><span class="hs-comment">--</span><span>
+</span><a name="line-191"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-192"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CBlkSize</span><span>
+</span><a name="line-193"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-194"></a><span>
+</span><a name="line-195"></a><span class="hs-cpp"># if defined(HTYPE_BLKCNT_T)</span><span>
+</span><a name="line-196"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-197"></a><span class="hs-comment">--</span><span>
+</span><a name="line-198"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-199"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CBlkCnt</span><span>
+</span><a name="line-200"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-201"></a><span>
+</span><a name="line-202"></a><span class="hs-cpp"># if defined(HTYPE_CLOCKID_T)</span><span>
+</span><a name="line-203"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-204"></a><span class="hs-comment">--</span><span>
+</span><a name="line-205"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-206"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CClockId</span><span>
+</span><a name="line-207"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-208"></a><span>
+</span><a name="line-209"></a><span class="hs-cpp"># if defined(HTYPE_FSBLKCNT_T)</span><span>
+</span><a name="line-210"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-211"></a><span class="hs-comment">--</span><span>
+</span><a name="line-212"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-213"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CFsBlkCnt</span><span>
+</span><a name="line-214"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-215"></a><span>
+</span><a name="line-216"></a><span class="hs-cpp"># if defined(HTYPE_FSFILCNT_T)</span><span>
+</span><a name="line-217"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-218"></a><span class="hs-comment">--</span><span>
+</span><a name="line-219"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-220"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CFsFilCnt</span><span>
+</span><a name="line-221"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-222"></a><span>
+</span><a name="line-223"></a><span class="hs-cpp"># if defined(HTYPE_ID_T)</span><span>
+</span><a name="line-224"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-225"></a><span class="hs-comment">--</span><span>
+</span><a name="line-226"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-227"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CId</span><span>
+</span><a name="line-228"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-229"></a><span>
+</span><a name="line-230"></a><span class="hs-cpp"># if defined(HTYPE_KEY_T)</span><span>
+</span><a name="line-231"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-232"></a><span class="hs-comment">--</span><span>
+</span><a name="line-233"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-234"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CKey</span><span>
+</span><a name="line-235"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-236"></a><span>
+</span><a name="line-237"></a><span class="hs-cpp"># if defined(HTYPE_TIMER_T)</span><span>
+</span><a name="line-238"></a><span class="hs-comment">-- | Only available with @base-4.10.0.0@ or later.</span><span>
+</span><a name="line-239"></a><span class="hs-comment">--</span><span>
+</span><a name="line-240"></a><span class="hs-comment">-- /Since: 3.6/</span><span>
+</span><a name="line-241"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-identifier">CTimer</span><span>
+</span><a name="line-242"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-243"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-244"></a><span>
+</span><a name="line-245"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-246"></a><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">Fd</span><span>
+</span><a name="line-247"></a></pre></body></html>

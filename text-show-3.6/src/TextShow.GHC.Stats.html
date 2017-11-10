@@ -1,0 +1,33 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-deprecations #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans      #-}</span><span>
+</span><a name="line-7"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-8"></a><span class="hs-comment">{-|
+Module:      TextShow.GHC.Stats
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instance for 'GCStats'.
+Only provided if using @base-4.5.0.0@ or later.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-21"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stats</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-cpp">#if MIN_VERSION_base(4,5,0)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Stats</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">GCStats</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Floating.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Floating</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-31"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''GCStats)
+#endif
+</span></pre></body></html>

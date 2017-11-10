@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-2"></a><span class="hs-comment">{-|
+Module:      TextShow.Debug.Trace.TH
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Functions that splice traces into source code which take an arbitrary data type or
+data family instance as an argument (even if it is not an instance of @TextShow@). You
+need to enable the @TemplateHaskell@ language extension in order to use this module.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-16"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Debug</span><span class="hs-operator">.</span><span class="hs-identifier">Trace</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-17"></a><span>      </span><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShow"><span class="hs-identifier hs-var">makeTraceTextShow</span></a><span>
+</span><a name="line-18"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShowId"><span class="hs-identifier hs-var">makeTraceTextShowId</span></a><span>
+</span><a name="line-19"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShowM"><span class="hs-identifier hs-var">makeTraceTextShowM</span></a><span>
+</span><a name="line-20"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Syntax</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Name</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Q</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Exp</span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Debug.Trace.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Debug</span><span class="hs-operator">.</span><span class="hs-identifier">Trace</span></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'traceTextShow' (without</span><span>
+</span><a name="line-28"></a><span class="hs-comment">-- requiring a @TextShow@ instance).</span><span>
+</span><a name="line-29"></a><span class="hs-comment">--</span><span>
+</span><a name="line-30"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-31"></a><span class="hs-identifier">makeTraceTextShow</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-32"></a><a name="makeTraceTextShow"><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShow"><span class="hs-identifier">makeTraceTextShow</span></a></a><span> </span><a name="local-6989586621681249336"><a href="#local-6989586621681249336"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span> </span><a href="#local-6989586621681249336"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-33"></a><span>
+</span><a name="line-34"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'traceTextShowId' (without</span><span>
+</span><a name="line-35"></a><span class="hs-comment">-- requiring a @TextShow@ instance).</span><span>
+</span><a name="line-36"></a><span class="hs-comment">--</span><span>
+</span><a name="line-37"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-38"></a><span class="hs-identifier">makeTraceTextShowId</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-39"></a><a name="makeTraceTextShowId"><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShowId"><span class="hs-identifier">makeTraceTextShowId</span></a></a><span> </span><a name="local-6989586621681249338"><a href="#local-6989586621681249338"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621681249339"><a href="#local-6989586621681249339"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="TextShow.Debug.Trace.html#tracet"><span class="hs-identifier hs-var">tracet</span></a><span> </span><span class="hs-special">(</span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span> </span><a href="#local-6989586621681249338"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621681249339"><span class="hs-identifier hs-var">a</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621681249339"><span class="hs-identifier hs-var">a</span></a><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-40"></a><span>
+</span><a name="line-41"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'traceTextShowM' (without</span><span>
+</span><a name="line-42"></a><span class="hs-comment">-- requiring a @TextShow@ instance).</span><span>
+</span><a name="line-43"></a><span class="hs-comment">--</span><span>
+</span><a name="line-44"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-45"></a><span class="hs-identifier">makeTraceTextShowM</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-46"></a><a name="makeTraceTextShowM"><a href="TextShow.Debug.Trace.TH.html#makeTraceTextShowM"><span class="hs-identifier">makeTraceTextShowM</span></a></a><span> </span><a name="local-6989586621681249341"><a href="#local-6989586621681249341"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><a href="TextShow.Debug.Trace.html#tracetM"><span class="hs-identifier hs-var">tracetM</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span> </span><a href="#local-6989586621681249341"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-47"></a></pre></body></html>

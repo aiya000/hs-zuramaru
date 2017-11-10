@@ -1,0 +1,1859 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns       #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE CPP                #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE MagicHash          #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell    #-}</span><span>
+</span><a name="line-5"></a><span class="hs-comment">{-|
+Module:      TextShow.TH.Internal
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Functions to mechanically derive 'TextShow', 'TextShow1', or 'TextShow2' instances,
+or to splice their functions directly into Haskell source code. You need to enable
+the @TemplateHaskell@ language extension in order to use this module.
+
+This implementation is loosely based off of the @Data.Aeson.TH@ module from the
+@aeson@ library.
+-}</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-21"></a><span>      </span><span class="hs-comment">-- * 'deriveTextShow'</span><span>
+</span><a name="line-22"></a><span>      </span><span class="hs-comment">-- $deriveTextShow</span><span>
+</span><a name="line-23"></a><span>      </span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span>
+</span><a name="line-24"></a><span>      </span><span class="hs-comment">-- * 'deriveTextShow1'</span><span>
+</span><a name="line-25"></a><span>      </span><span class="hs-comment">-- $deriveTextShow1</span><span>
+</span><a name="line-26"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span>
+</span><a name="line-27"></a><span>      </span><span class="hs-comment">-- * 'deriveTextShow2'</span><span>
+</span><a name="line-28"></a><span>      </span><span class="hs-comment">-- $deriveTextShow2</span><span>
+</span><a name="line-29"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow2"><span class="hs-identifier hs-var">deriveTextShow2</span></a><span>
+</span><a name="line-30"></a><span>      </span><span class="hs-comment">-- * @make-@ functions</span><span>
+</span><a name="line-31"></a><span>      </span><span class="hs-comment">-- $make</span><span>
+</span><a name="line-32"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span>
+</span><a name="line-33"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtl"><span class="hs-identifier hs-var">makeShowtl</span></a><span>
+</span><a name="line-34"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtPrec"><span class="hs-identifier hs-var">makeShowtPrec</span></a><span>
+</span><a name="line-35"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtlPrec"><span class="hs-identifier hs-var">makeShowtlPrec</span></a><span>
+</span><a name="line-36"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtList"><span class="hs-identifier hs-var">makeShowtList</span></a><span>
+</span><a name="line-37"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtlList"><span class="hs-identifier hs-var">makeShowtlList</span></a><span>
+</span><a name="line-38"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowb"><span class="hs-identifier hs-var">makeShowb</span></a><span>
+</span><a name="line-39"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbList"><span class="hs-identifier hs-var">makeShowbList</span></a><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makePrintT"><span class="hs-identifier hs-var">makePrintT</span></a><span>
+</span><a name="line-42"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makePrintTL"><span class="hs-identifier hs-var">makePrintTL</span></a><span>
+</span><a name="line-43"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeHPrintT"><span class="hs-identifier hs-var">makeHPrintT</span></a><span>
+</span><a name="line-44"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeHPrintTL"><span class="hs-identifier hs-var">makeHPrintTL</span></a><span>
+</span><a name="line-45"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec"><span class="hs-identifier hs-var">makeLiftShowbPrec</span></a><span>
+</span><a name="line-46"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec1"><span class="hs-identifier hs-var">makeShowbPrec1</span></a><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec2"><span class="hs-identifier hs-var">makeLiftShowbPrec2</span></a><span>
+</span><a name="line-48"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec2"><span class="hs-identifier hs-var">makeShowbPrec2</span></a><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-comment">-- * 'Options'</span><span>
+</span><a name="line-50"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-51"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span>
+</span><a name="line-52"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#GenTextMethods"><span class="hs-identifier hs-type">GenTextMethods</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-53"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShowOptions"><span class="hs-identifier hs-var">deriveTextShowOptions</span></a><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1Options"><span class="hs-identifier hs-var">deriveTextShow1Options</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow2Options"><span class="hs-identifier hs-var">deriveTextShow2Options</span></a><span>
+</span><a name="line-56"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-57"></a><span>
+</span><a name="line-58"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">liftM</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">unless</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">when</span><span class="hs-special">)</span><span>
+</span><a name="line-59"></a><span class="hs-cpp">#if MIN_VERSION_template_haskell(2,11,0)</span><span>
+</span><a name="line-60"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;=&lt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-61"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-62"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Foldable</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span>
+</span><a name="line-63"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">NonEmpty</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">NE</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">drop</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">length</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">reverse</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">splitAt</span><span class="hs-special">)</span><span>
+</span><a name="line-65"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">NonEmpty</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">NonEmpty</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;|</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Map</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Map</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">fromList</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">findWithDefault</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">keys</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">lookup</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-67"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Map</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Map</span><span class="hs-special">)</span><span>
+</span><a name="line-68"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span><span>
+</span><a name="line-69"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-70"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Set</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Set</span><span>
+</span><a name="line-71"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Set</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Set</span><span class="hs-special">)</span><span>
+</span><a name="line-72"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span>    </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span>
+</span><a name="line-73"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">putStrLn</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">hPutStrLn</span><span class="hs-special">)</span><span>
+</span><a name="line-74"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">toStrict</span><span class="hs-special">)</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TB</span><span>
+</span><a name="line-76"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">toLazyText</span><span class="hs-special">)</span><span>
+</span><a name="line-77"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span>    </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span>
+</span><a name="line-78"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">putStrLn</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">hPutStrLn</span><span class="hs-special">)</span><span>
+</span><a name="line-79"></a><span>
+</span><a name="line-80"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Double</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Float</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-81"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Double</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Float</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word</span><span class="hs-operator hs-type">#</span><span class="hs-special">)</span><span>
+</span><a name="line-82"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Show</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">appPrec</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">appPrec1</span><span class="hs-special">)</span><span>
+</span><a name="line-83"></a><span>
+</span><a name="line-84"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Lib</span><span>
+</span><a name="line-85"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Ppr</span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">appPrec</span><span class="hs-special">)</span><span>
+</span><a name="line-86"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Syntax</span><span>
+</span><a name="line-87"></a><span>
+</span><a name="line-88"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-89"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span>
+</span><a name="line-90"></a><span>
+</span><a name="line-91"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow2"><span class="hs-identifier hs-type">TextShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><a name="line-92"></a><span>                                   </span><a href="TextShow.Classes.html#showbListWith"><span class="hs-identifier hs-var">showbListWith</span></a><span class="hs-special">,</span><span>
+</span><a name="line-93"></a><span>                                   </span><a href="TextShow.Classes.html#showbParen"><span class="hs-identifier hs-var">showbParen</span></a><span class="hs-special">,</span><span>  </span><a href="TextShow.Classes.html#showbCommaSpace"><span class="hs-identifier hs-var">showbCommaSpace</span></a><span class="hs-special">,</span><span>  </span><a href="TextShow.Classes.html#showbSpace"><span class="hs-identifier hs-var">showbSpace</span></a><span class="hs-special">,</span><span>
+</span><a name="line-94"></a><span>                                   </span><a href="TextShow.Classes.html#showtParen"><span class="hs-identifier hs-var">showtParen</span></a><span class="hs-special">,</span><span>  </span><a href="TextShow.Classes.html#showtCommaSpace"><span class="hs-identifier hs-var">showtCommaSpace</span></a><span class="hs-special">,</span><span>  </span><a href="TextShow.Classes.html#showtSpace"><span class="hs-identifier hs-var">showtSpace</span></a><span class="hs-special">,</span><span>
+</span><a name="line-95"></a><span>                                   </span><a href="TextShow.Classes.html#showtlParen"><span class="hs-identifier hs-var">showtlParen</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlCommaSpace"><span class="hs-identifier hs-var">showtlCommaSpace</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlSpace"><span class="hs-identifier hs-var">showtlSpace</span></a><span class="hs-special">)</span><span>
+</span><a name="line-96"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Options.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Options</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#GenTextMethods"><span class="hs-identifier hs-type">GenTextMethods</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span class="hs-special">)</span><span>
+</span><a name="line-97"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Utils.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Utils.html#isInfixDataCon"><span class="hs-identifier hs-var">isInfixDataCon</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#isSymVar"><span class="hs-identifier hs-var">isSymVar</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#isTupleString"><span class="hs-identifier hs-var">isTupleString</span></a><span class="hs-special">)</span><span>
+</span><a name="line-98"></a><span>
+</span><a name="line-99"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-100"></a><span class="hs-comment">-- User-facing API</span><span>
+</span><a name="line-101"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-102"></a><span>
+</span><a name="line-103"></a><span class="hs-comment">{- $deriveTextShow
+
+'deriveTextShow' automatically generates a 'TextShow' instance declaration for a data
+type, newtype, or data family instance. This emulates what would (hypothetically)
+happen if you could attach a @deriving 'TextShow'@ clause to the end of a data
+declaration.
+
+Here are some examples of how to derive 'TextShow' for simple data types:
+
+@
+&amp;#123;-&amp;#35; LANGUAGE TemplateHaskell &amp;#35;-&amp;#125;
+import TextShow.TH
+
+data Letter = A | B | C
+$('deriveTextShow' ''Letter) -- instance TextShow Letter where ...
+
+newtype Box a = Box a
+$('deriveTextShow' ''Box) -- instance TextShow a =&gt; TextShow (Box a) where ...
+@
+
+If you are using @template-haskell-2.7.0.0@ or later (i.e., GHC 7.4 or later),
+'deriveTextShow' can also be used to derive 'TextShow' instances for data family
+instances (which requires the @-XTypeFamilies@ extension). To do so, pass the name of
+a data or newtype instance constructor (NOT a data family name!) to 'deriveTextShow'.
+Note that the generated code may require the @-XFlexibleInstances@ extension.
+Some examples:
+
+@
+&amp;#123;-&amp;#35; LANGUAGE FlexibleInstances, TemplateHaskell, TypeFamilies &amp;#35;-&amp;#125;
+import TextShow.TH (deriveTextShow)
+
+class AssocClass a where
+    data AssocData a
+instance AssocClass Int where
+    data AssocData Int = AssocDataInt1 Int | AssocDataInt2 Int Int
+$('deriveTextShow' 'AssocDataInt1) -- instance TextShow (AssocData Int) where ...
+-- Alternatively, one could use $(deriveTextShow 'AssocDataInt2)
+
+data family DataFam a b
+newtype instance DataFam () b = DataFamB b
+$('deriveTextShow' 'DataFamB) -- instance TextShow b =&gt; TextShow (DataFam () b)
+@
+
+Note that at the moment, there are some limitations:
+
+* The 'Name' argument to 'deriveTextShow' must not be a type synonym.
+
+* 'deriveTextShow' makes the assumption that all type variables of kind @*@ require a
+  'TextShow' constraint when creating the type context. For example, if you have @data
+  Phantom a = Phantom@, then @('deriveTextShow' ''Phantom)@ will generate @instance
+  'TextShow' a =&gt; 'TextShow' (Phantom a) where ...@, even though @'TextShow' a@ is
+  not required. If you want a proper 'TextShow' instance for @Phantom@, you will need
+  to use 'makeShowbPrec' (see the documentation of the @make@ functions for more
+  information).
+
+* 'deriveTextShow' lacks the ability to properly detect data types with higher-kinded
+   type parameters (e.g., @data HK f a = HK (f a)@) or with kinds other than @*@
+   (e.g., @data List a (empty :: Bool)@). If you wish to derive 'TextShow'
+   instances for these data types, you will need to use 'makeShowbPrec'.
+
+* Some data constructors have arguments whose 'TextShow' instance depends on a
+  typeclass besides 'TextShow'. For example, consider @newtype MyFixed a = MyFixed
+  (Fixed a)@. @'Fixed' a@ is a 'TextShow' instance only if @a@ is an instance of both
+  @HasResolution@ and 'TextShow'. Unfortunately, 'deriveTextShow' cannot infer that
+  'a' must be an instance of 'HasResolution', so it cannot create a 'TextShow'
+  instance for @MyFixed@. However, you can use 'makeShowbPrec' to get around this.
+
+-}</span><span>
+</span><a name="line-171"></a><span>
+</span><a name="line-172"></a><span class="hs-comment">-- | Generates a 'TextShow' instance declaration for the given data type or data</span><span>
+</span><a name="line-173"></a><span class="hs-comment">-- family instance.</span><span>
+</span><a name="line-174"></a><span class="hs-comment">--</span><span>
+</span><a name="line-175"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-176"></a><span class="hs-identifier">deriveTextShow</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-177"></a><a name="deriveTextShow"><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier">deriveTextShow</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShowOptions"><span class="hs-identifier hs-var">deriveTextShowOptions</span></a><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span>
+</span><a name="line-178"></a><span>
+</span><a name="line-179"></a><span class="hs-comment">-- | Like 'deriveTextShow', but takes an 'Options' argument.</span><span>
+</span><a name="line-180"></a><span class="hs-comment">--</span><span>
+</span><a name="line-181"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-182"></a><span class="hs-identifier">deriveTextShowOptions</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-183"></a><a name="deriveTextShowOptions"><a href="TextShow.TH.Internal.html#deriveTextShowOptions"><span class="hs-identifier">deriveTextShowOptions</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShowClass"><span class="hs-identifier hs-var">deriveTextShowClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow"><span class="hs-identifier hs-var">TextShow</span></a><span>
+</span><a name="line-184"></a><span>
+</span><a name="line-185"></a><span class="hs-comment">{- $deriveTextShow1
+
+'deriveTextShow1' automatically generates a 'Show1' instance declaration for a data
+type, newtype, or data family instance that has at least one type variable.
+This emulates what would (hypothetically) happen if you could attach a @deriving
+'TextShow1'@ clause to the end of a data declaration. Examples:
+
+@
+&amp;#123;-&amp;#35; LANGUAGE TemplateHaskell &amp;#35;-&amp;#125;
+import TextShow.TH
+
+data Stream a = Stream a (Stream a)
+$('deriveTextShow1' ''Stream) -- instance TextShow1 TextStream where ...
+
+newtype WrappedFunctor f a = WrapFunctor (f a)
+$('deriveTextShow1' ''WrappedFunctor) -- instance TextShow1 f =&gt; TextShow1 (WrappedFunctor f) where ...
+@
+
+The same restrictions that apply to 'deriveTextShow' also apply to 'deriveTextShow1',
+with some caveats:
+
+* With 'deriveTextShow1', the last type variable must be of kind @*@. For other ones,
+  type variables of kind @*@ are assumed to require a 'TextShow' context, and type
+  variables of kind @* -&gt; *@ are assumed to require a 'TextShow1' context. For more
+  complicated scenarios, use 'makeLiftShowbPrec'.
+
+* If using @-XDatatypeContexts@, a datatype constraint cannot mention the last type
+  variable. For example, @data Ord a =&gt; Illegal a = Illegal a@ cannot have a derived
+  'TextShow1' instance.
+
+* If the last type variable is used within a data field of a constructor, it must only
+  be used in the last argument of the data type constructor. For example, @data Legal a
+  = Legal (Either Int a)@ can have a derived 'TextShow1' instance, but @data Illegal a
+  = Illegal (Either a a)@ cannot.
+
+* Data family instances must be able to eta-reduce the last type variable. In other
+  words, if you have a instance of the form:
+
+  @
+  data family Family a1 ... an t
+  data instance Family e1 ... e2 v = ...
+  @
+
+  Then the following conditions must hold:
+
+  1. @v@ must be a type variable.
+  2. @v@ must not be mentioned in any of @e1@, ..., @e2@.
+
+-}</span><span>
+</span><a name="line-234"></a><span>
+</span><a name="line-235"></a><span class="hs-comment">-- | Generates a 'TextShow1' instance declaration for the given data type or data</span><span>
+</span><a name="line-236"></a><span class="hs-comment">-- family instance.</span><span>
+</span><a name="line-237"></a><span class="hs-comment">--</span><span>
+</span><a name="line-238"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-239"></a><span class="hs-identifier">deriveTextShow1</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-240"></a><a name="deriveTextShow1"><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier">deriveTextShow1</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1Options"><span class="hs-identifier hs-var">deriveTextShow1Options</span></a><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span>
+</span><a name="line-241"></a><span>
+</span><a name="line-242"></a><span class="hs-comment">-- | Like 'deriveTextShow1', but takes an 'Options' argument.</span><span>
+</span><a name="line-243"></a><span class="hs-comment">--</span><span>
+</span><a name="line-244"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-245"></a><span class="hs-identifier">deriveTextShow1Options</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-246"></a><a name="deriveTextShow1Options"><a href="TextShow.TH.Internal.html#deriveTextShow1Options"><span class="hs-identifier">deriveTextShow1Options</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShowClass"><span class="hs-identifier hs-var">deriveTextShowClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow1"><span class="hs-identifier hs-var">TextShow1</span></a><span>
+</span><a name="line-247"></a><span>
+</span><a name="line-248"></a><span class="hs-comment">{- $deriveTextShow2
+
+'deriveTextShow2' automatically generates a 'TextShow2' instance declaration for a data
+type, newtype, or data family instance that has at least two type variables.
+This emulates what would (hypothetically) happen if you could attach a @deriving
+'TextShow2'@ clause to the end of a data declaration. Examples:
+
+@
+&amp;#123;-&amp;#35; LANGUAGE TemplateHaskell &amp;#35;-&amp;#125;
+import TextShow.TH
+
+data OneOrNone a b = OneL a | OneR b | None
+$('deriveTextShow2' ''OneOrNone) -- instance TextShow2 OneOrNone where ...
+
+newtype WrappedBifunctor f a b = WrapBifunctor (f a b)
+$('deriveTextShow2' ''WrappedBifunctor) -- instance TextShow2 f =&gt; TextShow2 (WrappedBifunctor f) where ...
+@
+
+The same restrictions that apply to 'deriveTextShow' and 'deriveTextShow1' also apply
+to 'deriveTextShow2', with some caveats:
+
+* With 'deriveTextShow2', the last type variables must both be of kind @*@. For other
+  ones, type variables of kind @*@ are assumed to require a 'TextShow' constraint, type
+  variables of kind @* -&gt; *@ are assumed to require a 'TextShow1' constraint, and type
+  variables of kind @* -&gt; * -&gt; *@ are assumed to require a 'TextShow2' constraint. For
+  more complicated scenarios, use 'makeLiftShowbPrec2'.
+
+* If using @-XDatatypeContexts@, a datatype constraint cannot mention either of the last
+  two type variables. For example, @data Ord a =&gt; Illegal a b = Illegal a b@ cannot
+  have a derived 'TextShow2' instance.
+
+* If either of the last two type variables is used within a data field of a constructor,
+  it must only be used in the last two arguments of the data type constructor. For
+  example, @data Legal a b = Legal (Int, Int, a, b)@ can have a derived 'TextShow2'
+  instance, but @data Illegal a b = Illegal (a, b, a, b)@ cannot.
+
+* Data family instances must be able to eta-reduce the last two type variables. In other
+  words, if you have a instance of the form:
+
+  @
+  data family Family a1 ... an t1 t2
+  data instance Family e1 ... e2 v1 v2 = ...
+  @
+
+  Then the following conditions must hold:
+
+  1. @v1@ and @v2@ must be distinct type variables.
+  2. Neither @v1@ not @v2@ must be mentioned in any of @e1@, ..., @e2@.
+
+-}</span><span>
+</span><a name="line-298"></a><span>
+</span><a name="line-299"></a><span class="hs-comment">-- | Generates a 'TextShow2' instance declaration for the given data type or data</span><span>
+</span><a name="line-300"></a><span class="hs-comment">-- family instance.</span><span>
+</span><a name="line-301"></a><span class="hs-comment">--</span><span>
+</span><a name="line-302"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-303"></a><span class="hs-identifier">deriveTextShow2</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-304"></a><a name="deriveTextShow2"><a href="TextShow.TH.Internal.html#deriveTextShow2"><span class="hs-identifier">deriveTextShow2</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow2Options"><span class="hs-identifier hs-var">deriveTextShow2Options</span></a><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span>
+</span><a name="line-305"></a><span>
+</span><a name="line-306"></a><span class="hs-comment">-- | Like 'deriveTextShow2', but takes an 'Options' argument.</span><span>
+</span><a name="line-307"></a><span class="hs-comment">--</span><span>
+</span><a name="line-308"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-309"></a><span class="hs-identifier">deriveTextShow2Options</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-310"></a><a name="deriveTextShow2Options"><a href="TextShow.TH.Internal.html#deriveTextShow2Options"><span class="hs-identifier">deriveTextShow2Options</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShowClass"><span class="hs-identifier hs-var">deriveTextShowClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow2"><span class="hs-identifier hs-var">TextShow2</span></a><span>
+</span><a name="line-311"></a><span>
+</span><a name="line-312"></a><span class="hs-comment">{- $make
+
+There may be scenarios in which you want to show an arbitrary data type or data
+family instance without having to make the type an instance of 'TextShow'. For these
+cases, this modules provides several functions (all prefixed with @make@-) that
+splice the appropriate lambda expression into your source code. Example:
+
+This is particularly useful for creating instances for sophisticated data types. For
+example, 'deriveTextShow' cannot infer the correct type context for
+@newtype HigherKinded f a = HigherKinded (f a)@, since @f@ is of kind @* -&gt; *@.
+However, it is still possible to derive a 'TextShow' instance for @HigherKinded@
+without too much trouble using 'makeShowbPrec':
+
+@
+&amp;#123;-&amp;#35; LANGUAGE FlexibleContexts, TemplateHaskell &amp;#35;-&amp;#125;
+import TextShow
+import TextShow.TH
+
+instance TextShow (f a) =&gt; TextShow (HigherKinded f a) where
+    showbPrec = $(makeShowbPrec ''HigherKinded)
+@
+
+-}</span><span>
+</span><a name="line-335"></a><span>
+</span><a name="line-336"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showt' (without requiring a</span><span>
+</span><a name="line-337"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-338"></a><span class="hs-comment">--</span><span>
+</span><a name="line-339"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-340"></a><span class="hs-identifier">makeShowt</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-341"></a><a name="makeShowt"><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier">makeShowt</span></a></a><span> </span><a name="local-6989586621679455929"><a href="#local-6989586621679455929"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtPrec"><span class="hs-identifier hs-var">makeShowtPrec</span></a><span> </span><a href="#local-6989586621679455929"><span class="hs-identifier hs-var">name</span></a><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">appE</span><span class="hs-special">`</span><span> </span><a href="TextShow.TH.Internal.html#integerE"><span class="hs-identifier hs-var">integerE</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-342"></a><span>
+</span><a name="line-343"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showtl' (without requiring a</span><span>
+</span><a name="line-344"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-345"></a><span class="hs-comment">--</span><span>
+</span><a name="line-346"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-347"></a><span class="hs-identifier">makeShowtl</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-348"></a><a name="makeShowtl"><a href="TextShow.TH.Internal.html#makeShowtl"><span class="hs-identifier">makeShowtl</span></a></a><span> </span><a name="local-6989586621679455930"><a href="#local-6989586621679455930"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtlPrec"><span class="hs-identifier hs-var">makeShowtlPrec</span></a><span> </span><a href="#local-6989586621679455930"><span class="hs-identifier hs-var">name</span></a><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">appE</span><span class="hs-special">`</span><span> </span><a href="TextShow.TH.Internal.html#integerE"><span class="hs-identifier hs-var">integerE</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-349"></a><span>
+</span><a name="line-350"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showtPrec' (without requiring a</span><span>
+</span><a name="line-351"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-352"></a><span class="hs-comment">--</span><span>
+</span><a name="line-353"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-354"></a><span class="hs-identifier">makeShowtPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-355"></a><a name="makeShowtPrec"><a href="TextShow.TH.Internal.html#makeShowtPrec"><span class="hs-identifier">makeShowtPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrecClass"><span class="hs-identifier hs-var">makeShowbPrecClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow"><span class="hs-identifier hs-var">TextShow</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowtPrec"><span class="hs-identifier hs-var">ShowtPrec</span></a><span>
+</span><a name="line-356"></a><span>
+</span><a name="line-357"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showtlPrec' (without</span><span>
+</span><a name="line-358"></a><span class="hs-comment">-- requiring a 'TextShow' instance).</span><span>
+</span><a name="line-359"></a><span class="hs-comment">--</span><span>
+</span><a name="line-360"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-361"></a><span class="hs-identifier">makeShowtlPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-362"></a><a name="makeShowtlPrec"><a href="TextShow.TH.Internal.html#makeShowtlPrec"><span class="hs-identifier">makeShowtlPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrecClass"><span class="hs-identifier hs-var">makeShowbPrecClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow"><span class="hs-identifier hs-var">TextShow</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowtlPrec"><span class="hs-identifier hs-var">ShowtlPrec</span></a><span>
+</span><a name="line-363"></a><span>
+</span><a name="line-364"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showtList' (without requiring a</span><span>
+</span><a name="line-365"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-366"></a><span class="hs-comment">--</span><span>
+</span><a name="line-367"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-368"></a><span class="hs-identifier">makeShowtList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-369"></a><a name="makeShowtList"><a href="TextShow.TH.Internal.html#makeShowtList"><span class="hs-identifier">makeShowtList</span></a></a><span> </span><a name="local-6989586621679455931"><a href="#local-6989586621679455931"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier hs-var">toStrict</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowtlList"><span class="hs-identifier hs-var">makeShowtlList</span></a><span> </span><a href="#local-6989586621679455931"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-370"></a><span>
+</span><a name="line-371"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showtlList' (without</span><span>
+</span><a name="line-372"></a><span class="hs-comment">-- requiring a 'TextShow' instance).</span><span>
+</span><a name="line-373"></a><span class="hs-comment">--</span><span>
+</span><a name="line-374"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-375"></a><span class="hs-identifier">makeShowtlList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-376"></a><a name="makeShowtlList"><a href="TextShow.TH.Internal.html#makeShowtlList"><span class="hs-identifier">makeShowtlList</span></a></a><span> </span><a name="local-6989586621679455933"><a href="#local-6989586621679455933"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier hs-var">toLazyText</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowbList"><span class="hs-identifier hs-var">makeShowbList</span></a><span> </span><a href="#local-6989586621679455933"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-377"></a><span>
+</span><a name="line-378"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showb' (without requiring a</span><span>
+</span><a name="line-379"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-380"></a><span class="hs-comment">--</span><span>
+</span><a name="line-381"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-382"></a><span class="hs-identifier">makeShowb</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-383"></a><a name="makeShowb"><a href="TextShow.TH.Internal.html#makeShowb"><span class="hs-identifier">makeShowb</span></a></a><span> </span><a name="local-6989586621679455935"><a href="#local-6989586621679455935"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span> </span><a href="#local-6989586621679455935"><span class="hs-identifier hs-var">name</span></a><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">appE</span><span class="hs-special">`</span><span> </span><a href="TextShow.TH.Internal.html#integerE"><span class="hs-identifier hs-var">integerE</span></a><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-384"></a><span>
+</span><a name="line-385"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showbPrec' (without requiring a</span><span>
+</span><a name="line-386"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-387"></a><span class="hs-comment">--</span><span>
+</span><a name="line-388"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-389"></a><span class="hs-identifier">makeShowbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-390"></a><a name="makeShowbPrec"><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier">makeShowbPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrecClass"><span class="hs-identifier hs-var">makeShowbPrecClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow"><span class="hs-identifier hs-var">TextShow</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowbPrec"><span class="hs-identifier hs-var">ShowbPrec</span></a><span>
+</span><a name="line-391"></a><span>
+</span><a name="line-392"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'liftShowbPrec' (without</span><span>
+</span><a name="line-393"></a><span class="hs-comment">-- requiring a 'TextShow1' instance).</span><span>
+</span><a name="line-394"></a><span class="hs-comment">--</span><span>
+</span><a name="line-395"></a><span class="hs-comment">-- /Since: 3/</span><span>
+</span><a name="line-396"></a><span class="hs-identifier">makeLiftShowbPrec</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-397"></a><a name="makeLiftShowbPrec"><a href="TextShow.TH.Internal.html#makeLiftShowbPrec"><span class="hs-identifier">makeLiftShowbPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrecClass"><span class="hs-identifier hs-var">makeShowbPrecClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow1"><span class="hs-identifier hs-var">TextShow1</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowbPrec"><span class="hs-identifier hs-var">ShowbPrec</span></a><span>
+</span><a name="line-398"></a><span>
+</span><a name="line-399"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showbPrec1' (without</span><span>
+</span><a name="line-400"></a><span class="hs-comment">-- requiring a 'TextShow1' instance).</span><span>
+</span><a name="line-401"></a><span class="hs-comment">--</span><span>
+</span><a name="line-402"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-403"></a><span class="hs-identifier">makeShowbPrec1</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-404"></a><a name="makeShowbPrec1"><a href="TextShow.TH.Internal.html#makeShowbPrec1"><span class="hs-identifier">makeShowbPrec1</span></a></a><span> </span><a name="local-6989586621679455936"><a href="#local-6989586621679455936"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec"><span class="hs-identifier hs-var">makeLiftShowbPrec</span></a><span> </span><a href="#local-6989586621679455936"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier hs-var">showbPrec</span></a><span> </span><a href="TextShow.Classes.html#showbList"><span class="hs-identifier hs-var">showbList</span></a><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-405"></a><span>
+</span><a name="line-406"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'liftShowbPrec2' (without</span><span>
+</span><a name="line-407"></a><span class="hs-comment">-- requiring a 'TextShow2' instance).</span><span>
+</span><a name="line-408"></a><span class="hs-comment">--</span><span>
+</span><a name="line-409"></a><span class="hs-comment">-- /Since: 3/</span><span>
+</span><a name="line-410"></a><span class="hs-identifier">makeLiftShowbPrec2</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-411"></a><a name="makeLiftShowbPrec2"><a href="TextShow.TH.Internal.html#makeLiftShowbPrec2"><span class="hs-identifier">makeLiftShowbPrec2</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrecClass"><span class="hs-identifier hs-var">makeShowbPrecClass</span></a><span> </span><a href="TextShow.TH.Internal.html#TextShow2"><span class="hs-identifier hs-var">TextShow2</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowbPrec"><span class="hs-identifier hs-var">ShowbPrec</span></a><span>
+</span><a name="line-412"></a><span>
+</span><a name="line-413"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showbPrec2' (without</span><span>
+</span><a name="line-414"></a><span class="hs-comment">-- requiring a 'TextShow2' instance).</span><span>
+</span><a name="line-415"></a><span class="hs-comment">--</span><span>
+</span><a name="line-416"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-417"></a><span class="hs-identifier">makeShowbPrec2</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-418"></a><a name="makeShowbPrec2"><a href="TextShow.TH.Internal.html#makeShowbPrec2"><span class="hs-identifier">makeShowbPrec2</span></a></a><span> </span><a name="local-6989586621679455938"><a href="#local-6989586621679455938"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec2"><span class="hs-identifier hs-var">makeLiftShowbPrec2</span></a><span> </span><a href="#local-6989586621679455938"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier hs-var">showbPrec</span></a><span> </span><a href="TextShow.Classes.html#showbList"><span class="hs-identifier hs-var">showbList</span></a><span> </span><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier hs-var">showbPrec</span></a><span> </span><a href="TextShow.Classes.html#showbList"><span class="hs-identifier hs-var">showbList</span></a><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-419"></a><span>
+</span><a name="line-420"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'showbList' (without requiring a</span><span>
+</span><a name="line-421"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-422"></a><span class="hs-comment">--</span><span>
+</span><a name="line-423"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-424"></a><span class="hs-identifier">makeShowbList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-425"></a><a name="makeShowbList"><a href="TextShow.TH.Internal.html#makeShowbList"><span class="hs-identifier">makeShowbList</span></a></a><span> </span><a name="local-6989586621679455940"><a href="#local-6989586621679455940"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><a href="TextShow.Classes.html#showbListWith"><span class="hs-identifier hs-var">showbListWith</span></a><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowb"><span class="hs-identifier hs-var">makeShowb</span></a><span> </span><a href="#local-6989586621679455940"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-426"></a><span>
+</span><a name="line-427"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'printT' (without requiring a</span><span>
+</span><a name="line-428"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-429"></a><span class="hs-comment">--</span><span>
+</span><a name="line-430"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-431"></a><span class="hs-identifier">makePrintT</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-432"></a><a name="makePrintT"><a href="TextShow.TH.Internal.html#makePrintT"><span class="hs-identifier">makePrintT</span></a></a><span> </span><a name="local-6989586621679455942"><a href="#local-6989586621679455942"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">putStrLn</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span> </span><a href="#local-6989586621679455942"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-433"></a><span>
+</span><a name="line-434"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'printTL' (without requiring a</span><span>
+</span><a name="line-435"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-436"></a><span class="hs-comment">--</span><span>
+</span><a name="line-437"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-438"></a><span class="hs-identifier">makePrintTL</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-439"></a><a name="makePrintTL"><a href="TextShow.TH.Internal.html#makePrintTL"><span class="hs-identifier">makePrintTL</span></a></a><span> </span><a name="local-6989586621679455944"><a href="#local-6989586621679455944"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">putStrLn</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowtl"><span class="hs-identifier hs-var">makeShowtl</span></a><span> </span><a href="#local-6989586621679455944"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-440"></a><span>
+</span><a name="line-441"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'hPrintT' (without requiring a</span><span>
+</span><a name="line-442"></a><span class="hs-comment">-- 'TextShow' instance).</span><span>
+</span><a name="line-443"></a><span class="hs-comment">--</span><span>
+</span><a name="line-444"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-445"></a><span class="hs-identifier">makeHPrintT</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-446"></a><a name="makeHPrintT"><a href="TextShow.TH.Internal.html#makeHPrintT"><span class="hs-identifier">makeHPrintT</span></a></a><span> </span><a name="local-6989586621679455946"><a href="#local-6989586621679455946"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621679455947"><a href="#local-6989586621679455947"><span class="hs-identifier">h</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">hPutStrLn</span><span> </span><a href="#local-6989586621679455947"><span class="hs-identifier hs-var">h</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowt"><span class="hs-identifier hs-var">makeShowt</span></a><span> </span><a href="#local-6989586621679455946"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-447"></a><span>
+</span><a name="line-448"></a><span class="hs-comment">-- | Generates a lambda expression which behaves like 'hPrintTL' (without</span><span>
+</span><a name="line-449"></a><span class="hs-comment">-- requiring a 'TextShow' instance).</span><span>
+</span><a name="line-450"></a><span class="hs-comment">--</span><span>
+</span><a name="line-451"></a><span class="hs-comment">-- /Since: 2/</span><span>
+</span><a name="line-452"></a><span class="hs-identifier">makeHPrintTL</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-453"></a><a name="makeHPrintTL"><a href="TextShow.TH.Internal.html#makeHPrintTL"><span class="hs-identifier">makeHPrintTL</span></a></a><span> </span><a name="local-6989586621679455949"><a href="#local-6989586621679455949"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-glyph">|</span><span> </span><span class="hs-glyph">\</span><a name="local-6989586621679455950"><a href="#local-6989586621679455950"><span class="hs-identifier">h</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">hPutStrLn</span><span> </span><a href="#local-6989586621679455950"><span class="hs-identifier hs-var">h</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowtl"><span class="hs-identifier hs-var">makeShowtl</span></a><span> </span><a href="#local-6989586621679455949"><span class="hs-identifier hs-var">name</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span class="hs-special">]</span><span>
+</span><a name="line-454"></a><span>
+</span><a name="line-455"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-456"></a><span class="hs-comment">-- Code generation</span><span>
+</span><a name="line-457"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-458"></a><span>
+</span><a name="line-459"></a><span class="hs-comment">-- | Derive a TextShow(1)(2) instance declaration (depending on the TextShowClass</span><span>
+</span><a name="line-460"></a><span class="hs-comment">-- argument's value).</span><span>
+</span><a name="line-461"></a><span class="hs-identifier">deriveTextShowClass</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.TH.Internal.html#TextShowClass"><span class="hs-identifier hs-type">TextShowClass</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-462"></a><a name="deriveTextShowClass"><a href="TextShow.TH.Internal.html#deriveTextShowClass"><span class="hs-identifier">deriveTextShowClass</span></a></a><span> </span><a name="local-6989586621679455952"><a href="#local-6989586621679455952"><span class="hs-identifier">tsClass</span></a></a><span> </span><a name="local-6989586621679455953"><a href="#local-6989586621679455953"><span class="hs-identifier">opts</span></a></a><span> </span><a name="local-6989586621679455954"><a href="#local-6989586621679455954"><span class="hs-identifier">name</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Internal.html#withType"><span class="hs-identifier hs-var">withType</span></a><span> </span><a href="#local-6989586621679455954"><span class="hs-identifier hs-var">name</span></a><span> </span><a href="#local-6989586621679455955"><span class="hs-identifier hs-var">fromCons</span></a><span>
+</span><a name="line-463"></a><span>  </span><span class="hs-keyword">where</span><span>
+</span><a name="line-464"></a><span>    </span><span class="hs-identifier">fromCons</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Cxt</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">TyVarBndr</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Con</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Type</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-465"></a><span>    </span><a name="local-6989586621679455955"><a href="#local-6989586621679455955"><span class="hs-identifier">fromCons</span></a></a><span> </span><a name="local-6989586621679455956"><a href="#local-6989586621679455956"><span class="hs-identifier">name'</span></a></a><span> </span><a name="local-6989586621679455957"><a href="#local-6989586621679455957"><span class="hs-identifier">ctxt</span></a></a><span> </span><a name="local-6989586621679455958"><a href="#local-6989586621679455958"><span class="hs-identifier">tvbs</span></a></a><span> </span><a name="local-6989586621679455959"><a href="#local-6989586621679455959"><span class="hs-identifier">cons</span></a></a><span> </span><a name="local-6989586621679455960"><a href="#local-6989586621679455960"><span class="hs-identifier">mbTys</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">:</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">&lt;$&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-466"></a><span>        </span><span class="hs-special">(</span><a name="local-6989586621679455961"><a href="#local-6989586621679455961"><span class="hs-identifier">instanceCxt</span></a></a><span class="hs-special">,</span><span> </span><a name="local-6989586621679455962"><a href="#local-6989586621679455962"><span class="hs-identifier">instanceType</span></a></a><span class="hs-special">)</span><span>
+</span><a name="line-467"></a><span>            </span><span class="hs-glyph">&lt;-</span><span> </span><a href="TextShow.TH.Internal.html#buildTypeInstance"><span class="hs-identifier hs-var">buildTypeInstance</span></a><span> </span><a href="#local-6989586621679455952"><span class="hs-identifier hs-var">tsClass</span></a><span> </span><a href="#local-6989586621679455956"><span class="hs-identifier hs-var">name'</span></a><span> </span><a href="#local-6989586621679455957"><span class="hs-identifier hs-var">ctxt</span></a><span> </span><a href="#local-6989586621679455958"><span class="hs-identifier hs-var">tvbs</span></a><span> </span><a href="#local-6989586621679455960"><span class="hs-identifier hs-var">mbTys</span></a><span>
+</span><a name="line-468"></a><span>        </span><span class="hs-identifier hs-var">instanceD</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621679455961"><span class="hs-identifier hs-var">instanceCxt</span></a><span class="hs-special">)</span><span>
+</span><a name="line-469"></a><span>                  </span><span class="hs-special">(</span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621679455962"><span class="hs-identifier hs-var">instanceType</span></a><span class="hs-special">)</span><span>
+</span><a name="line-470"></a><span>                  </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecDecs"><span class="hs-identifier hs-var">showbPrecDecs</span></a><span> </span><a href="#local-6989586621679455952"><span class="hs-identifier hs-var">tsClass</span></a><span> </span><a href="#local-6989586621679455953"><span class="hs-identifier hs-var">opts</span></a><span> </span><a href="#local-6989586621679455959"><span class="hs-identifier hs-var">cons</span></a><span class="hs-special">)</span><span>
+</span><a name="line-471"></a><span>
+</span><a name="line-472"></a><span class="hs-comment">-- | Generates a declaration defining the primary function corresponding to a</span><span>
+</span><a name="line-473"></a><span class="hs-comment">-- particular class (showbPrec for TextShow, liftShowbPrec for TextShow1, and</span><span>
+</span><a name="line-474"></a><span class="hs-comment">-- liftShowbPrec2 for TextShow2).</span><span>
+</span><a name="line-475"></a><span class="hs-identifier">showbPrecDecs</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.TH.Internal.html#TextShowClass"><span class="hs-identifier hs-type">TextShowClass</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Con</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-476"></a><a name="showbPrecDecs"><a href="TextShow.TH.Internal.html#showbPrecDecs"><span class="hs-identifier">showbPrecDecs</span></a></a><span> </span><a name="local-6989586621679455972"><a href="#local-6989586621679455972"><span class="hs-identifier">tsClass</span></a></a><span> </span><a name="local-6989586621679455973"><a href="#local-6989586621679455973"><span class="hs-identifier">opts</span></a></a><span> </span><a name="local-6989586621679455974"><a href="#local-6989586621679455974"><span class="hs-identifier">cons</span></a></a><span> </span><span class="hs-glyph">=</span><span>
+</span><a name="line-477"></a><span>    </span><span class="hs-special">[</span><a href="#local-6989586621679455976"><span class="hs-identifier hs-var">genMethod</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowbPrec"><span class="hs-identifier hs-var">ShowbPrec</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecName"><span class="hs-identifier hs-var">showbPrecName</span></a><span> </span><a href="#local-6989586621679455972"><span class="hs-identifier hs-var">tsClass</span></a><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><a name="line-478"></a><span>    </span><span class="hs-operator hs-var">++</span><span> </span><span class="hs-keyword">if</span><span> </span><a href="#local-6989586621679455972"><span class="hs-identifier hs-var">tsClass</span></a><span> </span><span class="hs-operator hs-var">==</span><span> </span><a href="TextShow.TH.Internal.html#TextShow"><span class="hs-identifier hs-var">TextShow</span></a><span> </span><span class="hs-operator hs-var">&amp;&amp;</span><span> </span><a href="#local-6989586621679455975"><span class="hs-identifier hs-var">shouldGenTextMethods</span></a><span>
+</span><a name="line-479"></a><span>          </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679455976"><span class="hs-identifier hs-var">genMethod</span></a><span> </span><a href="TextShow.TH.Internal.html#ShowtPrec"><span class="hs-identifier hs-var">ShowtPrec</span></a><span> </span><span class="hs-char">'showtPrec, genMethod ShowtlPrec 'showtlPrec]
+          else []
+  where
+    shouldGenTextMethods :: Bool
+    shouldGenTextMethods = case genTextMethods opts of
+      AlwaysTextMethods    -&gt; True
+      SometimesTextMethods -&gt; all isNullaryCon cons
+      NeverTextMethods     -&gt; False
+
+    genMethod :: TextShowFun -&gt; Name -&gt; Q Dec
+    genMethod method methodName
+      = funD methodName
+             [ clause []
+                      (normalB $ makeTextShowForCons tsClass method cons)
+                      []
+             ]
+
+
+-- | Generates a lambda expression which behaves like showbPrec (for TextShow),
+-- liftShowbPrec (for TextShow1), or liftShowbPrec2 (for TextShow2).
+makeShowbPrecClass :: TextShowClass -&gt; TextShowFun -&gt; Name -&gt; Q Exp
+makeShowbPrecClass tsClass tsFun name = withType name fromCons
+  where
+    fromCons :: Name -&gt; Cxt -&gt; [TyVarBndr] -&gt; [Con] -&gt; Maybe [Type] -&gt; Q Exp
+    fromCons name' ctxt tvbs cons mbTys =
+        -- We force buildTypeInstance here since it performs some checks for whether
+        -- or not the provided datatype can actually have showbPrec/liftShowbPrec/etc.
+        -- implemented for it, and produces errors if it can't.
+        buildTypeInstance tsClass name' ctxt tvbs mbTys
+          `seq` makeTextShowForCons tsClass tsFun cons
+
+-- | Generates a lambda expression for showbPrec/liftShowbPrec/etc. for the
+-- given constructors. All constructors must be from the same type.
+makeTextShowForCons :: TextShowClass -&gt; TextShowFun -&gt; [Con] -&gt; Q Exp
+makeTextShowForCons _ _ [] = error &quot;Must have at least one data constructor&quot;
+makeTextShowForCons tsClass tsFun cons = do
+    p       &lt;- newName &quot;p&quot;
+    value   &lt;- newName &quot;value&quot;
+    sps     &lt;- newNameList &quot;sp&quot; $ fromEnum tsClass
+    sls     &lt;- newNameList &quot;sl&quot; $ fromEnum tsClass
+    let spls      = zip sps sls
+        spsAndSls = interleave sps sls
+    matches &lt;- concatMapM (makeTextShowForCon p tsClass tsFun spls) cons
+    lamE (map varP $ spsAndSls ++ [p, value])
+        . appsE
+        $ [ varE $ showPrecConstName tsClass tsFun
+          , caseE (varE value) (map return matches)
+          ] ++ map varE spsAndSls
+            ++ [varE p, varE value]
+
+-- | Generates a lambda expression for howbPrec/liftShowbPrec/etc. for a
+-- single constructor.
+makeTextShowForCon :: Name
+                   -&gt; TextShowClass
+                   -&gt; TextShowFun
+                   -&gt; [(Name, Name)]
+                   -&gt; Con
+                   -&gt; Q [Match]
+makeTextShowForCon _ _ tsFun _ (NormalC conName []) = do
+    m &lt;- match
+           (conP conName [])
+           (normalB  $ varE (fromStringName tsFun) `appE` stringE (parenInfixConName conName &quot;&quot;))
+           []
+    return [m]
+makeTextShowForCon p tsClass tsFun spls (NormalC conName [_]) = do
+    ([argTy], tvMap) &lt;- reifyConTys tsClass spls conName
+    arg &lt;- newName &quot;arg&quot;
+
+    let showArg  = makeTextShowForArg appPrec1 tsClass tsFun conName tvMap argTy arg
+        namedArg = infixApp (varE (fromStringName tsFun) `appE` stringE (parenInfixConName conName &quot; &quot;))
+                            [| (&lt;&gt;) |]
+                            showArg
+
+    m &lt;- match
+           (conP conName [varP arg])
+           (normalB $ varE (showParenName tsFun)
+                       `appE` infixApp (varE p) [| (&gt;) |] (integerE appPrec)
+                       `appE` namedArg)
+           []
+    return [m]
+makeTextShowForCon p tsClass tsFun spls (NormalC conName _) = do
+    (argTys, tvMap) &lt;- reifyConTys tsClass spls conName
+    args &lt;- newNameList &quot;arg&quot; $ length argTys
+
+    m &lt;- if isNonUnitTuple conName
+         then do
+           let showArgs       = zipWith (makeTextShowForArg 0 tsClass tsFun conName tvMap) argTys args
+               parenCommaArgs = (varE (singletonName tsFun) `appE` charE '(')
+                                : intersperse (varE (singletonName tsFun) `appE` charE ',') showArgs
+               mappendArgs    = foldr' (`infixApp` [| (&lt;&gt;) |])
+                                       (varE (singletonName tsFun) `appE` charE ')')
+                                       parenCommaArgs
+
+           match (conP conName $ map varP args)
+                 (normalB mappendArgs)
+                 []
+         else do
+           let showArgs    = zipWith (makeTextShowForArg appPrec1 tsClass tsFun conName tvMap) argTys args
+               mappendArgs = foldr1 (\v q -&gt; infixApp v
+                                                      [| (&lt;&gt;) |]
+                                                      (infixApp (varE $ showSpaceName tsFun)
+                                                                [| (&lt;&gt;) |]
+                                                                q)) showArgs
+               namedArgs   = infixApp (varE (fromStringName tsFun) `appE` stringE (parenInfixConName conName &quot; &quot;))
+                                      [| (&lt;&gt;) |]
+                                      mappendArgs
+
+           match (conP conName $ map varP args)
+                 (normalB $ varE (showParenName tsFun)
+                              `appE` infixApp (varE p) [| (&gt;) |] (integerE appPrec)
+                              `appE` namedArgs)
+                 []
+    return [m]
+makeTextShowForCon p tsClass tsFun spls (RecC conName []) =
+    makeTextShowForCon p tsClass tsFun spls $ NormalC conName []
+makeTextShowForCon p tsClass tsFun spls (RecC conName ts) = do
+    (argTys, tvMap) &lt;- reifyConTys tsClass spls conName
+    args &lt;- newNameList &quot;arg&quot; $ length argTys
+
+    let showArgs       = concatMap (\((argName, _, _), argTy, arg)
+                                      -&gt; let argNameBase = nameBase argName
+                                             infixRec    = showParen (isSymVar argNameBase)
+                                                                     (showString argNameBase) &quot;&quot;
+                                         in [ varE (fromStringName tsFun) `appE` stringE (infixRec ++ &quot; = &quot;)
+                                            , makeTextShowForArg 0 tsClass tsFun conName tvMap argTy arg
+                                            , varE (showCommaSpaceName tsFun)
+                                            ]
+                                   )
+                                   (zip3 ts argTys args)
+        braceCommaArgs = (varE (singletonName tsFun) `appE` charE '{') : take (length showArgs - 1) showArgs
+        mappendArgs    = foldr' (`infixApp` [| (&lt;&gt;) |])
+                                (varE (singletonName tsFun) `appE` charE '}')
+                                braceCommaArgs
+        namedArgs      = infixApp (varE (fromStringName tsFun) `appE` stringE (parenInfixConName conName &quot; &quot;))
+                                  [| (&lt;&gt;) |]
+                                  mappendArgs
+
+    m &lt;- match
+           (conP conName $ map varP args)
+           (normalB $ varE (showParenName tsFun)
+                        `appE` infixApp (varE p) [| (&gt;) |] (integerE appPrec)
+                        `appE` namedArgs)
+           []
+    return [m]
+makeTextShowForCon p tsClass tsFun spls (InfixC _ conName _) = do
+    ([alTy, arTy], tvMap) &lt;- reifyConTys tsClass spls conName
+    al   &lt;- newName &quot;argL&quot;
+    ar   &lt;- newName &quot;argR&quot;
+    info &lt;- reify conName
+
+#if MIN_VERSION_template_haskell(2,11,0)
+    conPrec &lt;- case info of
+                        DataConI{} -&gt; do
+                            fi &lt;- fromMaybe defaultFixity &lt;$&gt; reifyFixity conName
+                            case fi of
+                                 Fixity prec _ -&gt; return prec
+#else
+    let conPrec  = case info of
+                        DataConI _ _ _ (Fixity prec _) -&gt; prec
+#endif
+                        _ -&gt; error $ &quot;TextShow.TH.makeTextShowForCon: Unsupported type: &quot; ++ show info
+
+    let opName   = nameBase conName
+        infixOpE = appE (varE $ fromStringName tsFun) . stringE $
+                     if isInfixDataCon opName
+                        then &quot; &quot;  ++ opName ++ &quot; &quot;
+                        else &quot; `&quot; ++ opName ++ &quot;` &quot;
+
+    m &lt;- match
+           (infixP (varP al) conName (varP ar))
+           (normalB $ (varE (showParenName tsFun) `appE` infixApp (varE p) [| (&gt;) |] (integerE conPrec))
+                        `appE` (infixApp (makeTextShowForArg (conPrec + 1) tsClass tsFun conName tvMap alTy al)
+                                         [| (&lt;&gt;) |]
+                                         (infixApp infixOpE
+                                                   [| (&lt;&gt;) |]
+                                                   (makeTextShowForArg (conPrec + 1) tsClass tsFun conName tvMap arTy ar)))
+           )
+           []
+    return [m]
+makeTextShowForCon p tsClass tsFun spls (ForallC _ _ con) =
+    makeTextShowForCon p tsClass tsFun spls con
+#if MIN_VERSION_template_haskell(2,11,0)
+makeTextShowForCon p tsClass tsFun spls (GadtC conNames ts _) =
+    let con :: Name -&gt; Q Con
+        con conName = do
+            mbFi &lt;- reifyFixity conName
+            return $ if isInfixDataCon (nameBase conName)
+                        &amp;&amp; length ts == 2
+                        &amp;&amp; isJust mbFi
+                      then let [t1, t2] = ts in InfixC t1 conName t2
+                      else NormalC conName ts
+
+    in concatMapM (makeTextShowForCon p tsClass tsFun spls &lt;=&lt; con) conNames
+makeTextShowForCon p tsClass tsFun spls (RecGadtC conNames ts _) =
+    concatMapM (makeTextShowForCon p tsClass tsFun spls . flip RecC ts) conNames
+#endif
+
+-- | Generates a lambda expression for howbPrec/liftShowbPrec/etc. for an
+-- argument of a constructor.
+makeTextShowForArg :: Int
+                   -&gt; TextShowClass
+                   -&gt; TextShowFun
+                   -&gt; Name
+                   -&gt; TyVarMap
+                   -&gt; Type
+                   -&gt; Name
+                   -&gt; Q Exp
+makeTextShowForArg p _ tsFun _ _ (ConT tyName) tyExpName =
+    showE
+  where
+    tyVarE, showPrecE :: Q Exp
+    tyVarE    = varE tyExpName
+    showPrecE = varE (showPrecName TextShow tsFun)
+
+    showE :: Q Exp
+    showE | tyName == ''Char#   = showPrimE 'C# oneHashE
+          | tyName == ''Double# = showPrimE 'D# twoHashE
+          | tyName == ''Float#  = showPrimE 'F# oneHashE
+          | tyName == ''Int#    = showPrimE 'I# oneHashE
+          | tyName == ''Word#   = showPrimE 'W# twoHashE
+          | otherwise = showPrecE `appE` integerE p `appE` tyVarE
+
+    -- Starting with GHC 7.10, data types containing unlifted types with derived Show
+    -- instances show hashed literals with actual hash signs, and negative hashed
+    -- literals are not surrounded with parentheses.
+    showPrimE :: Name -&gt; Q Exp -&gt; Q Exp
+    showPrimE con _hashE
+#if __GLASGOW_HASKELL__ &gt;= 711
+      = infixApp (showPrecE `appE` integerE 0 `appE` (conE con `appE` tyVarE))
+                 [| (&lt;&gt;) |]
+                 _hashE
+#else
+      = showPrecE `appE` integerE p `appE` (conE con `appE` tyVarE)
+#endif
+
+    oneHashE, twoHashE :: Q Exp
+    oneHashE = varE (singletonName  tsFun) `appE` charE   '#'
+    twoHashE = varE (fromStringName tsFun) `appE` stringE &quot;##&quot;
+makeTextShowForArg p tsClass tsFun conName tvMap ty tyExpName =
+    [| $(makeTextShowForType tsClass tsFun conName tvMap False ty) p $(varE tyExpName) |]
+
+-- | Generates a lambda expression for howbPrec/liftShowbPrec/etc. for a
+-- specific type. The generated expression depends on the number of type variables.
+--
+-- 1. If the type is of kind * (T), apply showbPrec.
+-- 2. If the type is of kind * -&gt; * (T a), apply liftShowbPrec $(makeTextShowForType a)
+-- 3. If the type is of kind * -&gt; * -&gt; * (T a b), apply
+--    liftShowbPrec2 $(makeTextShowForType a) $(makeTextShowForType b)
+makeTextShowForType :: TextShowClass
+                    -&gt; TextShowFun
+                    -&gt; Name
+                    -&gt; TyVarMap
+                    -&gt; Bool -- ^ True if we are using the function of type ([a] -&gt; Builder),
+                            --   False if we are using the function of type (Int -&gt; a -&gt; Builder).
+                    -&gt; Type
+                    -&gt; Q Exp
+makeTextShowForType _ tsFun _ tvMap sl (VarT tyName) =
+    varE $ case Map.lookup tyName tvMap of
+         Just (spExp, slExp) -&gt; if sl then slExp else spExp
+         Nothing             -&gt; if sl then showListName TextShow tsFun
+                                      else showPrecName TextShow tsFun
+makeTextShowForType tsClass tsFun conName tvMap sl (SigT ty _) =
+    makeTextShowForType tsClass tsFun conName tvMap sl ty
+makeTextShowForType tsClass tsFun conName tvMap sl (ForallT _ _ ty) =
+    makeTextShowForType tsClass tsFun conName tvMap sl ty
+makeTextShowForType tsClass tsFun conName tvMap sl ty = do
+    let tyCon :: Type
+        tyArgs :: [Type]
+        tyCon :| tyArgs = unapplyTy ty
+
+        numLastArgs :: Int
+        numLastArgs = min (fromEnum tsClass) (length tyArgs)
+
+        lhsArgs, rhsArgs :: [Type]
+        (lhsArgs, rhsArgs) = splitAt (length tyArgs - numLastArgs) tyArgs
+
+        tyVarNames :: [Name]
+        tyVarNames = Map.keys tvMap
+
+    itf &lt;- isTyFamily tyCon
+    if any (`mentionsName` tyVarNames) lhsArgs
+          || itf &amp;&amp; any (`mentionsName` tyVarNames) tyArgs
+       then outOfPlaceTyVarError tsClass conName
+       else if any (`mentionsName` tyVarNames) rhsArgs
+               then appsE $ [ varE $ showPrecOrListName sl (toEnum numLastArgs) tsFun]
+                            ++ zipWith (makeTextShowForType tsClass tsFun conName tvMap)
+                                       (cycle [False,True])
+                                       (interleave rhsArgs rhsArgs)
+               else varE $ if sl then showListName TextShow tsFun
+                                 else showPrecName TextShow tsFun
+
+-------------------------------------------------------------------------------
+-- Template Haskell reifying and AST manipulation
+-------------------------------------------------------------------------------
+
+-- | Extracts a plain type constructor's information.
+-- | Boilerplate for top level splices.
+--
+-- The given Name must meet one of two criteria:
+--
+-- 1. It must be the name of a type constructor of a plain data type or newtype.
+-- 2. It must be the name of a data family instance or newtype instance constructor.
+--
+-- Any other value will result in an exception.
+withType :: Name
+         -&gt; (Name -&gt; Cxt -&gt; [TyVarBndr] -&gt; [Con] -&gt; Maybe [Type] -&gt; Q a)
+         -&gt; Q a
+withType name f = do
+  info &lt;- reify name
+  case info of
+    TyConI dec -&gt;
+      case dec of
+        DataD ctxt _ tvbs
+#if MIN_VERSION_template_haskell(2,11,0)
+              _
+#endif
+              cons _ -&gt; f name ctxt tvbs cons Nothing
+        NewtypeD ctxt _ tvbs
+#if MIN_VERSION_template_haskell(2,11,0)
+                 _
+#endif
+                 con _ -&gt; f name ctxt tvbs [con] Nothing
+        _ -&gt; error $ ns ++ &quot;Unsupported type: &quot; ++ show dec
+#if MIN_VERSION_template_haskell(2,7,0)
+# if MIN_VERSION_template_haskell(2,11,0)
+    DataConI _ _ parentName   -&gt; do
+# else
+    DataConI _ _ parentName _ -&gt; do
+# endif
+      parentInfo &lt;- reify parentName
+      case parentInfo of
+# if MIN_VERSION_template_haskell(2,11,0)
+        FamilyI (DataFamilyD _ tvbs _) decs -&gt;
+# else
+        FamilyI (FamilyD DataFam _ tvbs _) decs -&gt;
+# endif
+          let instDec = flip find decs $ \dec -&gt; case dec of
+                DataInstD _ _ _
+# if MIN_VERSION_template_haskell(2,11,0)
+                          _
+# endif
+                          cons _ -&gt; any ((name ==) . constructorName) cons
+                NewtypeInstD _ _ _
+# if MIN_VERSION_template_haskell(2,11,0)
+                             _
+# endif
+                             con _ -&gt; name == constructorName con
+                _ -&gt; error $ ns ++ &quot;Must be a data or newtype instance.&quot;
+           in case instDec of
+                Just (DataInstD ctxt _ instTys
+# if MIN_VERSION_template_haskell(2,11,0)
+                                _
+# endif
+                                cons _)
+                  -&gt; f parentName ctxt tvbs cons $ Just instTys
+                Just (NewtypeInstD ctxt _ instTys
+# if MIN_VERSION_template_haskell(2,11,0)
+                                   _
+# endif
+                                   con _)
+                  -&gt; f parentName ctxt tvbs [con] $ Just instTys
+                _ -&gt; error $ ns ++
+                  &quot;Could not find data or newtype instance constructor.&quot;
+        _ -&gt; error $ ns ++ &quot;Data constructor &quot; ++ show name ++
+          &quot; is not from a data family instance constructor.&quot;
+# if MIN_VERSION_template_haskell(2,11,0)
+    FamilyI DataFamilyD{} _ -&gt;
+# else
+    FamilyI (FamilyD DataFam _ _ _) _ -&gt;
+# endif
+      error $ ns ++
+        &quot;Cannot use a data family name. Use a data family instance constructor instead.&quot;
+    _ -&gt; error $ ns ++ &quot;The name must be of a plain data type constructor, &quot;
+                    ++ &quot;or a data family instance constructor.&quot;
+#else
+    DataConI{} -&gt; dataConIError
+    _          -&gt; error $ ns ++ &quot;The name must be of a plain type constructor.&quot;
+#endif
+  where
+    ns :: String
+    ns = &quot;TextShow.TH.withType: &quot;
+
+-- | Deduces the instance context and head for an instance.
+buildTypeInstance :: TextShowClass
+                  -- ^ TextShow, TextShow1, or TextShow2
+                  -&gt; Name
+                  -- ^ The type constructor or data family name
+                  -&gt; Cxt
+                  -- ^ The datatype context
+                  -&gt; [TyVarBndr]
+                  -- ^ The type variables from the data type/data family declaration
+                  -&gt; Maybe [Type]
+                  -- ^ 'Just' the types used to instantiate a data family instance,
+                  -- or 'Nothing' if it's a plain data type
+                  -&gt; Q (Cxt, Type)
+-- Plain data type/newtype case
+buildTypeInstance tsClass tyConName dataCxt tvbs Nothing =
+    let varTys :: [Type]
+        varTys = map tvbToType tvbs
+    in buildTypeInstanceFromTys tsClass tyConName dataCxt varTys False
+-- Data family instance case
+--
+-- The CPP is present to work around a couple of annoying old GHC bugs.
+-- See Note [Polykinded data families in Template Haskell]
+buildTypeInstance tsClass parentName dataCxt tvbs (Just instTysAndKinds) = do
+#if !(MIN_VERSION_template_haskell(2,8,0)) || MIN_VERSION_template_haskell(2,10,0)
+    let instTys :: [Type]
+        instTys = zipWith stealKindForType tvbs instTysAndKinds
+#else
+    let kindVarNames :: [Name]
+        kindVarNames = nub $ concatMap (tyVarNamesOfType . tvbKind) tvbs
+
+        numKindVars :: Int
+        numKindVars = length kindVarNames
+
+        givenKinds, givenKinds' :: [Kind]
+        givenTys                :: [Type]
+        (givenKinds, givenTys) = splitAt numKindVars instTysAndKinds
+        givenKinds' = map sanitizeStars givenKinds
+
+        -- A GHC 7.6-specific bug requires us to replace all occurrences of
+        -- (ConT GHC.Prim.*) with StarT, or else Template Haskell will reject it.
+        -- Luckily, (ConT GHC.Prim.*) only seems to occur in this one spot.
+        sanitizeStars :: Kind -&gt; Kind
+        sanitizeStars = go
+          where
+            go :: Kind -&gt; Kind
+            go (AppT t1 t2)                 = AppT (go t1) (go t2)
+            go (SigT t k)                   = SigT (go t) (go k)
+            go (ConT n) | n == starKindName = StarT
+            go t                            = t
+
+            -- It's quite awkward to import * from GHC.Prim, so we'll just
+            -- hack our way around it.
+            starKindName :: Name
+            starKindName = mkNameG_tc &quot;ghc-prim&quot; &quot;GHC.Prim&quot; &quot;*&quot;
+
+    -- If we run this code with GHC 7.8, we might have to generate extra type
+    -- variables to compensate for any type variables that Template Haskell
+    -- eta-reduced away.
+    -- See Note [Polykinded data families in Template Haskell]
+    xTypeNames &lt;- newNameList &quot;tExtra&quot; (length tvbs - length givenTys)
+
+    let xTys   :: [Type]
+        xTys = map VarT xTypeNames
+        -- ^ Because these type variables were eta-reduced away, we can only
+        --   determine their kind by using stealKindForType. Therefore, we mark
+        --   them as VarT to ensure they will be given an explicit kind annotation
+        --   (and so the kind inference machinery has the right information).
+
+        substNamesWithKinds :: [(Name, Kind)] -&gt; Type -&gt; Type
+        substNamesWithKinds nks t = foldr' (uncurry substNameWithKind) t nks
+
+        -- The types from the data family instance might not have explicit kind
+        -- annotations, which the kind machinery needs to work correctly. To
+        -- compensate, we use stealKindForType to explicitly annotate any
+        -- types without kind annotations.
+        instTys :: [Type]
+        instTys = map (substNamesWithKinds (zip kindVarNames givenKinds'))
+                  -- ^ Note that due to a GHC 7.8-specific bug
+                  --   (see Note [Polykinded data families in Template Haskell]),
+                  --   there may be more kind variable names than there are kinds
+                  --   to substitute. But this is OK! If a kind is eta-reduced, it
+                  --   means that is was not instantiated to something more specific,
+                  --   so we need not substitute it. Using stealKindForType will
+                  --   grab the correct kind.
+                $ zipWith stealKindForType tvbs (givenTys ++ xTys)
+#endif
+    buildTypeInstanceFromTys tsClass parentName dataCxt instTys True
+
+-- For the given Types, generate an instance context and head. Coming up with
+-- the instance type isn't as simple as dropping the last types, as you need to
+-- be wary of kinds being instantiated with *.
+-- See Note [Type inference in derived instances]
+buildTypeInstanceFromTys :: TextShowClass
+                         -- ^ TextShow, TextShow1, or TextShow2
+                         -&gt; Name
+                         -- ^ The type constructor or data family name
+                         -&gt; Cxt
+                         -- ^ The datatype context
+                         -&gt; [Type]
+                         -- ^ The types to instantiate the instance with
+                         -&gt; Bool
+                         -- ^ True if it's a data family, False otherwise
+                         -&gt; Q (Cxt, Type)
+buildTypeInstanceFromTys tsClass tyConName dataCxt varTysOrig isDataFamily = do
+    -- Make sure to expand through type/kind synonyms! Otherwise, the
+    -- eta-reduction check might get tripped up over type variables in a
+    -- synonym that are actually dropped.
+    -- (See GHC Trac #11416 for a scenario where this actually happened.)
+    varTysExp &lt;- mapM expandSyn varTysOrig
+
+    let remainingLength :: Int
+        remainingLength = length varTysOrig - fromEnum tsClass
+
+        droppedTysExp :: [Type]
+        droppedTysExp = drop remainingLength varTysExp
+
+        droppedStarKindStati :: [StarKindStatus]
+        droppedStarKindStati = map canRealizeKindStar droppedTysExp
+
+    -- Check there are enough types to drop and that all of them are either of
+    -- kind * or kind k (for some kind variable k). If not, throw an error.
+    when (remainingLength &lt; 0 || any (== NotKindStar) droppedStarKindStati) $
+      derivingKindError tsClass tyConName
+
+    let droppedKindVarNames :: [Name]
+        droppedKindVarNames = catKindVarNames droppedStarKindStati
+
+        -- Substitute kind * for any dropped kind variables
+        varTysExpSubst :: [Type]
+        varTysExpSubst = map (substNamesWithKindStar droppedKindVarNames) varTysExp
+
+        remainingTysExpSubst, droppedTysExpSubst :: [Type]
+        (remainingTysExpSubst, droppedTysExpSubst) =
+          splitAt remainingLength varTysExpSubst
+
+        -- All of the type variables mentioned in the dropped types
+        -- (post-synonym expansion)
+        droppedTyVarNames :: [Name]
+        droppedTyVarNames = concatMap tyVarNamesOfType droppedTysExpSubst
+
+    -- If any of the dropped types were polykinded, ensure that they are of kind *
+    -- after substituting * for the dropped kind variables. If not, throw an error.
+    unless (all hasKindStar droppedTysExpSubst) $
+      derivingKindError tsClass tyConName
+
+    let preds    :: [Maybe Pred]
+        kvNames  :: [[Name]]
+        kvNames' :: [Name]
+        -- Derive instance constraints (and any kind variables which are specialized
+        -- to * in those constraints)
+        (preds, kvNames) = unzip $ map (deriveConstraint tsClass) remainingTysExpSubst
+        kvNames' = concat kvNames
+
+        -- Substitute the kind variables specialized in the constraints with *
+        remainingTysExpSubst' :: [Type]
+        remainingTysExpSubst' =
+          map (substNamesWithKindStar kvNames') remainingTysExpSubst
+
+        -- We now substitute all of the specialized-to-* kind variable names with
+        -- *, but in the original types, not the synonym-expanded types. The reason
+        -- we do this is a superficial one: we want the derived instance to resemble
+        -- the datatype written in source code as closely as possible. For example,
+        -- for the following data family instance:
+        --
+        --   data family Fam a
+        --   newtype instance Fam String = Fam String
+        --
+        -- We'd want to generate the instance:
+        --
+        --   instance C (Fam String)
+        --
+        -- Not:
+        --
+        --   instance C (Fam [Char])
+        remainingTysOrigSubst :: [Type]
+        remainingTysOrigSubst =
+          map (substNamesWithKindStar (union droppedKindVarNames kvNames'))
+            $ take remainingLength varTysOrig
+
+        remainingTysOrigSubst' :: [Type]
+        -- See Note [Kind signatures in derived instances] for an explanation
+        -- of the isDataFamily check.
+        remainingTysOrigSubst' =
+          if isDataFamily
+             then remainingTysOrigSubst
+             else map unSigT remainingTysOrigSubst
+
+        instanceCxt :: Cxt
+        instanceCxt = catMaybes preds
+
+        instanceType :: Type
+        instanceType = AppT (ConT $ textShowClassName tsClass)
+                     $ applyTyCon tyConName remainingTysOrigSubst'
+
+    -- If the datatype context mentions any of the dropped type variables,
+    -- we can't derive an instance, so throw an error.
+    when (any (`predMentionsName` droppedTyVarNames) dataCxt) $
+      datatypeContextError tyConName instanceType
+    -- Also ensure the dropped types can be safely eta-reduced. Otherwise,
+    -- throw an error.
+    unless (canEtaReduce remainingTysExpSubst' droppedTysExpSubst) $
+      etaReductionError instanceType
+    return (instanceCxt, instanceType)
+
+-- | Attempt to derive a constraint on a Type. If successful, return
+-- Just the constraint and any kind variable names constrained to *.
+-- Otherwise, return Nothing and the empty list.
+--
+-- See Note [Type inference in derived instances] for the heuristics used to
+-- come up with constraints.
+deriveConstraint :: TextShowClass -&gt; Type -&gt; (Maybe Pred, [Name])
+deriveConstraint tsClass t
+  | not (isTyVar t) = (Nothing, [])
+  | hasKindStar t   = (Just (applyClass ''TextShow tName), [])
+  | otherwise = case hasKindVarChain 1 t of
+      Just ns | tsClass &gt;= TextShow1
+              -&gt; (Just (applyClass ''TextShow1 tName), ns)
+      _ -&gt; case hasKindVarChain 2 t of
+           Just ns | tsClass == TextShow2
+                   -&gt; (Just (applyClass ''TextShow2 tName), ns)
+           _ -&gt; (Nothing, [])
+  where
+    tName :: Name
+    tName = varTToName t
+
+{-
+Note [Polykinded data families in Template Haskell]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to come up with the correct instance context and head for an instance, e.g.,
+
+  instance C a =&gt; C (Data a) where ...
+
+We need to know the exact types and kinds used to instantiate the instance. For
+plain old datatypes, this is simple: every type must be a type variable, and
+Template Haskell reliably tells us the type variables and their kinds.
+
+Doing the same for data families proves to be much harder for three reasons:
+
+1. On any version of Template Haskell, it may not tell you what an instantiated
+   type's kind is. For instance, in the following data family instance:
+
+     data family Fam (f :: * -&gt; *) (a :: *)
+     data instance Fam f a
+
+   Then if we use TH's reify function, it would tell us the TyVarBndrs of the
+   data family declaration are:
+
+     [KindedTV f (AppT (AppT ArrowT StarT) StarT),KindedTV a StarT]
+
+   and the instantiated types of the data family instance are:
+
+     [VarT f1,VarT a1]
+
+   We can't just pass [VarT f1,VarT a1] to buildTypeInstanceFromTys, since we
+   have no way of knowing their kinds. Luckily, the TyVarBndrs tell us what the
+   kind is in case an instantiated type isn't a SigT, so we use the stealKindForType
+   function to ensure all of the instantiated types are SigTs before passing them
+   to buildTypeInstanceFromTys.
+2. On GHC 7.6 and 7.8, a bug is present in which Template Haskell lists all of
+   the specified kinds of a data family instance efore any of the instantiated
+   types. Fortunately, this is easy to deal with: you simply count the number of
+   distinct kind variables in the data family declaration, take that many elements
+   from the front of the  Types list of the data family instance, substitute the
+   kind variables with their respective instantiated kinds (which you took earlier),
+   and proceed as normal.
+3. On GHC 7.8, an even uglier bug is present (GHC Trac #9692) in which Template
+   Haskell might not even list all of the Types of a data family instance, since
+   they are eta-reduced away! And yes, kinds can be eta-reduced too.
+
+   The simplest workaround is to count how many instantiated types are missing from
+   the list and generate extra type variables to use in their place. Luckily, we
+   needn't worry much if its kind was eta-reduced away, since using stealKindForType
+   will get it back.
+
+Note [Kind signatures in derived instances]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to put explicit kind signatures into the derived instances, e.g.,
+
+  instance C a =&gt; C (Data (f :: * -&gt; *)) where ...
+
+But it is preferable to avoid this if possible. If we come up with an incorrect
+kind signature (which is entirely possible, since our type inferencer is pretty
+unsophisticated - see Note [Type inference in derived instances]), then GHC will
+flat-out reject the instance, which is quite unfortunate.
+
+Plain old datatypes have the advantage that you can avoid using any kind signatures
+at all in their instances. This is because a datatype declaration uses all type
+variables, so the types that we use in a derived instance uniquely determine their
+kinds. As long as we plug in the right types, the kind inferencer can do the rest
+of the work. For this reason, we use unSigT to remove all kind signatures before
+splicing in the instance context and head.
+
+Data family instances are trickier, since a data family can have two instances that
+are distinguished by kind alone, e.g.,
+
+  data family Fam (a :: k)
+  data instance Fam (a :: * -&gt; *)
+  data instance Fam (a :: *)
+
+If we dropped the kind signatures for C (Fam a), then GHC will have no way of
+knowing which instance we are talking about. To avoid this scenario, we always
+include explicit kind signatures in data family instances. There is a chance that
+the inferred kind signatures will be incorrect, but if so, we can always fall back
+on the make- functions.
+
+Note [Type inference in derived instances]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Type inference is can be tricky to get right, and we want to avoid recreating the
+entirety of GHC's type inferencer in Template Haskell. For this reason, we will
+probably never come up with derived instance contexts that are as accurate as
+GHC's. But that doesn't mean we can't do anything! There are a couple of simple
+things we can do to make instance contexts that work for 80% of use cases:
+
+1. If one of the last type parameters is polykinded, then its kind will be
+   specialized to * in the derived instance. We note what kind variable the type
+   parameter had and substitute it with * in the other types as well. For example,
+   imagine you had
+
+     data Data (a :: k) (b :: k)
+
+   Then you'd want to derived instance to be:
+
+     instance C (Data (a :: *))
+
+   Not:
+
+     instance C (Data (a :: k))
+
+2. We na&#239;vely come up with instance constraints using the following criteria:
+
+   (i)   If there's a type parameter n of kind *, generate a TextShow n constraint.
+   (ii)  If there's a type parameter n of kind k1 -&gt; k2 (where k1/k2 are * or kind
+         variables), then generate a TextShow1 n constraint, and if k1/k2 are kind
+         variables, then substitute k1/k2 with * elsewhere in the types. We must
+         consider the case where they are kind variables because you might have a
+         scenario like this:
+
+           newtype Compose (f :: k2 -&gt; *) (g :: k1 -&gt; k2) (a :: k1)
+             = Compose (f (g a))
+
+         Which would have a derived TextShow1 instance of:
+
+           instance (TextShow1 f, TextShow1 g) =&gt; TextShow1 (Compose f g) where ...
+   (iii) If there's a type parameter n of kind k1 -&gt; k2 -&gt; k3 (where k1/k2/k3 are
+         * or kind variables), then generate a TextShow2 constraint and perform
+         kind substitution as in the other cases.
+-}
+
+-------------------------------------------------------------------------------
+-- Error messages
+-------------------------------------------------------------------------------
+
+-- | Either the given data type doesn't have enough type variables, or one of
+-- the type variables to be eta-reduced cannot realize kind *.
+derivingKindError :: TextShowClass -&gt; Name -&gt; a
+derivingKindError tsClass tyConName = error
+    . showString &quot;Cannot derive well-kinded instance of form &#8216;&quot;
+    . showString className
+    . showChar ' '
+    . showParen True
+      ( showString (nameBase tyConName)
+      . showString &quot; ...&quot;
+      )
+    . showString &quot;&#8216;\n\tClass &quot;
+    . showString className
+    . showString &quot; expects an argument of kind &quot;
+    . showString (pprint . createKindChain $ fromEnum tsClass)
+    $ &quot;&quot;
+  where
+    className :: String
+    className = nameBase $ textShowClassName tsClass
+
+-- | One of the last type variables cannot be eta-reduced (see the canEtaReduce
+-- function for the criteria it would have to meet).
+etaReductionError :: Type -&gt; a
+etaReductionError instanceType = error $
+    &quot;Cannot eta-reduce to an instance of form \n\tinstance (...) =&gt; &quot;
+    ++ pprint instanceType
+
+-- | The data type has a DatatypeContext which mentions one of the eta-reduced
+-- type variables.
+datatypeContextError :: Name -&gt; Type -&gt; a
+datatypeContextError dataName instanceType = error
+    . showString &quot;Can't make a derived instance of &#8216;&quot;
+    . showString (pprint instanceType)
+    . showString &quot;&#8216;:\n\tData type &#8216;&quot;
+    . showString (nameBase dataName)
+    . showString &quot;&#8216; must not have a class context involving the last type argument(s)&quot;
+    $ &quot;&quot;
+
+-- | The data type mentions one of the n eta-reduced type variables in a place other
+-- than the last nth positions of a data type in a constructor's field.
+outOfPlaceTyVarError :: TextShowClass -&gt; Name -&gt; a
+outOfPlaceTyVarError tsClass conName = error
+    . showString &quot;Constructor &#8216;&quot;
+    . showString (nameBase conName)
+    . showString &quot;&#8216; must only use its last &quot;
+    . shows n
+    . showString &quot; type variable(s) within the last &quot;
+    . shows n
+    . showString &quot; argument(s) of a data type&quot;
+    $ &quot;&quot;
+  where
+    n :: Int
+    n = fromEnum tsClass
+
+#if !(MIN_VERSION_template_haskell(2,7,0))
+-- | Template Haskell didn't list all of a data family's instances upon reification
+-- until template-haskell-2.7.0.0, which is necessary for a derived TextShow(1)(2)
+-- instance to work.
+dataConIError :: a
+dataConIError = error
+    . showString &quot;Cannot use a data constructor.&quot;
+    . showString &quot;\n\t(Note: if you are trying to derive TextShow for a&quot;
+    . showString &quot;\n\ttype family, use GHC &gt;= 7.4 instead.)&quot;
+    $ &quot;&quot;
+#endif
+
+-------------------------------------------------------------------------------
+-- Expanding type synonyms
+-------------------------------------------------------------------------------
+
+-- | Expands all type synonyms in a type. Written by Dan Ros&#233;n in the
+-- @genifunctors@ package (licensed under BSD3).
+expandSyn :: Type -&gt; Q Type
+expandSyn (ForallT tvs ctx t) = fmap (ForallT tvs ctx) $ expandSyn t
+expandSyn t@AppT{}            = expandSynApp t []
+expandSyn t@ConT{}            = expandSynApp t []
+expandSyn (SigT t k)          = do t' &lt;- expandSyn t
+                                   k' &lt;- expandSynKind k
+                                   return (SigT t' k')
+expandSyn t                   = return t
+
+expandSynKind :: Kind -&gt; Q Kind
+#if MIN_VERSION_template_haskell(2,8,0)
+expandSynKind = expandSyn
+#else
+expandSynKind = return -- There are no kind synonyms to deal with
+#endif
+
+expandSynApp :: Type -&gt; [Type] -&gt; Q Type
+expandSynApp (AppT t1 t2) ts = do
+    t2' &lt;- expandSyn t2
+    expandSynApp t1 (t2':ts)
+expandSynApp (ConT n) ts | nameBase n == &quot;[]&quot; = return $ foldl' AppT ListT ts
+expandSynApp t@(ConT n) ts = do
+    info &lt;- reify n
+    case info of
+        TyConI (TySynD _ tvs rhs) -&gt;
+            let (ts', ts'') = splitAt (length tvs) ts
+                subs = mkSubst tvs ts'
+                rhs' = substType subs rhs
+             in expandSynApp rhs' ts''
+        _ -&gt; return $ foldl' AppT t ts
+expandSynApp t ts = do
+    t' &lt;- expandSyn t
+    return $ foldl' AppT t' ts
+
+type TypeSubst = Map Name Type
+type KindSubst = Map Name Kind
+
+mkSubst :: [TyVarBndr] -&gt; [Type] -&gt; TypeSubst
+mkSubst vs ts =
+   let vs' = map un vs
+       un (PlainTV v)    = v
+       un (KindedTV v _) = v
+   in Map.fromList $ zip vs' ts
+
+substType :: TypeSubst -&gt; Type -&gt; Type
+substType subs (ForallT v c t) = ForallT v c $ substType subs t
+substType subs t@(VarT n)      = Map.findWithDefault t n subs
+substType subs (AppT t1 t2)    = AppT (substType subs t1) (substType subs t2)
+substType subs (SigT t k)      = SigT (substType subs t)
+#if MIN_VERSION_template_haskell(2,8,0)
+                                      (substType subs k)
+#else
+                                      k
+#endif
+substType _ t                  = t
+
+substKind :: KindSubst -&gt; Type -&gt; Type
+#if MIN_VERSION_template_haskell(2,8,0)
+substKind = substType
+#else
+substKind _ = id -- There are no kind variables!
+#endif
+
+substNameWithKind :: Name -&gt; Kind -&gt; Type -&gt; Type
+substNameWithKind n k = substKind (Map.singleton n k)
+
+substNamesWithKindStar :: [Name] -&gt; Type -&gt; Type
+substNamesWithKindStar ns t = foldr' (flip substNameWithKind starK) t ns
+
+-------------------------------------------------------------------------------
+-- Class-specific constants
+-------------------------------------------------------------------------------
+
+-- | A representation of which TextShow variant is being derived.
+data TextShowClass = TextShow | TextShow1 | TextShow2
+  deriving (Enum, Eq, Ord)
+
+-- | A representation of which TextShow method is being used to
+-- implement something.
+data TextShowFun = ShowbPrec | ShowtPrec | ShowtlPrec
+
+fromStringName :: TextShowFun -&gt; Name
+fromStringName ShowbPrec  = 'TB.fromString
+fromStringName ShowtPrec  = 'TS.pack
+fromStringName ShowtlPrec = 'TL.pack
+
+singletonName :: TextShowFun -&gt; Name
+singletonName ShowbPrec  = 'TB.singleton
+singletonName ShowtPrec  = 'TS.singleton
+singletonName ShowtlPrec = 'TL.singleton
+
+showParenName :: TextShowFun -&gt; Name
+showParenName ShowbPrec  = 'showbParen
+showParenName ShowtPrec  = 'showtParen
+showParenName ShowtlPrec = 'showtlParen
+
+showCommaSpaceName :: TextShowFun -&gt; Name
+showCommaSpaceName ShowbPrec  = 'showbCommaSpace
+showCommaSpaceName ShowtPrec  = 'showtCommaSpace
+showCommaSpaceName ShowtlPrec = 'showtlCommaSpace
+
+showSpaceName :: TextShowFun -&gt; Name
+showSpaceName ShowbPrec  = 'showbSpace
+showSpaceName ShowtPrec  = 'showtSpace
+showSpaceName ShowtlPrec = 'showtlSpace
+
+showPrecConstName :: TextShowClass -&gt; TextShowFun -&gt; Name
+showPrecConstName tsClass  ShowbPrec  = showbPrecConstName tsClass
+showPrecConstName TextShow ShowtPrec  = 'showtPrecConst
+showPrecConstName TextShow ShowtlPrec = 'showtlPrecConst
+showPrecConstName _        _          = error &quot;showPrecConstName&quot;
+
+showbPrecConstName :: TextShowClass -&gt; Name
+showbPrecConstName TextShow  = 'showbPrecConst
+showbPrecConstName TextShow1 = 'liftShowbPrecConst
+showbPrecConstName TextShow2 = 'liftShowbPrec2Const
+
+textShowClassName :: TextShowClass -&gt; Name
+textShowClassName TextShow  = ''TextShow
+textShowClassName TextShow1 = ''TextShow1
+textShowClassName TextShow2 = ''TextShow2
+
+showPrecName :: TextShowClass -&gt; TextShowFun -&gt; Name
+showPrecName tsClass  ShowbPrec  = showbPrecName tsClass
+showPrecName TextShow ShowtPrec  = 'showtPrec
+showPrecName TextShow ShowtlPrec = 'showtlPrec
+showPrecName _        _          = error &quot;showPrecName&quot;
+
+showbPrecName :: TextShowClass -&gt; Name
+showbPrecName TextShow  = 'showbPrec
+showbPrecName TextShow1 = 'liftShowbPrec
+showbPrecName TextShow2 = 'liftShowbPrec2
+
+showListName :: TextShowClass -&gt; TextShowFun -&gt; Name
+showListName tsClass  ShowbPrec  = showbListName tsClass
+showListName TextShow ShowtPrec  = 'showtPrec
+showListName TextShow ShowtlPrec = 'showtlPrec
+showListName _        _          = error &quot;showListName&quot;
+
+showbListName :: TextShowClass -&gt; Name
+showbListName TextShow  = 'showbList
+showbListName TextShow1 = 'liftShowbList
+showbListName TextShow2 = 'liftShowbList2
+
+showPrecOrListName :: Bool -- ^ showbListName if True, showbPrecName if False
+                   -&gt; TextShowClass
+                   -&gt; TextShowFun
+                   -&gt; Name
+showPrecOrListName False = showPrecName
+showPrecOrListName True  = showListName
+
+-- | A type-restricted version of 'const'. This is useful when generating the lambda
+-- expression in 'makeShowbPrec' for a data type with only nullary constructors (since
+-- the expression wouldn't depend on the precedence). For example, if you had @data
+-- Nullary = Nullary@ and attempted to run @$(makeShowbPrec ''Nullary) Nullary@, simply
+-- ignoring the precedence argument would cause the type signature of @$(makeShowbPrec
+-- ''Nullary)@ to be @a -&gt; Nullary -&gt; Builder@, not @Int -&gt; Nullary -&gt; Builder@.
+showbPrecConst :: Builder
+               -&gt; Int -&gt; a -&gt; Builder
+showbPrecConst b _ _ = b
+
+showtPrecConst :: TS.Text
+               -&gt; Int -&gt; a -&gt; TS.Text
+showtPrecConst t _ _ = t
+
+showtlPrecConst :: TL.Text
+                -&gt; Int -&gt; a -&gt; TL.Text
+showtlPrecConst tl _ _ = tl
+
+liftShowbPrecConst :: Builder
+                   -&gt; (Int -&gt; a -&gt; Builder) -&gt; ([a] -&gt; Builder)
+                   -&gt; Int -&gt; f a -&gt; Builder
+liftShowbPrecConst b _ _ _ _ = b
+
+liftShowbPrec2Const :: Builder
+                    -&gt; (Int -&gt; a -&gt; Builder) -&gt; ([a] -&gt; Builder)
+                    -&gt; (Int -&gt; b -&gt; Builder) -&gt; ([b] -&gt; Builder)
+                    -&gt; Int -&gt; f a b -&gt; Builder
+liftShowbPrec2Const b _ _ _ _ _ _ = b
+
+-------------------------------------------------------------------------------
+-- StarKindStatus
+-------------------------------------------------------------------------------
+
+-- | Whether a type is not of kind *, is of kind *, or is a kind variable.
+data StarKindStatus = NotKindStar
+                    | KindStar
+                    | IsKindVar Name
+  deriving Eq
+
+-- | Does a Type have kind * or k (for some kind variable k)?
+canRealizeKindStar :: Type -&gt; StarKindStatus
+canRealizeKindStar t
+  | hasKindStar t = KindStar
+  | otherwise = case t of
+#if MIN_VERSION_template_haskell(2,8,0)
+                     SigT _ (VarT k) -&gt; IsKindVar k
+#endif
+                     _               -&gt; NotKindStar
+
+-- | Returns 'Just' the kind variable 'Name' of a 'StarKindStatus' if it exists.
+-- Otherwise, returns 'Nothing'.
+starKindStatusToName :: StarKindStatus -&gt; Maybe Name
+starKindStatusToName (IsKindVar n) = Just n
+starKindStatusToName _             = Nothing
+
+-- | Concat together all of the StarKindStatuses that are IsKindVar and extract
+-- the kind variables' Names out.
+catKindVarNames :: [StarKindStatus] -&gt; [Name]
+catKindVarNames = mapMaybe starKindStatusToName
+
+-------------------------------------------------------------------------------
+-- Assorted utilities
+-------------------------------------------------------------------------------
+
+integerE :: Int -&gt; Q Exp
+integerE = litE . integerL . fromIntegral
+
+charE :: Char -&gt; Q Exp
+charE = litE . charL
+
+-- | Returns True if a Type has kind *.
+hasKindStar :: Type -&gt; Bool
+hasKindStar VarT{}         = True
+#if MIN_VERSION_template_haskell(2,8,0)
+hasKindStar (SigT _ StarT) = True
+#else
+hasKindStar (SigT _ StarK) = True
+#endif
+hasKindStar _              = False
+
+-- Returns True is a kind is equal to *, or if it is a kind variable.
+isStarOrVar :: Kind -&gt; Bool
+#if MIN_VERSION_template_haskell(2,8,0)
+isStarOrVar StarT  = True
+isStarOrVar VarT{} = True
+#else
+isStarOrVar StarK  = True
+#endif
+isStarOrVar _      = False
+
+-- Generate a list of fresh names with a common prefix, and numbered suffixes.
+newNameList :: String -&gt; Int -&gt; Q [Name]
+newNameList prefix n = mapM (newName . (prefix ++) . show) [1..n]
+
+-- | Gets all of the type/kind variable names mentioned somewhere in a Type.
+tyVarNamesOfType :: Type -&gt; [Name]
+tyVarNamesOfType = go
+  where
+    go :: Type -&gt; [Name]
+    go (AppT t1 t2) = go t1 ++ go t2
+    go (SigT t _k)  = go t
+#if MIN_VERSION_template_haskell(2,8,0)
+                           ++ go _k
+#endif
+    go (VarT n)     = [n]
+    go _            = []
+
+-- | Gets all of the type/kind variable names mentioned somewhere in a Kind.
+tyVarNamesOfKind :: Kind -&gt; [Name]
+#if MIN_VERSION_template_haskell(2,8,0)
+tyVarNamesOfKind = tyVarNamesOfType
+#else
+tyVarNamesOfKind _ = [] -- There are no kind variables
+#endif
+
+-- | @hasKindVarChain n kind@ Checks if @kind@ is of the form
+-- k_0 -&gt; k_1 -&gt; ... -&gt; k_(n-1), where k0, k1, ..., and k_(n-1) can be * or
+-- kind variables.
+hasKindVarChain :: Int -&gt; Type -&gt; Maybe [Name]
+hasKindVarChain kindArrows t =
+  let uk = uncurryKind (tyKind t)
+  in if (length uk - 1 == kindArrows) &amp;&amp; all isStarOrVar uk
+        then Just (concatMap tyVarNamesOfKind uk)
+        else Nothing
+
+-- | If a Type is a SigT, returns its kind signature. Otherwise, return *.
+tyKind :: Type -&gt; Kind
+tyKind (SigT _ k) = k
+tyKind _          = starK
+
+-- | If a VarT is missing an explicit kind signature, steal it from a TyVarBndr.
+stealKindForType :: TyVarBndr -&gt; Type -&gt; Type
+stealKindForType tvb t@VarT{} = SigT t (tvbKind tvb)
+stealKindForType _   t        = t
+
+-- | Monadic version of concatMap
+concatMapM :: Monad m =&gt; (a -&gt; m [b]) -&gt; [a] -&gt; m [b]
+concatMapM f xs = liftM concat (mapM f xs)
+
+-- | A mapping of type variable Names to their show function Names. For example, in a
+-- TextShow2 declaration, a TyVarMap might look like (a ~&gt; sp1, b ~&gt; sp2), where
+-- a and b are the last two type variables of the datatype, and sp1 and sp2 are the two
+-- functions which show their respective type variables.
+type TyVarMap = Map Name (Name, Name)
+
+-- | Checks if a 'Name' represents a tuple type constructor (other than '()')
+isNonUnitTuple :: Name -&gt; Bool
+isNonUnitTuple = isTupleString . nameBase
+
+-- | Parenthesize an infix constructor name if it is being applied as a prefix
+-- function (e.g., data Amp a = (:&amp;) a a)
+parenInfixConName :: Name -&gt; ShowS
+parenInfixConName conName =
+    let conNameBase = nameBase conName
+     in showParen (isInfixDataCon conNameBase) $ showString conNameBase
+
+-- | Extracts the kind from a TyVarBndr.
+tvbKind :: TyVarBndr -&gt; Kind
+tvbKind (PlainTV  _)   = starK
+tvbKind (KindedTV _ k) = k
+
+-- | Convert a TyVarBndr to a Type.
+tvbToType :: TyVarBndr -&gt; Type
+tvbToType (PlainTV n)    = VarT n
+tvbToType (KindedTV n k) = SigT (VarT n) k
+
+-- | Applies a typeclass constraint to a type.
+applyClass :: Name -&gt; Name -&gt; Pred
+#if MIN_VERSION_template_haskell(2,10,0)
+applyClass con t = AppT (ConT con) (VarT t)
+#else
+applyClass con t = ClassP con [VarT t]
+#endif
+
+-- | Checks to see if the last types in a data family instance can be safely eta-
+-- reduced (i.e., dropped), given the other types. This checks for three conditions:
+--
+-- (1) All of the dropped types are type variables
+-- (2) All of the dropped types are distinct
+-- (3) None of the remaining types mention any of the dropped types
+canEtaReduce :: [Type] -&gt; [Type] -&gt; Bool
+canEtaReduce remaining dropped =
+       all isTyVar dropped
+    &amp;&amp; allDistinct droppedNames -- Make sure not to pass something of type [Type], since Type
+                                -- didn't have an Ord instance until template-haskell-2.10.0.0
+    &amp;&amp; not (any (`mentionsName` droppedNames) remaining)
+  where
+    droppedNames :: [Name]
+    droppedNames = map varTToName dropped
+
+-- | Extract Just the Name from a type variable. If the argument Type is not a
+-- type variable, return Nothing.
+varTToName_maybe :: Type -&gt; Maybe Name
+varTToName_maybe (VarT n)   = Just n
+varTToName_maybe (SigT t _) = varTToName_maybe t
+varTToName_maybe _          = Nothing
+
+-- | Extract the Name from a type variable. If the argument Type is not a
+-- type variable, throw an error.
+varTToName :: Type -&gt; Name
+varTToName = fromMaybe (error &quot;Not a type variable!&quot;) . varTToName_maybe
+
+-- | Peel off a kind signature from a Type (if it has one).
+unSigT :: Type -&gt; Type
+unSigT (SigT t _) = t
+unSigT t          = t
+
+-- | Is the given type a variable?
+isTyVar :: Type -&gt; Bool
+isTyVar (VarT _)   = True
+isTyVar (SigT t _) = isTyVar t
+isTyVar _          = False
+
+-- | Is the given type a type family constructor (and not a data family constructor)?
+isTyFamily :: Type -&gt; Q Bool
+isTyFamily (ConT n) = do
+    info &lt;- reify n
+    return $ case info of
+#if MIN_VERSION_template_haskell(2,11,0)
+         FamilyI OpenTypeFamilyD{} _       -&gt; True
+#elif MIN_VERSION_template_haskell(2,7,0)
+         FamilyI (FamilyD TypeFam _ _ _) _ -&gt; True
+#else
+         TyConI  (FamilyD TypeFam _ _ _)   -&gt; True
+#endif
+#if MIN_VERSION_template_haskell(2,9,0)
+         FamilyI ClosedTypeFamilyD{} _     -&gt; True
+#endif
+         _ -&gt; False
+isTyFamily _ = return False
+
+-- | Are all of the items in a list (which have an ordering) distinct?
+--
+-- This uses Set (as opposed to nub) for better asymptotic time complexity.
+allDistinct :: Ord a =&gt; [a] -&gt; Bool
+allDistinct = allDistinct' Set.empty
+  where
+    allDistinct' :: Ord a =&gt; Set a -&gt; [a] -&gt; Bool
+    allDistinct' uniqs (x:xs)
+        | x `Set.member` uniqs = False
+        | otherwise            = allDistinct' (Set.insert x uniqs) xs
+    allDistinct' _ _           = True
+
+-- | Does the given type mention any of the Names in the list?
+mentionsName :: Type -&gt; [Name] -&gt; Bool
+mentionsName = go
+  where
+    go :: Type -&gt; [Name] -&gt; Bool
+    go (AppT t1 t2) names = go t1 names || go t2 names
+    go (SigT t _k)  names = go t names
+#if MIN_VERSION_template_haskell(2,8,0)
+                              || go _k names
+#endif
+    go (VarT n)     names = n `elem` names
+    go _            _     = False
+
+-- | Does an instance predicate mention any of the Names in the list?
+predMentionsName :: Pred -&gt; [Name] -&gt; Bool
+#if MIN_VERSION_template_haskell(2,10,0)
+predMentionsName = mentionsName
+#else
+predMentionsName (ClassP n tys) names = n `elem` names || any (`mentionsName` names) tys
+predMentionsName (EqualP t1 t2) names = mentionsName t1 names || mentionsName t2 names
+#endif
+
+-- | Construct a type via curried application.
+applyTy :: Type -&gt; [Type] -&gt; Type
+applyTy = foldl' AppT
+
+-- | Fully applies a type constructor to its type variables.
+applyTyCon :: Name -&gt; [Type] -&gt; Type
+applyTyCon = applyTy . ConT
+
+-- | Split an applied type into its individual components. For example, this:
+--
+-- @
+-- Either Int Char
+-- @
+--
+-- would split to this:
+--
+-- @
+-- [Either, Int, Char]
+-- @
+unapplyTy :: Type -&gt; NonEmpty Type
+unapplyTy = NE.reverse . go
+  where
+    go :: Type -&gt; NonEmpty Type
+    go (AppT t1 t2)    = t2 &lt;| go t1
+    go (SigT t _)      = go t
+    go (ForallT _ _ t) = go t
+    go t               = t :| []
+
+-- | Split a type signature by the arrows on its spine. For example, this:
+--
+-- @
+-- (Int -&gt; String) -&gt; Char -&gt; ()
+-- @
+--
+-- would split to this:
+--
+-- @
+-- [Int -&gt; String, Char, ()]
+-- @
+uncurryTy :: Type -&gt; NonEmpty Type
+uncurryTy (AppT (AppT ArrowT t1) t2) = t1 &lt;| uncurryTy t2
+uncurryTy (SigT t _)                 = uncurryTy t
+uncurryTy (ForallT _ _ t)            = uncurryTy t
+uncurryTy t                          = t :| []
+
+-- | Like uncurryType, except on a kind level.
+uncurryKind :: Kind -&gt; NonEmpty Kind
+#if MIN_VERSION_template_haskell(2,8,0)
+uncurryKind = uncurryTy
+#else
+uncurryKind (ArrowK k1 k2) = k1 &lt;| uncurryKind k2
+uncurryKind k              = k :| []
+#endif
+
+createKindChain :: Int -&gt; Kind
+createKindChain = go starK
+  where
+    go :: Kind -&gt; Int -&gt; Kind
+    go k !0 = k
+#if MIN_VERSION_template_haskell(2,8,0)
+    go k !n = go (AppT (AppT ArrowT StarT) k) (n - 1)
+#else
+    go k !n = go (ArrowK StarK k) (n - 1)
+#endif
+
+#if MIN_VERSION_template_haskell(2,7,0)
+-- | Extracts the name of a constructor.
+constructorName :: Con -&gt; Name
+constructorName (NormalC name      _  ) = name
+constructorName (RecC    name      _  ) = name
+constructorName (InfixC  _    name _  ) = name
+constructorName (ForallC _    _    con) = constructorName con
+# if MIN_VERSION_template_haskell(2,11,0)
+constructorName (GadtC    names _ _)    = head names
+constructorName (RecGadtC names _ _)    = head names
+# endif
+#endif
+
+isNullaryCon :: Con -&gt; Bool
+isNullaryCon (NormalC _ [])    = True
+isNullaryCon (RecC    _ [])    = True
+isNullaryCon InfixC{}          = False
+isNullaryCon (ForallC _ _ con) = isNullaryCon con
+#if MIN_VERSION_template_haskell(2,11,0)
+isNullaryCon (GadtC    _ [] _) = True
+isNullaryCon (RecGadtC _ [] _) = True
+#endif
+isNullaryCon _                 = False
+
+interleave :: [a] -&gt; [a] -&gt; [a]
+interleave (a1:a1s) (a2:a2s) = a1:a2:interleave a1s a2s
+interleave _        _        = []
+
+-- Determines the types of a constructor's arguments as well as the last type
+-- parameters (mapped to their show functions), expanding through any type synonyms.
+-- The type parameters are determined on a constructor-by-constructor basis since
+-- they may be refined to be particular types in a GADT.
+reifyConTys :: TextShowClass
+            -&gt; [(Name, Name)]
+            -&gt; Name
+            -&gt; Q ([Type], TyVarMap)
+reifyConTys tsClass spls conName = do
+    info  &lt;- reify conName
+    uncTy &lt;- case info of
+                  DataConI _ ty _
+#if !(MIN_VERSION_template_haskell(2,11,0))
+                           _
+#endif
+                           -&gt; fmap uncurryTy (expandSyn ty)
+                  _ -&gt; error &quot;Must be a data constructor&quot;
+    let (argTys, [resTy]) = NE.splitAt (length uncTy - 1) uncTy
+        unapResTy = unapplyTy resTy
+        -- If one of the last type variables is refined to a particular type
+        -- (i.e., not truly polymorphic), we mark it with Nothing and filter
+        -- it out later, since we only apply show functions to arguments of
+        -- a type that it (1) one of the last type variables, and (2)
+        -- of a truly polymorphic type.
+        mbTvNames = map varTToName_maybe $
+                        NE.drop (NE.length unapResTy - fromEnum tsClass) unapResTy
+        -- We use Map.fromList to ensure that if there are any duplicate type
+        -- variables (as can happen in a GADT), the rightmost type variable gets
+        -- associated with the show function.
+        --
+        -- See Note [Matching functions with GADT type variables]
+        tvMap = Map.fromList
+                    . catMaybes -- Drop refined types
+                    $ zipWith (\mbTvName sp -&gt;
+                                  fmap (\tvName -&gt; (tvName, sp)) mbTvName)
+                              mbTvNames spls
+    return (argTys, tvMap)
+
+{-
+Note [Matching functions with GADT type variables]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When deriving TextShow2, there is a tricky corner case to consider:
+
+  data Both a b where
+    BothCon :: x -&gt; x -&gt; Both x x
+
+Which show functions should be applied to which arguments of BothCon? We have a
+choice, since both the function of type (Int -&gt; a -&gt; Builder) and of type
+(Int -&gt; b -&gt; Builder) can be applied to either argument. In such a scenario, the
+second show function takes precedence over the first show function, so the
+derived TextShow2 instance would be:
+
+  instance TextShow Both where
+    liftShowsPrec2 sp1 sp2 p (BothCon x1 x2) =
+      showbParen (p &gt; appPrec) $
+        &quot;BothCon &quot; &lt;&gt; sp2 appPrec1 x1 &lt;&gt; showbSpace &lt;&gt; sp2 appPrec1 x2
+
+This is not an arbitrary choice, as this definition ensures that
+liftShowsPrec2 showsPrec = liftShowsPrec for a derived TextShow1 instance for
+Both.
+-}
+</span></pre></body></html>

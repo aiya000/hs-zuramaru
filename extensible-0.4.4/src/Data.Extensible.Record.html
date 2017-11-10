@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase, TemplateHaskell, TypeFamilies #-}</span><span>
+</span><a name="line-2"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Module      :  Data.Extensible.Record</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-7"></a><span class="hs-comment">--</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- Bidirectional conversion from/to records</span><span>
+</span><a name="line-11"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-12"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Record</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Record.html#IsRecord"><span class="hs-identifier hs-type">IsRecord</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Record.html#toRecord"><span class="hs-identifier hs-var">toRecord</span></a><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Record.html#fromRecord"><span class="hs-identifier hs-var">fromRecord</span></a><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Record.html#record"><span class="hs-identifier hs-var">record</span></a><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Record.html#deriveIsRecord"><span class="hs-identifier hs-var">deriveIsRecord</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-13"></a><span>
+</span><a name="line-14"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span>
+</span><a name="line-15"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-16"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.Rig.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Rig</span></a><span>
+</span><a name="line-17"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.HList.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">HList</span></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Product.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Product</span></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Field.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Field</span></a><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Functor</span><span class="hs-operator">.</span><span class="hs-identifier">Identity</span><span>
+</span><a name="line-21"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Profunctor</span><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">TypeLits</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-comment">-- | The class of types that can be converted to/from a 'Record'.</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">class</span><span> </span><a name="IsRecord"><a href="Data.Extensible.Record.html#IsRecord"><span class="hs-identifier">IsRecord</span></a></a><span> </span><a name="local-6989586621679234695"><a href="#local-6989586621679234695"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-keyword">type</span><span> </span><span class="hs-identifier">RecFields</span><span> </span><a name="local-6989586621679234695"><a href="#local-6989586621679234695"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><a href="Data.Extensible.Internal.html#Assoc"><span class="hs-identifier hs-type">Assoc</span></a><span> </span><span class="hs-identifier hs-type">Symbol</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">]</span><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-identifier">recordFromList</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Extensible.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#Field"><span class="hs-identifier hs-type">Field</span></a><span> </span><span class="hs-identifier hs-type">Identity</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Record.html#RecFields"><span class="hs-identifier hs-type">RecFields</span></a><span> </span><a href="#local-6989586621679234695"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679234695"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-identifier">recordToList</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679234695"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#Field"><span class="hs-identifier hs-type">Field</span></a><span> </span><span class="hs-identifier hs-type">Identity</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Record.html#RecFields"><span class="hs-identifier hs-type">RecFields</span></a><span> </span><a href="#local-6989586621679234695"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Extensible.Record.html#IsRecord"><span class="hs-identifier hs-type">IsRecord</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-keyword">type</span><span> </span><span class="hs-identifier">RecFields</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-char">'[]
+  recordFromList _ = ()
+  recordToList _ = HNil
+
+-- | Convert a value into a 'Record'.
+toRecord :: IsRecord a =&gt; a -&gt; Record (RecFields a)
+toRecord = fromHList . recordToList
+{-# INLINE toRecord #-}
+
+-- | Convert a 'Record' to a value.
+fromRecord :: IsRecord a =&gt; Record (RecFields a) -&gt; a
+fromRecord = recordFromList . toHList
+{-# INLINE fromRecord #-}
+
+-- | @record :: IsRecord a =&gt; Iso' a (Record (RecFields a)) @
+record :: (IsRecord a, Functor f, Profunctor p)
+  =&gt; Optic' p f a (Record (RecFields a))
+record = dimap toRecord (fmap fromRecord)
+{-# INLINE record #-}
+
+tvName :: TyVarBndr -&gt; Name
+tvName (PlainTV n) = n
+tvName (KindedTV n _) = n
+
+-- | Create an 'IsRecord' instance for a normal record declaration.
+deriveIsRecord :: Name -&gt; DecsQ
+deriveIsRecord name = reify name &gt;&gt;= \case
+#if MIN_VERSION_template_haskell(2,11,0)
+  TyConI (DataD _ _ vars _ [RecC conName vst] _) -&gt; do
+#else
+  TyConI (DataD _ _ vars [RecC conName vst] _) -&gt; do
+#endif
+    rec &lt;- newName &quot;rec&quot;
+    let names = [x | (x, _, _) &lt;- vst]
+    newNames &lt;- traverse (newName . nameBase) names
+    let tvmap = [(tvName tv, VarT (mkName $ &quot;p&quot; ++ show i)) | (i, tv) &lt;- zip [0 :: Int ..] vars]
+    let ty = foldl AppT (ConT name) $ map snd tvmap
+    let refineTV (VarT t) | Just t' &lt;- lookup t tvmap = t'
+        refineTV (AppT a b) = refineTV a `AppT` refineTV b
+        refineTV t = t
+    return
+#if MIN_VERSION_template_haskell(2,11,0)
+      [InstanceD Nothing [] (ConT ''IsRecord `AppT` ty)
+#else
+      [InstanceD [] (ConT ''IsRecord `AppT` ty)
+#endif
+        [ TySynInstD ''RecFields $ TySynEqn [ty] $ foldr
+            (\(v, _, t) r -&gt; PromotedConsT `AppT` (PromotedT '(:&gt;) `AppT` LitT (StrTyLit $ nameBase v) `AppT` refineTV t) `AppT` r)
+            PromotedNilT
+            vst
+        , FunD 'recordFromList [Clause
+            [shape2Pat $ fmap (\x -&gt; ConP 'Field [ConP 'Identity [VarP x]]) newNames]
+            (NormalB $ RecConE conName [(n, VarE n') | (n, n') &lt;- zip names newNames])
+            []
+            ]
+        , FunD 'recordToList [Clause
+            [VarP rec]
+            (NormalB $ shape2Exp [AppE (ConE 'Field)
+                $ AppE (ConE 'Identity)
+                $ VarE n `AppE` VarE rec
+              | n &lt;- names])
+            []
+            ]
+        ]
+      ]
+  info -&gt; fail $ &quot;deriveIsRecord: Unsupported &quot; ++ show info
+
+shape2Pat :: [Pat] -&gt; Pat
+shape2Pat [] = ConP 'HNil []
+shape2Pat (x : xs) = ConP 'HCons [x, shape2Pat xs]
+
+shape2Exp :: [Exp] -&gt; Exp
+shape2Exp [] = ConE 'HNil
+shape2Exp (x : xs) = ConE 'HCons `AppE` x `AppE` shape2Exp xs
+</span></pre></body></html>

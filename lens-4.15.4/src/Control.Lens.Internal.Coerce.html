@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 708</span><span>
+</span><a name="line-4"></a><span class="hs-cpp">#define USE_COERCE</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE Trustworthy #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE RankNTypes #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><a name="line-8"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE Unsafe #-}</span><span>
+</span><a name="line-10"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- Copyright   :  (C) 2016 Edward Kmett and Eric Mertens</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- Stability   :  experimental</span><span>
+</span><a name="line-17"></a><span class="hs-comment">-- Portability :  non-portable</span><span>
+</span><a name="line-18"></a><span class="hs-comment">--</span><span>
+</span><a name="line-19"></a><span class="hs-comment">-- This module provides a shim around 'coerce' that defaults to 'unsafeCoerce'</span><span>
+</span><a name="line-20"></a><span class="hs-comment">-- on GHC &lt; 7.8</span><span>
+</span><a name="line-21"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-22"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-var">coerce</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Control.Lens.Internal.Coerce.html#coerce%27"><span class="hs-identifier hs-var">coerce'</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-cpp">#ifdef USE_COERCE</span><span>
+</span><a name="line-28"></a><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-identifier">coerce'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679098326"><a href="#local-6989586621679098326"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679098327"><a href="#local-6989586621679098327"><span class="hs-identifier">b</span></a></a><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">Coercible</span><span> </span><a href="#local-6989586621679098326"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679098327"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679098327"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679098326"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-32"></a><a name="coerce%27"><a href="Control.Lens.Internal.Coerce.html#coerce%27"><span class="hs-identifier">coerce'</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">coerce</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">id</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679098326"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679098326"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span class="hs-pragma">{-# INLINE coerce' #-}</span><span>
+</span><a name="line-34"></a><span>
+</span><a name="line-35"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Unsafe</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-38"></a><span>
+</span><a name="line-39"></a><span class="hs-identifier">coerce</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">coerce'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">b</span><span>
+</span><a name="line-40"></a><span class="hs-identifier">coerce</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span>
+</span><a name="line-41"></a><span class="hs-identifier">coerce'</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">unsafeCoerce</span><span>
+</span><a name="line-42"></a><span class="hs-pragma">{-# INLINE coerce #-}</span><span>
+</span><a name="line-43"></a><span class="hs-pragma">{-# INLINE coerce' #-}</span><span>
+</span><a name="line-44"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-45"></a></pre></body></html>

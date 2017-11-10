@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE MagicHash #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances #-}</span><span>
+</span><a name="line-6"></a><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-8"></a><span>
+</span><a name="line-9"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Lift</span><span>
+</span><a name="line-10"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLift"><span class="hs-identifier hs-var">deriveLift</span></a><span>
+</span><a name="line-11"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLiftMany"><span class="hs-identifier hs-var">deriveLiftMany</span></a><span>
+</span><a name="line-12"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLift%27"><span class="hs-identifier hs-var">deriveLift'</span></a><span>
+</span><a name="line-13"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLiftMany%27"><span class="hs-identifier hs-var">deriveLiftMany'</span></a><span>
+</span><a name="line-14"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Language.Haskell.TH.Lift.html#makeLift"><span class="hs-identifier hs-var">makeLift</span></a><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Language.Haskell.TH.Lift.html#makeLift%27"><span class="hs-identifier hs-var">makeLift'</span></a><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Lift</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-cpp">#if !(MIN_VERSION_template_haskell(2,4,0))</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">PackedString</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">PackedString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">packString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">unpackPS</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span class="hs-cpp">#endif /* MIN_VERSION_template_haskell(2,4,0) */</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Base</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">unpackCString</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Double</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Float</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Addr</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Double</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Float</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word</span><span class="hs-operator hs-type">#</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-cpp">#if MIN_VERSION_template_haskell(2,11,0)</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-operator hs-type">#</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-cpp">#endif /* !(MIN_VERSION_template_haskell(2,11,0)) */</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-cpp">#if MIN_VERSION_template_haskell(2,8,0)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">ord</span><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span class="hs-cpp">#endif /* !(MIN_VERSION_template_haskell(2,8,0)) */</span><span>
+</span><a name="line-34"></a><span class="hs-cpp">#if !(MIN_VERSION_template_haskell(2,10,0))</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Ratio</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Ratio</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span class="hs-cpp">#endif /* !(MIN_VERSION_template_haskell(2,10,0)) */</span><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Syntax</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;=&lt;</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">zipWithM</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span class="hs-cpp">#if MIN_VERSION_template_haskell(2,9,0)</span><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">catMaybes</span><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span class="hs-cpp">#endif /* MIN_VERSION_template_haskell(2,9,0) */</span><span>
+</span><a name="line-43"></a><span>
+</span><a name="line-44"></a><span class="hs-identifier">modName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">String</span><span>
+</span><a name="line-45"></a><a name="modName"><a href="Language.Haskell.TH.Lift.html#modName"><span class="hs-identifier">modName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;Language.Haskell.TH.Lift&quot;</span><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span class="hs-comment">-- | Derive Lift instances for the given datatype.</span><span>
+</span><a name="line-48"></a><span class="hs-identifier">deriveLift</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-49"></a><a name="deriveLift"><a href="Language.Haskell.TH.Lift.html#deriveLift"><span class="hs-identifier">deriveLift</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLift%27"><span class="hs-identifier hs-var">deriveLift'</span></a><span> </span><span class="hs-operator hs-var">&lt;=&lt;</span><span> </span><span class="hs-identifier hs-var">reify</span><span>
+</span><a name="line-50"></a><span>
+</span><a name="line-51"></a><span class="hs-comment">-- | Derive Lift instances for many datatypes.</span><span>
+</span><a name="line-52"></a><span class="hs-identifier">deriveLiftMany</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Name</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-53"></a><a name="deriveLiftMany"><a href="Language.Haskell.TH.Lift.html#deriveLiftMany"><span class="hs-identifier">deriveLiftMany</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLiftMany%27"><span class="hs-identifier hs-var">deriveLiftMany'</span></a><span> </span><span class="hs-operator hs-var">&lt;=&lt;</span><span> </span><span class="hs-identifier hs-var">mapM</span><span> </span><span class="hs-identifier hs-var">reify</span><span>
+</span><a name="line-54"></a><span>
+</span><a name="line-55"></a><span class="hs-comment">-- | Obtain Info values through a custom reification function. This is useful</span><span>
+</span><a name="line-56"></a><span class="hs-comment">-- when generating instances for datatypes that have not yet been declared.</span><span>
+</span><a name="line-57"></a><span class="hs-identifier">deriveLift'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Info</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-58"></a><a name="deriveLift%27"><a href="Language.Haskell.TH.Lift.html#deriveLift%27"><span class="hs-identifier">deriveLift'</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">fmap</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">:</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLiftOne"><span class="hs-identifier hs-var">deriveLiftOne</span></a><span>
+</span><a name="line-59"></a><span>
+</span><a name="line-60"></a><span class="hs-identifier">deriveLiftMany'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Info</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Dec</span><span class="hs-special">]</span><span>
+</span><a name="line-61"></a><a name="deriveLiftMany%27"><a href="Language.Haskell.TH.Lift.html#deriveLiftMany%27"><span class="hs-identifier">deriveLiftMany'</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mapM</span><span> </span><a href="Language.Haskell.TH.Lift.html#deriveLiftOne"><span class="hs-identifier hs-var">deriveLiftOne</span></a><span>
+</span><a name="line-62"></a><span>
+</span><a name="line-63"></a><span class="hs-comment">-- | Generates a lambda expresson which behaves like 'lift' (without requiring</span><span>
+</span><a name="line-64"></a><span class="hs-comment">-- a 'Lift' instance). Example:</span><span>
+</span><a name="line-65"></a><span class="hs-comment">--</span><span>
+</span><a name="line-66"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-67"></a><span class="hs-comment">-- newtype Fix f = In { out :: f (Fix f) }</span><span>
+</span><a name="line-68"></a><span class="hs-comment">--</span><span>
+</span><a name="line-69"></a><span class="hs-comment">-- instance Lift (f (Fix f)) =&gt; Lift (Fix f) where</span><span>
+</span><a name="line-70"></a><span class="hs-comment">--   lift = $(makeLift ''Fix)</span><span>
+</span><a name="line-71"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-72"></a><span class="hs-identifier">makeLift</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-73"></a><a name="makeLift"><a href="Language.Haskell.TH.Lift.html#makeLift"><span class="hs-identifier">makeLift</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Language.Haskell.TH.Lift.html#makeLift%27"><span class="hs-identifier hs-var">makeLift'</span></a><span> </span><span class="hs-operator hs-var">&lt;=&lt;</span><span> </span><span class="hs-identifier hs-var">reify</span><span>
+</span><a name="line-74"></a><span>
+</span><a name="line-75"></a><span class="hs-comment">-- | Like 'makeLift', but using a custom reification function.</span><span>
+</span><a name="line-76"></a><span class="hs-identifier">makeLift'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Info</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Exp</span><span>
+</span><a name="line-77"></a><a name="makeLift%27"><a href="Language.Haskell.TH.Lift.html#makeLift%27"><span class="hs-identifier">makeLift'</span></a></a><span> </span><a name="local-6989586621679028700"><a href="#local-6989586621679028700"><span class="hs-identifier">i</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Language.Haskell.TH.Lift.html#withInfo"><span class="hs-identifier hs-var">withInfo</span></a><span> </span><a href="#local-6989586621679028700"><span class="hs-identifier hs-var">i</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-glyph">\</span><span class="hs-identifier">_</span><span> </span><a name="local-6989586621679028701"><a href="#local-6989586621679028701"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><a name="local-6989586621679028702"><a href="#local-6989586621679028702"><span class="hs-identifier">cons</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Language.Haskell.TH.Lift.html#makeLiftOne"><span class="hs-identifier hs-var">makeLiftOne</span></a><span> </span><a href="#local-6989586621679028701"><span class="hs-identifier hs-var">n</span></a><span> </span><a href="#local-6989586621679028702"><span class="hs-identifier hs-var">cons</span></a><span>
+</span><a name="line-78"></a><span>
+</span><a name="line-79"></a><span class="hs-identifier">deriveLiftOne</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Info</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Q</span><span> </span><span class="hs-identifier hs-type">Dec</span><span>
+</span><a name="line-80"></a><a name="deriveLiftOne"><a href="Language.Haskell.TH.Lift.html#deriveLiftOne"><span class="hs-identifier">deriveLiftOne</span></a></a><span> </span><a name="local-6989586621679028703"><a href="#local-6989586621679028703"><span class="hs-identifier">i</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Language.Haskell.TH.Lift.html#withInfo"><span class="hs-identifier hs-var">withInfo</span></a><span> </span><a href="#local-6989586621679028703"><span class="hs-identifier hs-var">i</span></a><span> </span><a href="#local-6989586621679028704"><span class="hs-identifier hs-var">liftInstance</span></a><span>
+</span><a name="line-81"></a><span>  </span><span class="hs-keyword">where</span><span>
+</span><a name="line-82"></a><span>    </span><a name="local-6989586621679028704"><a href="#local-6989586621679028704"><span class="hs-identifier">liftInstance</span></a></a><span> </span><a name="local-6989586621679028708"><a href="#local-6989586621679028708"><span class="hs-identifier">dcx</span></a></a><span> </span><a name="local-6989586621679028709"><a href="#local-6989586621679028709"><span class="hs-identifier">n</span></a></a><span> </span><a name="local-6989586621679028710"><a href="#local-6989586621679028710"><span class="hs-identifier">vs</span></a></a><span> </span><a name="local-6989586621679028711"><a href="#local-6989586621679028711"><span class="hs-identifier">cons</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-83"></a><span class="hs-cpp">#if MIN_VERSION_template_haskell(2,9,0)</span><span>
+</span><a name="line-84"></a><span>      </span><a name="local-6989586621679028712"><a href="#local-6989586621679028712"><span class="hs-identifier">roles</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-identifier hs-var">qReifyRoles</span><span> </span><a href="#local-6989586621679028709"><span class="hs-identifier hs-var">n</span></a><span>
+</span><a name="line-85"></a><span>      </span><span class="hs-comment">-- Compute the set of phantom variables.</span><span>
+</span><a name="line-86"></a><span>      </span><span class="hs-keyword">let</span><span> </span><a name="local-6989586621679028713"><a href="#local-6989586621679028713"><span class="hs-identifier">phvars</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">catMaybes</span><span> </span><span class="hs-operator hs-var">$</span><span>
+</span><a name="line-87"></a><span>            </span><span class="hs-identifier hs-var">zipWith</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><a name="local-6989586621679028908"><a href="#local-6989586621679028908"><span class="hs-identifier">v</span></a></a><span> </span><a name="local-6989586621679028909"><a href="#local-6989586621679028909"><span class="hs-identifier">role</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><a href="#local-6989586621679028909"><span class="hs-identifier hs-var">role</span></a><span> </span><span class="hs-operator hs-var">==</span><span> </span><span class="hs-identifier hs-var">PhantomR</span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><a href="#local-6989586621679028908"><span class="hs-identifier hs-var">v</span></a><span> </span><span class="hs-keyword">else</span><span> </span><span class="hs-identifier hs-var">Nothing</span><span class="hs-special">)</span><span>
+</span><a name="line-88"></a><span>                    </span><a href="#local-6989586621679028710"><span class="hs-identifier hs-var">vs</span></a><span>
+</span><a name="line-89"></a><span>                    </span><a href="#local-6989586621679028712"><span class="hs-identifier hs-var">roles</span></a><span>
+</span><a name="line-90"></a><span class="hs-cpp">#else /* MIN_VERSION_template_haskell(2,9,0) */</span><span>
+</span><a name="line-91"></a><span>      </span><span class="hs-keyword">let</span><span> </span><span class="hs-identifier">phvars</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a name="line-92"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-93"></a><span>      </span><span class="hs-identifier hs-var">instanceD</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679028706"><span class="hs-identifier hs-var">ctxt</span></a><span> </span><a href="#local-6989586621679028708"><span class="hs-identifier hs-var">dcx</span></a><span> </span><a href="#local-6989586621679028713"><span class="hs-identifier hs-var">phvars</span></a><span> </span><a href="#local-6989586621679028710"><span class="hs-identifier hs-var">vs</span></a><span class="hs-special">)</span><span>
+</span><a name="line-94"></a><span>                </span><span class="hs-special">(</span><span class="hs-identifier hs-var">conT</span><span> </span><span class="hs-char">''Lift `appT` typ n (map fst vs))
+                [funD 'lift [clause [] (normalB (makeLiftOne n cons)) []]]
+    typ n = foldl appT (conT n) . map varT
+    -- Only consider *-kinded type variables, because Lift instances cannot
+    -- meaningfully be given to types of other kinds. Further, filter out type
+    -- variables that are obviously phantom.
+    ctxt dcx phvars =
+        fmap (dcx ++) . cxt . concatMap liftPred . filter (`notElem` phvars)
+#if MIN_VERSION_template_haskell(2,10,0)
+    liftPred (v, StarT) = [conT ''Lift `appT` varT v]
+    liftPred (_, _) = []
+#elif MIN_VERSION_template_haskell(2,8,0)
+    liftPred (v, StarT) = [classP ''Lift [varT v]]
+    liftPred (_, _) = []
+#elif MIN_VERSION_template_haskell(2,4,0)
+    liftPred (v, StarK) = [classP ''Lift [varT v]]
+    liftPred (_, _) = []
+#else /* !(MIN_VERSION_template_haskell(2,4,0)) */
+    liftPred n = conT ''Lift `appT` varT n
+#endif
+
+makeLiftOne :: Name -&gt; [Con] -&gt; Q Exp
+makeLiftOne n cons = do
+  e &lt;- newName &quot;e&quot;
+  lam1E (varP e) $ caseE (varE e) $ consMatches n cons
+
+consMatches :: Name -&gt; [Con] -&gt; [Q Match]
+consMatches n [] = [match wildP (normalB e) []]
+  where
+    e = [| errorQExp $(stringE (&quot;Can't lift value of empty datatype &quot; ++ nameBase n)) |]
+consMatches _ cons = concatMap doCons cons
+
+doCons :: Con -&gt; [Q Match]
+doCons (NormalC c sts) = (:[]) $ do
+    ns &lt;- zipWithM (\_ i -&gt; newName ('x':show (i :: Int))) sts [0..]
+    let con = [| conE c |]
+        args = [ liftVar n t | (n, (_, t)) &lt;- zip ns sts ]
+        e = foldl (\e1 e2 -&gt; [| appE $e1 $e2 |]) con args
+    match (conP c (map varP ns)) (normalB e) []
+doCons (RecC c sts) = doCons $ NormalC c [(s, t) | (_, s, t) &lt;- sts]
+doCons (InfixC sty1 c sty2) = (:[]) $ do
+    x0 &lt;- newName &quot;x0&quot;
+    x1 &lt;- newName &quot;x1&quot;
+    let con = [| conE c |]
+        left = liftVar x0 (snd sty1)
+        right = liftVar x1 (snd sty2)
+        e = [| infixApp $left $con $right |]
+    match (infixP (varP x0) c (varP x1)) (normalB e) []
+doCons (ForallC _ _ c) = doCons c
+#if MIN_VERSION_template_haskell(2,11,0)
+-- GADTs can have multiple constructor names, when they are written like:
+--
+-- data T where
+--   MkT1, MkT2 :: T
+doCons (GadtC cs sts _) = map (\c -&gt; do
+    ns &lt;- zipWithM (\_ i -&gt; newName ('x':show (i :: Int))) sts [0..]
+    let con = [| conE c |]
+        args = [ liftVar n t | (n, (_, t)) &lt;- zip ns sts ]
+        e = foldl (\e1 e2 -&gt; [| appE $e1 $e2 |]) con args
+    match (conP c (map varP ns)) (normalB e) []
+  ) cs
+doCons (RecGadtC cs sts _) =
+      concatMap (\c -&gt; doCons $ NormalC c [(s,t) | (_, s, t) &lt;- sts]) cs
+#endif
+
+liftVar :: Name -&gt; Type -&gt; Q Exp
+liftVar varName (ConT tyName)
+#if MIN_VERSION_template_haskell(2,8,0)
+  | tyName == ''Addr#   = [| litE (stringPrimL (map (fromIntegral . ord)
+                                                    (unpackCString# $var))) |]
+#else /* !(MIN_VERSION_template_haskell(2,8,0)) */
+  | tyName == ''Addr#   = [| litE (stringPrimL (unpackCString# $var))       |]
+#endif
+#if MIN_VERSION_template_haskell(2,11,0)
+  | tyName == ''Char#   = [| litE (charPrimL               (C# $var))  |]
+#endif  /* !(MIN_VERSION_template_haskell(2,11,0)) */
+  | tyName == ''Double# = [| litE (doublePrimL (toRational (D# $var))) |]
+  | tyName == ''Float#  = [| litE (floatPrimL  (toRational (F# $var))) |]
+  | tyName == ''Int#    = [| litE (intPrimL    (toInteger  (I# $var))) |]
+  | tyName == ''Word#   = [| litE (wordPrimL   (toInteger  (W# $var))) |]
+  where
+    var :: Q Exp
+    var = varE varName
+liftVar varName _ = [| lift $(varE varName) |]
+
+withInfo :: Info
+#if MIN_VERSION_template_haskell(2,4,0)
+         -&gt; (Cxt -&gt; Name -&gt; [(Name, Kind)] -&gt; [Con] -&gt; Q a)
+#else /* !(MIN_VERSION_template_haskell(2,4,0)) */
+         -&gt; (Cxt -&gt; Name -&gt; [Name]         -&gt; [Con] -&gt; Q a)
+#endif
+         -&gt; Q a
+withInfo i f = case i of
+#if MIN_VERSION_template_haskell(2,11,0)
+    TyConI (DataD dcx n vsk _ cons _) -&gt;
+        f dcx n (map unTyVarBndr vsk) cons
+    TyConI (NewtypeD dcx n vsk _ con _) -&gt;
+        f dcx n (map unTyVarBndr vsk) [con]
+#else
+    TyConI (DataD dcx n vsk cons _) -&gt;
+        f dcx n (map unTyVarBndr vsk) cons
+    TyConI (NewtypeD dcx n vsk con _) -&gt;
+        f dcx n (map unTyVarBndr vsk) [con]
+#endif
+    _ -&gt; error (modName ++ &quot;.deriveLift: unhandled: &quot; ++ pprint i)
+  where
+#if MIN_VERSION_template_haskell(2,8,0)
+    unTyVarBndr (PlainTV v) = (v, StarT)
+    unTyVarBndr (KindedTV v k) = (v, k)
+#elif MIN_VERSION_template_haskell(2,4,0)
+    unTyVarBndr (PlainTV v) = (v, StarK)
+    unTyVarBndr (KindedTV v k) = (v, k)
+#else /* !(MIN_VERSION_template_haskell(2,4,0)) */
+    unTyVarBndr :: Name -&gt; Name
+    unTyVarBndr v = v
+#endif
+
+-- A type-restricted version of error that ensures makeLift always returns a
+-- value of type Q Exp, even when used on an empty datatype.
+errorQExp :: String -&gt; Q Exp
+errorQExp = error
+{-# INLINE errorQExp #-}
+
+instance Lift Name where
+  lift (Name occName nameFlavour) = [| Name occName nameFlavour |]
+
+#if MIN_VERSION_template_haskell(2,4,0)
+instance Lift OccName where
+  lift n = [| mkOccName $(lift $ occString n) |]
+
+instance Lift PkgName where
+  lift n = [| mkPkgName $(lift $ pkgString n) |]
+
+instance Lift ModName where
+  lift n = [| mkModName $(lift $ modString n) |]
+
+#else /* MIN_VERSION_template_haskell(2,4,0) */
+instance Lift PackedString where
+  lift ps = [| packString $(lift $ unpackPS ps) |]
+
+#endif /* MIN_VERSION_template_haskell(2,4,0) */
+instance Lift NameFlavour where
+  lift NameS = [| NameS |]
+  lift (NameQ modnam) = [| NameQ modnam |]
+#if __GLASGOW_HASKELL__ &gt;= 710
+  lift (NameU i) = [| NameU i |]
+  lift (NameL i) = [| NameL i |]
+#else /* __GLASGOW_HASKELL__ &lt; 710 */
+  lift (NameU i) = [| case $( lift (I# i) ) of
+                          I# i' -&gt; NameU i' |]
+  lift (NameL i) = [| case $( lift (I# i) ) of
+                          I# i' -&gt; NameL i' |]
+#endif /* __GLASGOW_HASKELL__ &lt; 710 */
+  lift (NameG nameSpace pkgName modnam)
+   = [| NameG nameSpace pkgName modnam |]
+
+instance Lift NameSpace where
+  lift VarName = [| VarName |]
+  lift DataName = [| DataName |]
+  lift TcClsName = [| TcClsName |]
+
+#if !(MIN_VERSION_template_haskell(2,10,0))
+-- These instances should really go in the template-haskell package.
+
+instance Lift () where
+  lift _ = [| () |]
+
+instance Integral a =&gt; Lift (Ratio a) where
+  lift x = return (LitE (RationalL (toRational x)))
+#endif
+</span></pre></body></html>

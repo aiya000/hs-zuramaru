@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP               #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell   #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-5"></a><span class="hs-comment">{-|
+Module:      TextShow.System.IO
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for 'IO'-related data types.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-17"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">fromString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">TextEncoding</span><span class="hs-special">(</span><span class="hs-identifier">textEncodingName</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span class="hs-cpp">#if MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span class="hs-operator">.</span><span class="hs-identifier">Failure</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">CodingFailureMode</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">CodingProgress</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Handle</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">HandlePosn</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Handle</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Handle</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">BufferMode</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">IOMode</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Newline</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">NewlineMode</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">SeekMode</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Maybe.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">Handle</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-39"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">FileHandle</span><span>   </span><a name="local-6989586621681116893"><a href="#local-6989586621681116893"><span class="hs-identifier">file</span></a></a><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.System.IO.html#showbHandleFilePath"><span class="hs-identifier hs-var">showbHandleFilePath</span></a><span> </span><a href="#local-6989586621681116893"><span class="hs-identifier hs-var">file</span></a><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">DuplexHandle</span><span> </span><a name="local-6989586621681116894"><a href="#local-6989586621681116894"><span class="hs-identifier">file</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.System.IO.html#showbHandleFilePath"><span class="hs-identifier hs-var">showbHandleFilePath</span></a><span> </span><a href="#local-6989586621681116894"><span class="hs-identifier hs-var">file</span></a><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-42"></a><span>
+</span><a name="line-43"></a><span class="hs-comment">-- | Convert a 'Handle`'s 'FilePath' to a 'Builder'.</span><span>
+</span><a name="line-44"></a><span class="hs-identifier">showbHandleFilePath</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">FilePath</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-45"></a><a name="showbHandleFilePath"><a href="TextShow.System.IO.html#showbHandleFilePath"><span class="hs-identifier">showbHandleFilePath</span></a></a><span> </span><a name="local-6989586621681116892"><a href="#local-6989586621681116892"><span class="hs-identifier">file</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;{handle: &quot;</span><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><span class="hs-identifier hs-var">fromString</span><span> </span><a href="#local-6989586621681116892"><span class="hs-identifier hs-var">file</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><span class="hs-identifier hs-var">singleton</span><span> </span><span class="hs-char">'}'</span><span>
+</span><a name="line-46"></a><span class="hs-pragma">{-# INLINE showbHandleFilePath #-}</span><span>
+</span><a name="line-47"></a><span>
+</span><a name="line-48"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-49"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''IOMode)
+-- | /Since: 2/
+$(deriveTextShow ''BufferMode)
+
+-- | /Since: 2/
+instance TextShow HandlePosn where
+    showb (HandlePosn h pos) = showb h &lt;&gt; &quot; at position &quot; &lt;&gt; showbPrec 0 pos
+    {-# INLINE showb #-}
+
+-- | /Since: 2/
+$(deriveTextShow ''SeekMode)
+
+-- | /Since: 2/
+instance TextShow TextEncoding where
+    showb = fromString . textEncodingName
+    {-# INLINE showb #-}
+
+#if MIN_VERSION_base(4,4,0)
+-- | Only available with @base-4.4.0.0@ or later.
+--
+-- /Since: 2/
+$(deriveTextShow ''CodingProgress)
+-- | Only available with @base-4.4.0.0@ or later.
+--
+-- /Since: 2/
+$(deriveTextShow ''CodingFailureMode)
+#endif
+
+-- | /Since: 2/
+$(deriveTextShow ''Newline)
+-- | /Since: 2/
+$(deriveTextShow ''NewlineMode)
+</span></pre></body></html>

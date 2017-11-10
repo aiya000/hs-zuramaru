@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP               #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell   #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-7"></a><span class="hs-comment">{-|
+Module:      TextShow.GHC.RTS.Flags
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for data types in the 'GHC.RTS.Flags' module.
+Only provided if using @base-4.8.0.0@ or later.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">RTS</span><span class="hs-operator">.</span><span class="hs-identifier">Flags</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">RTS</span><span class="hs-operator">.</span><span class="hs-identifier">Flags</span><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Bool.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Bool</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Char.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Floating.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Floating</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.List.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Maybe.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span></a><span>    </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Names.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Names</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Names.html#giveGCStatsTypeName"><span class="hs-identifier hs-var">giveGCStatsTypeName</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Names.html#doCostCentresTypeName"><span class="hs-identifier hs-var">doCostCentresTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-33"></a><span>                          </span><a href="TextShow.TH.Names.html#doHeapProfileTypeName"><span class="hs-identifier hs-var">doHeapProfileTypeName</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Names.html#doTraceTypeName"><span class="hs-identifier hs-var">doTraceTypeName</span></a><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span>
+</span><a name="line-35"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-36"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''RTSFlags)
+-- | /Since: 2/
+$(deriveTextShow ''GCFlags)
+-- | /Since: 2/
+$(deriveTextShow ''ConcFlags)
+-- | /Since: 2/
+$(deriveTextShow ''MiscFlags)
+-- | /Since: 2/
+$(deriveTextShow ''DebugFlags)
+-- | /Since: 2/
+$(deriveTextShow ''CCFlags)
+-- | /Since: 2/
+$(deriveTextShow ''ProfFlags)
+-- | /Since: 2/
+$(deriveTextShow ''TraceFlags)
+-- | /Since: 2/
+$(deriveTextShow ''TickyFlags)
+# if MIN_VERSION_base(4,10,0)
+-- | Only available with @base-4.10.0.0@ or later.
+--
+-- /Since: 3.3/
+$(deriveTextShow ''ParFlags)
+# endif
+
+-- | /Since: 2.1/
+$(deriveTextShow giveGCStatsTypeName)
+-- | /Since: 2.1/
+$(deriveTextShow doCostCentresTypeName)
+-- | /Since: 2.1/
+$(deriveTextShow doHeapProfileTypeName)
+-- | /Since: 2.1/
+$(deriveTextShow doTraceTypeName)
+#endif
+</span></pre></body></html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE GADTs           #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds       #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-8"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-9"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Type.Coercion
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instance for representational equality.
+Only provided if using @base-4.7.0.0@ or later.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-22"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">Coercion</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-cpp">#if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">Coercion</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Coercion</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow2"><span class="hs-identifier hs-var">deriveTextShow2</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec"><span class="hs-identifier hs-var">makeLiftShowbPrec</span></a><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-31"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''Coercion)
+
+-- | /Since: 2/
+instance TextShow1 (Coercion a) where
+    liftShowbPrec = $(makeLiftShowbPrec ''Coercion)
+
+-- | /Since: 2/
+$(deriveTextShow2 ''Coercion)
+#endif
+</span></pre></body></html>

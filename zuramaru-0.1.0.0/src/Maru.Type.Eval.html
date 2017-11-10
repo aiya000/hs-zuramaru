@@ -1,0 +1,418 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE OverloadedLabels #-}</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE OverloadedLists #-}</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-10"></a><span class="hs-pragma">{-# LANGUAGE Rank2Types #-}</span><span>
+</span><a name="line-11"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><a name="line-14"></a><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><a name="line-15"></a><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances #-}</span><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-19"></a><span class="hs-comment">-- Integrate types of extensible's Effect.</span><span>
+</span><a name="line-20"></a><span class="hs-comment">--</span><span>
+</span><a name="line-21"></a><span class="hs-comment">-- `MaruMacro` is evaluated by `MaruEvaluator`.</span><span>
+</span><a name="line-22"></a><span class="hs-comment">-- `MaruFunc` is calculated by `MaruCalculator`.</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">Eval</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Maru.Type.Eval.html#Fail"><span class="hs-identifier hs-type">Fail</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#FailKey"><span class="hs-identifier hs-type">FailKey</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#FailValue"><span class="hs-identifier hs-type">FailValue</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#FailAssociation"><span class="hs-identifier hs-type">FailAssociation</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#throwFail"><span class="hs-identifier hs-var">throwFail</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#includeFail"><span class="hs-identifier hs-var">includeFail</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#includeFail%27"><span class="hs-identifier hs-var">includeFail'</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#SimplificationSteps"><span class="hs-identifier hs-type">SimplificationSteps</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#reportSteps"><span class="hs-identifier hs-var">reportSteps</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#SimplifSteps"><span class="hs-identifier hs-type">SimplifSteps</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsKey"><span class="hs-identifier hs-type">SimplifStepsKey</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsValue"><span class="hs-identifier hs-type">SimplifStepsValue</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsAssociation"><span class="hs-identifier hs-type">SimplifStepsAssociation</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruScopes"><span class="hs-identifier hs-type">MaruScopes</span></a><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesKey"><span class="hs-identifier hs-type">MaruScopesKey</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesValue"><span class="hs-identifier hs-type">MaruScopesValue</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#insertGlobalVar"><span class="hs-identifier hs-var">insertGlobalVar</span></a><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#newScope"><span class="hs-identifier hs-var">newScope</span></a><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#popNewerScope"><span class="hs-identifier hs-var">popNewerScope</span></a><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#getMaruEnv"><span class="hs-identifier hs-var">getMaruEnv</span></a><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#putMaruEnv"><span class="hs-identifier hs-var">putMaruEnv</span></a><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#modifyMaruEnv"><span class="hs-identifier hs-var">modifyMaruEnv</span></a><span>
+</span><a name="line-48"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#IOEff"><span class="hs-identifier hs-type">IOEff</span></a><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#IOEffKey"><span class="hs-identifier hs-type">IOEffKey</span></a><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#IOEffValue"><span class="hs-identifier hs-type">IOEffValue</span></a><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#IOEffAssociation"><span class="hs-identifier hs-type">IOEffAssociation</span></a><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#liftIOEff"><span class="hs-identifier hs-var">liftIOEff</span></a><span>
+</span><a name="line-53"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier hs-type">ExceptionCause</span></a><span>
+</span><a name="line-54"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruEvaluator"><span class="hs-identifier hs-type">MaruEvaluator</span></a><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#runMaruEvaluator"><span class="hs-identifier hs-var">runMaruEvaluator</span></a><span>
+</span><a name="line-56"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#newSymbol"><span class="hs-identifier hs-var">newSymbol</span></a><span>
+</span><a name="line-57"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruScope"><span class="hs-identifier hs-type">MaruScope</span></a><span>
+</span><a name="line-58"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruFunc"><span class="hs-identifier hs-type">MaruFunc</span></a><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-59"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruMacro"><span class="hs-identifier hs-type">MaruMacro</span></a><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-60"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#lookup"><span class="hs-identifier hs-var">lookup</span></a><span>
+</span><a name="line-61"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#lookupVar"><span class="hs-identifier hs-var">lookupVar</span></a><span>
+</span><a name="line-62"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Maru.Type.Eval.html#%5E%24"><span class="hs-operator hs-var">^$</span></a><span class="hs-special">)</span><span>
+</span><a name="line-63"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#MaruCalculator"><span class="hs-identifier hs-type">MaruCalculator</span></a><span>
+</span><a name="line-64"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#runMaruCalculator"><span class="hs-identifier hs-var">runMaruCalculator</span></a><span>
+</span><a name="line-65"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#First%27"><span class="hs-identifier hs-type">First'</span></a><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-66"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#first%27"><span class="hs-identifier hs-var">first'</span></a><span>
+</span><a name="line-67"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#expandVars"><span class="hs-identifier hs-var">expandVars</span></a><span>
+</span><a name="line-68"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Maru.Type.Eval.html#substituteVar"><span class="hs-identifier hs-var">substituteVar</span></a><span>
+</span><a name="line-69"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-70"></a><span>
+</span><a name="line-71"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;|</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-72"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Fail</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">MonadFail</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-73"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span>
+</span><a name="line-74"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">NonEmpty</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">NonEmpty</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;|</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Map</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Map</span><span class="hs-special">)</span><span>
+</span><a name="line-76"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">First</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-77"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Proxy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-78"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Semigroup</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-79"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">)</span><span>
+</span><a name="line-80"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">typeRep</span><span class="hs-special">)</span><span>
+</span><a name="line-81"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Unique</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">newUnique</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">hashUnique</span><span class="hs-special">)</span><span>
+</span><a name="line-82"></a><span class="hs-keyword">import</span><span> </span><a href="Maru.Type.SExpr.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">SExpr</span></a><span>
+</span><a name="line-83"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">fail</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">lookup</span><span class="hs-special">)</span><span>
+</span><a name="line-84"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">TextShow</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-85"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">NonEmpty</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">NE</span><span>
+</span><a name="line-86"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Map</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">M</span><span>
+</span><a name="line-87"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">T</span><span>
+</span><a name="line-88"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><a href="Maru.Type.SExpr.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">SExpr</span></a><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">MTS</span><span>
+</span><a name="line-89"></a><span>
+</span><a name="line-90"></a><span class="hs-comment">-- $setup</span><span>
+</span><a name="line-91"></a><span class="hs-comment">-- &gt;&gt;&gt; :set -XOverloadedStrings</span><span>
+</span><a name="line-92"></a><span class="hs-comment">-- &gt;&gt;&gt; import Data.Either</span><span>
+</span><a name="line-93"></a><span class="hs-comment">-- &gt;&gt;&gt; import qualified Maru.Eval as E</span><span>
+</span><a name="line-94"></a><span>
+</span><a name="line-95"></a><span class="hs-comment">-- | A message of @Fail@</span><span>
+</span><a name="line-96"></a><span class="hs-keyword">type</span><span> </span><a name="ExceptionCause"><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier">ExceptionCause</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-97"></a><span>
+</span><a name="line-98"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-99"></a><span class="hs-comment">-- An effect of @MaruEvaluator@.</span><span>
+</span><a name="line-100"></a><span class="hs-comment">-- A possible of the failure.</span><span>
+</span><a name="line-101"></a><span class="hs-keyword">type</span><span> </span><a name="Fail"><a href="Maru.Type.Eval.html#Fail"><span class="hs-identifier">Fail</span></a></a><span>      </span><span class="hs-glyph">=</span><span> </span><a href="Maru.Type.Eval.html#FailKey"><span class="hs-identifier hs-type">FailKey</span></a><span> </span><span class="hs-operator">&gt;:</span><span> </span><a href="Maru.Type.Eval.html#FailValue"><span class="hs-identifier hs-type">FailValue</span></a><span>
+</span><a name="line-102"></a><span class="hs-keyword">type</span><span> </span><a name="FailKey"><a href="Maru.Type.Eval.html#FailKey"><span class="hs-identifier">FailKey</span></a></a><span>   </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;fail&quot;</span><span>
+</span><a name="line-103"></a><span class="hs-keyword">type</span><span> </span><a name="FailValue"><a href="Maru.Type.Eval.html#FailValue"><span class="hs-identifier">FailValue</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">EitherEff</span><span> </span><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier hs-type">ExceptionCause</span></a><span>
+</span><a name="line-104"></a><span class="hs-comment">-- | `Fail`'s `Associate`</span><span>
+</span><a name="line-105"></a><span class="hs-keyword">type</span><span> </span><a name="FailAssociation"><a href="Maru.Type.Eval.html#FailAssociation"><span class="hs-identifier">FailAssociation</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Associate</span><span> </span><a href="Maru.Type.Eval.html#FailKey"><span class="hs-identifier hs-type">FailKey</span></a><span> </span><a href="Maru.Type.Eval.html#FailValue"><span class="hs-identifier hs-type">FailValue</span></a><span>
+</span><a name="line-106"></a><span>
+</span><a name="line-107"></a><span class="hs-comment">-- | `throwEff` for `Fail`</span><span>
+</span><a name="line-108"></a><span class="hs-identifier">throwFail</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#FailAssociation"><span class="hs-identifier hs-type">FailAssociation</span></a><span> </span><a href="#local-6989586621679212479"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier hs-type">ExceptionCause</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212479"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679212480"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-109"></a><a name="throwFail"><a href="Maru.Type.Eval.html#throwFail"><span class="hs-identifier">throwFail</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">throwEff</span><span> </span><span class="hs-operator">#</span><span class="hs-identifier">fail</span><span>
+</span><a name="line-110"></a><span>
+</span><a name="line-111"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-112"></a><span class="hs-comment">-- Include `Maybe` to `Fail` context.</span><span>
+</span><a name="line-113"></a><span class="hs-comment">-- If it is Nothing,</span><span>
+</span><a name="line-114"></a><span class="hs-comment">-- the whole of `Fail a` to be failed.</span><span>
+</span><a name="line-115"></a><span class="hs-identifier">includeFail</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#FailAssociation"><span class="hs-identifier hs-type">FailAssociation</span></a><span> </span><a href="#local-6989586621679212477"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier hs-type">ExceptionCause</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212477"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="#local-6989586621679212478"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212477"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679212478"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-116"></a><a name="includeFail"><a href="Maru.Type.Eval.html#includeFail"><span class="hs-identifier">includeFail</span></a></a><span> </span><a name="local-6989586621679212481"><a href="#local-6989586621679212481"><span class="hs-identifier">cause</span></a></a><span> </span><a name="local-6989586621679212482"><a href="#local-6989586621679212482"><span class="hs-identifier">mm</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-117"></a><span>  </span><a name="local-6989586621679212483"><a href="#local-6989586621679212483"><span class="hs-identifier">maybeIt</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="#local-6989586621679212482"><span class="hs-identifier hs-var">mm</span></a><span>
+</span><a name="line-118"></a><span>  </span><span class="hs-keyword">case</span><span> </span><a href="#local-6989586621679212483"><span class="hs-identifier hs-var">maybeIt</span></a><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-119"></a><span>    </span><span class="hs-identifier hs-var">Nothing</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.Eval.html#throwFail"><span class="hs-identifier hs-var">throwFail</span></a><span> </span><a href="#local-6989586621679212481"><span class="hs-identifier hs-var">cause</span></a><span>
+</span><a name="line-120"></a><span>    </span><span class="hs-identifier hs-var">Just</span><span> </span><a name="local-6989586621679212484"><a href="#local-6989586621679212484"><span class="hs-identifier">x</span></a></a><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621679212484"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-121"></a><span>
+</span><a name="line-122"></a><span class="hs-comment">-- | Same as `includeFail`</span><span>
+</span><a name="line-123"></a><span class="hs-identifier">includeFail'</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#FailAssociation"><span class="hs-identifier hs-type">FailAssociation</span></a><span> </span><a href="#local-6989586621679212475"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212475"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Either</span><span> </span><a href="Maru.Type.Eval.html#ExceptionCause"><span class="hs-identifier hs-type">ExceptionCause</span></a><span> </span><a href="#local-6989586621679212476"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212475"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679212476"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-124"></a><a name="includeFail%27"><a href="Maru.Type.Eval.html#includeFail%27"><span class="hs-identifier">includeFail'</span></a></a><span> </span><a name="local-6989586621679212485"><a href="#local-6989586621679212485"><span class="hs-identifier">e</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-125"></a><span>  </span><a name="local-6989586621679212486"><a href="#local-6989586621679212486"><span class="hs-identifier">maybeIt</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="#local-6989586621679212485"><span class="hs-identifier hs-var">e</span></a><span>
+</span><a name="line-126"></a><span>  </span><span class="hs-keyword">case</span><span> </span><a href="#local-6989586621679212486"><span class="hs-identifier hs-var">maybeIt</span></a><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-127"></a><span>    </span><span class="hs-identifier hs-var">Left</span><span>  </span><a name="local-6989586621679212487"><a href="#local-6989586621679212487"><span class="hs-identifier">c</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.Eval.html#throwFail"><span class="hs-identifier hs-var">throwFail</span></a><span> </span><a href="#local-6989586621679212487"><span class="hs-identifier hs-var">c</span></a><span>
+</span><a name="line-128"></a><span>    </span><span class="hs-identifier hs-var">Right</span><span> </span><a name="local-6989586621679212488"><a href="#local-6989586621679212488"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621679212488"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-129"></a><span>
+</span><a name="line-130"></a><span>
+</span><a name="line-131"></a><span class="hs-comment">-- | A log for &#31777;&#32004;s</span><span>
+</span><a name="line-132"></a><span class="hs-keyword">type</span><span> </span><a name="SimplificationSteps"><a href="Maru.Type.Eval.html#SimplificationSteps"><span class="hs-identifier">SimplificationSteps</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><a href="Maru.Type.SExpr.html#SExpr"><span class="hs-identifier hs-type">SExpr</span></a><span class="hs-special">]</span><span>
+</span><a name="line-133"></a><span>
+</span><a name="line-134"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-135"></a><span class="hs-comment">-- Append numbers to steps</span><span>
+</span><a name="line-136"></a><span class="hs-comment">--</span><span>
+</span><a name="line-137"></a><span class="hs-comment">-- &gt;&gt;&gt; import Maru.Type.SExpr</span><span>
+</span><a name="line-138"></a><span class="hs-comment">-- &gt;&gt;&gt; reportSteps [Cons (AtomInt 1) (Cons (AtomInt 2) Nil), Cons (AtomInt 2) Nil]</span><span>
+</span><a name="line-139"></a><span class="hs-comment">-- [&quot;1: (1 2)&quot;,&quot;2: (2)&quot;]</span><span>
+</span><a name="line-140"></a><span class="hs-identifier">reportSteps</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#SimplificationSteps"><span class="hs-identifier hs-type">SimplificationSteps</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">]</span><span>
+</span><a name="line-141"></a><a name="reportSteps"><a href="Maru.Type.Eval.html#reportSteps"><span class="hs-identifier">reportSteps</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">zipWith</span><span> </span><a href="#local-6989586621679212489"><span class="hs-identifier hs-var">appendStepNumber</span></a><span> </span><span class="hs-special">[</span><span class="hs-number">1</span><span class="hs-glyph">..</span><span class="hs-special">]</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">map</span><span> </span><a href="Maru.Type.SExpr.html#readable"><span class="hs-identifier hs-var">readable</span></a><span>
+</span><a name="line-142"></a><span>  </span><span class="hs-keyword">where</span><span>
+</span><a name="line-143"></a><span>    </span><span class="hs-identifier">appendStepNumber</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-144"></a><span>    </span><a name="local-6989586621679212489"><a href="#local-6989586621679212489"><span class="hs-identifier">appendStepNumber</span></a></a><span> </span><a name="local-6989586621679212490"><a href="#local-6989586621679212490"><span class="hs-identifier">n</span></a></a><span> </span><a name="local-6989586621679212491"><a href="#local-6989586621679212491"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">showt</span><span> </span><a href="#local-6989586621679212490"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><span class="hs-string">&quot;: &quot;</span><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="#local-6989586621679212491"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-145"></a><span>
+</span><a name="line-146"></a><span class="hs-comment">-- | An effect of @MaruEvaluator@, for logging simplifications</span><span>
+</span><a name="line-147"></a><span class="hs-keyword">type</span><span> </span><a name="SimplifSteps"><a href="Maru.Type.Eval.html#SimplifSteps"><span class="hs-identifier">SimplifSteps</span></a></a><span>      </span><span class="hs-glyph">=</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsKey"><span class="hs-identifier hs-type">SimplifStepsKey</span></a><span> </span><span class="hs-operator">&gt;:</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsValue"><span class="hs-identifier hs-type">SimplifStepsValue</span></a><span>
+</span><a name="line-148"></a><span class="hs-keyword">type</span><span> </span><a name="SimplifStepsKey"><a href="Maru.Type.Eval.html#SimplifStepsKey"><span class="hs-identifier">SimplifStepsKey</span></a></a><span>   </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;simplifSteps&quot;</span><span>
+</span><a name="line-149"></a><span class="hs-keyword">type</span><span> </span><a name="SimplifStepsValue"><a href="Maru.Type.Eval.html#SimplifStepsValue"><span class="hs-identifier">SimplifStepsValue</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">WriterEff</span><span> </span><a href="Maru.Type.Eval.html#SimplificationSteps"><span class="hs-identifier hs-type">SimplificationSteps</span></a><span>
+</span><a name="line-150"></a><span class="hs-keyword">type</span><span> </span><a name="SimplifStepsAssociation"><a href="Maru.Type.Eval.html#SimplifStepsAssociation"><span class="hs-identifier">SimplifStepsAssociation</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Associate</span><span> </span><a href="Maru.Type.Eval.html#SimplifStepsKey"><span class="hs-identifier hs-type">SimplifStepsKey</span></a><span> </span><a href="Maru.Type.Eval.html#SimplifStepsValue"><span class="hs-identifier hs-type">SimplifStepsValue</span></a><span>
+</span><a name="line-151"></a><span>
+</span><a name="line-152"></a><span>
+</span><a name="line-153"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-154"></a><span class="hs-comment">-- An effect of @MaruEvaluator@.</span><span>
+</span><a name="line-155"></a><span class="hs-comment">-- This is a stack for the lexical scope.</span><span>
+</span><a name="line-156"></a><span class="hs-keyword">type</span><span> </span><a name="MaruScopes"><a href="Maru.Type.Eval.html#MaruScopes"><span class="hs-identifier">MaruScopes</span></a></a><span>      </span><span class="hs-glyph">=</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesKey"><span class="hs-identifier hs-type">MaruScopesKey</span></a><span> </span><span class="hs-operator">&gt;:</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesValue"><span class="hs-identifier hs-type">MaruScopesValue</span></a><span>
+</span><a name="line-157"></a><span class="hs-keyword">type</span><span> </span><a name="MaruScopesKey"><a href="Maru.Type.Eval.html#MaruScopesKey"><span class="hs-identifier">MaruScopesKey</span></a></a><span>   </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;maruScopes&quot;</span><span>
+</span><a name="line-158"></a><span class="hs-keyword">type</span><span> </span><a name="MaruScopesValue"><a href="Maru.Type.Eval.html#MaruScopesValue"><span class="hs-identifier">MaruScopesValue</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">State</span><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span>
+</span><a name="line-159"></a><span class="hs-keyword">type</span><span> </span><a name="MaruScopesAssociation"><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier">MaruScopesAssociation</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Associate</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesKey"><span class="hs-identifier hs-type">MaruScopesKey</span></a><span> </span><a href="Maru.Type.Eval.html#MaruScopesValue"><span class="hs-identifier hs-type">MaruScopesValue</span></a><span>
+</span><a name="line-160"></a><span>
+</span><a name="line-161"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-162"></a><span class="hs-comment">-- The whole of the runtime state.</span><span>
+</span><a name="line-163"></a><span class="hs-comment">-- This is `NonEmpty`, because the global scope is defined with the program startup</span><span>
+</span><a name="line-164"></a><span class="hs-comment">--</span><span>
+</span><a name="line-165"></a><span class="hs-comment">-- and</span><span>
+</span><a name="line-166"></a><span class="hs-comment">--</span><span>
+</span><a name="line-167"></a><span class="hs-comment">-- 'getMaruEnv &gt;&gt;= return . last' is the toplevel (and this is used as global scope).</span><span>
+</span><a name="line-168"></a><span class="hs-comment">-- 'getMaruEnv &gt;&gt;= return . head' is the newest scope.</span><span>
+</span><a name="line-169"></a><span class="hs-comment">--</span><span>
+</span><a name="line-170"></a><span class="hs-comment">-- ( This means the cons operation makes a new scope, it is not '++ [x]'.</span><span>
+</span><a name="line-171"></a><span class="hs-comment">--   Please see `makeScope`.</span><span>
+</span><a name="line-172"></a><span class="hs-comment">-- )</span><span>
+</span><a name="line-173"></a><span class="hs-keyword">type</span><span> </span><a name="MaruEnv"><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier">MaruEnv</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">NonEmpty</span><span> </span><a href="Maru.Type.Eval.html#MaruScope"><span class="hs-identifier hs-type">MaruScope</span></a><span>
+</span><a name="line-174"></a><span>
+</span><a name="line-175"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-176"></a><span class="hs-comment">-- Insert a variable to the toplevel scope</span><span>
+</span><a name="line-177"></a><span class="hs-comment">--</span><span>
+</span><a name="line-178"></a><span class="hs-comment">-- &gt;&gt;&gt; (_, env, _) &lt;- flip runMaruEvaluator E.initialEnv $ insertGlobalVar &quot;x&quot; (AtomInt 10)</span><span>
+</span><a name="line-179"></a><span class="hs-comment">-- &gt;&gt;&gt; lookup &quot;x&quot; env</span><span>
+</span><a name="line-180"></a><span class="hs-comment">-- Just (AtomInt 10)</span><span>
+</span><a name="line-181"></a><span class="hs-identifier">insertGlobalVar</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212474"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Maru.Type.SExpr.html#MaruSymbol"><span class="hs-identifier hs-type">MaruSymbol</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.SExpr.html#SExpr"><span class="hs-identifier hs-type">SExpr</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212474"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-182"></a><a name="insertGlobalVar"><a href="Maru.Type.Eval.html#insertGlobalVar"><span class="hs-identifier">insertGlobalVar</span></a></a><span> </span><a name="local-6989586621679212492"><a href="#local-6989586621679212492"><span class="hs-identifier">sym</span></a></a><span> </span><a name="local-6989586621679212493"><a href="#local-6989586621679212493"><span class="hs-identifier">val</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-183"></a><span>  </span><a name="local-6989586621679212494"><a href="#local-6989586621679212494"><span class="hs-identifier">env</span></a></a><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Maru.Type.Eval.html#getMaruEnv"><span class="hs-identifier hs-var">getMaruEnv</span></a><span>
+</span><a name="line-184"></a><span>  </span><span class="hs-keyword">let</span><span> </span><a name="local-6989586621679212495"><a href="#local-6989586621679212495"><span class="hs-identifier">env'</span></a></a><span>   </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">init</span><span> </span><a href="#local-6989586621679212494"><span class="hs-identifier hs-var">env</span></a><span>
+</span><a name="line-185"></a><span>      </span><a name="local-6989586621679212496"><a href="#local-6989586621679212496"><span class="hs-identifier">global</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">M</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">insert</span><span> </span><a href="#local-6989586621679212492"><span class="hs-identifier hs-var">sym</span></a><span> </span><a href="#local-6989586621679212493"><span class="hs-identifier hs-var">val</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">last</span><span> </span><a href="#local-6989586621679212494"><span class="hs-identifier hs-var">env</span></a><span>
+</span><a name="line-186"></a><span>  </span><a href="Maru.Type.Eval.html#putMaruEnv"><span class="hs-identifier hs-var">putMaruEnv</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">nonEmpty</span><span> </span><a href="#local-6989586621679212495"><span class="hs-identifier hs-var">env'</span></a><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-187"></a><span>    </span><span class="hs-identifier hs-var">Nothing</span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679212496"><span class="hs-identifier hs-var">global</span></a><span> </span><span class="hs-operator hs-var">:|</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><a name="line-188"></a><span>    </span><span class="hs-identifier hs-var">Just</span><span> </span><a name="local-6989586621679212497"><a href="#local-6989586621679212497"><span class="hs-identifier">env''</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679212497"><span class="hs-identifier hs-var">env''</span></a><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679212496"><span class="hs-identifier hs-var">global</span></a><span class="hs-special">]</span><span>
+</span><a name="line-189"></a><span>
+</span><a name="line-190"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-191"></a><span class="hs-comment">-- Make a scope in the state, with a variable.</span><span>
+</span><a name="line-192"></a><span class="hs-comment">--</span><span>
+</span><a name="line-193"></a><span class="hs-comment">-- NOTE:</span><span>
+</span><a name="line-194"></a><span class="hs-comment">-- The scope must be created with one or more variables.</span><span>
+</span><a name="line-195"></a><span class="hs-comment">-- It keeps any safety.</span><span>
+</span><a name="line-196"></a><span class="hs-comment">--</span><span>
+</span><a name="line-197"></a><span class="hs-comment">-- e.g.</span><span>
+</span><a name="line-198"></a><span class="hs-comment">--   1. unintended empty scope is never created</span><span>
+</span><a name="line-199"></a><span class="hs-comment">--   2. high affinity of `MaruEnv` (`NonEmpty`)  is kept</span><span>
+</span><a name="line-200"></a><span class="hs-identifier">newScope</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212473"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Maru.Type.SExpr.html#MaruSymbol"><span class="hs-identifier hs-type">MaruSymbol</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.SExpr.html#SExpr"><span class="hs-identifier hs-type">SExpr</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212473"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-201"></a><a name="newScope"><a href="Maru.Type.Eval.html#newScope"><span class="hs-identifier">newScope</span></a></a><span> </span><a name="local-6989586621679212498"><a href="#local-6989586621679212498"><span class="hs-identifier">sym</span></a></a><span> </span><a name="local-6989586621679212499"><a href="#local-6989586621679212499"><span class="hs-identifier">val</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Maru.Type.Eval.html#modifyMaruEnv"><span class="hs-identifier hs-var">modifyMaruEnv</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">(</span><a href="#local-6989586621679212498"><span class="hs-identifier hs-var">sym</span></a><span class="hs-special">,</span><span> </span><a href="#local-6989586621679212499"><span class="hs-identifier hs-var">val</span></a><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-operator hs-var">&lt;|</span><span class="hs-special">)</span><span>
+</span><a name="line-202"></a><span>
+</span><a name="line-203"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-204"></a><span class="hs-comment">-- Remove the newest scope (about the newest scope is written in `MaruEnv`),</span><span>
+</span><a name="line-205"></a><span class="hs-comment">-- and Return removed scope</span><span>
+</span><a name="line-206"></a><span class="hs-identifier">popNewerScope</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212472"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212472"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="Maru.Type.Eval.html#MaruScope"><span class="hs-identifier hs-type">MaruScope</span></a><span>
+</span><a name="line-207"></a><a name="popNewerScope"><a href="Maru.Type.Eval.html#popNewerScope"><span class="hs-identifier">popNewerScope</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a name="line-208"></a><span>  </span><span class="hs-special">(</span><a name="local-6989586621679212500"><a href="#local-6989586621679212500"><span class="hs-identifier">newest</span></a></a><span class="hs-operator hs-var">:|</span><a name="local-6989586621679212501"><a href="#local-6989586621679212501"><span class="hs-identifier">restEnv</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><a href="Maru.Type.Eval.html#getMaruEnv"><span class="hs-identifier hs-var">getMaruEnv</span></a><span>
+</span><a name="line-209"></a><span>  </span><span class="hs-keyword">case</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">nonEmpty</span><span> </span><a href="#local-6989586621679212501"><span class="hs-identifier hs-var">restEnv</span></a><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-210"></a><span>    </span><span class="hs-identifier hs-var">Nothing</span><span>       </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">error</span><span> </span><span class="hs-string">&quot;localScope(fatal error!): unexpected empty stack is detected! (In the correct case, the global scope is existed)&quot;</span><span>
+</span><a name="line-211"></a><span>    </span><span class="hs-identifier hs-var">Just</span><span> </span><a name="local-6989586621679212502"><a href="#local-6989586621679212502"><span class="hs-identifier">restEnv'</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.Eval.html#putMaruEnv"><span class="hs-identifier hs-var">putMaruEnv</span></a><span> </span><a href="#local-6989586621679212502"><span class="hs-identifier hs-var">restEnv'</span></a><span> </span><span class="hs-operator hs-var">&gt;&gt;</span><span> </span><span class="hs-identifier hs-var">return</span><span> </span><a href="#local-6989586621679212500"><span class="hs-identifier hs-var">newest</span></a><span>
+</span><a name="line-212"></a><span>
+</span><a name="line-213"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-214"></a><span class="hs-comment">-- The runtime state.</span><span>
+</span><a name="line-215"></a><span class="hs-comment">-- This associates the variable name and the value.</span><span>
+</span><a name="line-216"></a><span class="hs-keyword">type</span><span> </span><a name="MaruScope"><a href="Maru.Type.Eval.html#MaruScope"><span class="hs-identifier">MaruScope</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Map</span><span> </span><a href="Maru.Type.SExpr.html#MaruSymbol"><span class="hs-identifier hs-type">MaruSymbol</span></a><span> </span><a href="Maru.Type.SExpr.html#SExpr"><span class="hs-identifier hs-type">SExpr</span></a><span>
+</span><a name="line-217"></a><span>
+</span><a name="line-218"></a><span class="hs-comment">-- | `getEff` for `MaruScopes`</span><span>
+</span><a name="line-219"></a><span class="hs-identifier">getMaruEnv</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212471"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212471"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span>
+</span><a name="line-220"></a><a name="getMaruEnv"><a href="Maru.Type.Eval.html#getMaruEnv"><span class="hs-identifier">getMaruEnv</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">getEff</span><span> </span><span class="hs-operator">#</span><span class="hs-identifier">maruScopes</span><span>
+</span><a name="line-221"></a><span>
+</span><a name="line-222"></a><span class="hs-comment">-- | `putEff` for `MaruScopes`</span><span>
+</span><a name="line-223"></a><span class="hs-identifier">putMaruEnv</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212470"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212470"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-224"></a><a name="putMaruEnv"><a href="Maru.Type.Eval.html#putMaruEnv"><span class="hs-identifier">putMaruEnv</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">putEff</span><span> </span><span class="hs-operator">#</span><span class="hs-identifier">maruScopes</span><span>
+</span><a name="line-225"></a><span>
+</span><a name="line-226"></a><span class="hs-comment">-- | `modifyEff` for `maruScopes`</span><span>
+</span><a name="line-227"></a><span class="hs-identifier">modifyMaruEnv</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#MaruScopesAssociation"><span class="hs-identifier hs-type">MaruScopesAssociation</span></a><span> </span><a href="#local-6989586621679212469"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212469"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-228"></a><a name="modifyMaruEnv"><a href="Maru.Type.Eval.html#modifyMaruEnv"><span class="hs-identifier">modifyMaruEnv</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">modifyEff</span><span> </span><span class="hs-operator">#</span><span class="hs-identifier">maruScopes</span><span>
+</span><a name="line-229"></a><span>
+</span><a name="line-230"></a><span class="hs-comment">-- | Find a variable from the whole of the runtime environment with a symbol</span><span>
+</span><a name="line-231"></a><span class="hs-identifier">lookup</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.SExpr.html#MaruSymbol"><span class="hs-identifier hs-type">MaruSymbol</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Maru.Type.Eval.html#MaruEnv"><span class="hs-identifier hs-type">MaruEnv</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="Maru.Type.SExpr.html#SExpr"><span class="hs-identifier hs-type">SExpr</span></a><span>
+</span><a name="line-232"></a><a name="lookup"><a href="Maru.Type.Eval.html#lookup"><span class="hs-identifier">lookup</span></a></a><span> </span><a name="local-6989586621679212503"><a href="#local-6989586621679212503"><span class="hs-identifier">sym</span></a></a><span> </span><a name="local-6989586621679212504"><a href="#local-6989586621679212504"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">getFirst</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">mconcat</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">toList</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">NE</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">map</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">First</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">M</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">lookup</span><span> </span><a href="#local-6989586621679212503"><span class="hs-identifier hs-var">sym</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679212504"><span class="hs-identifier hs-var">xs</span></a><span>
+</span><a name="line-233"></a><span>
+</span><a name="line-234"></a><span>
+</span><a name="line-235"></a><span class="hs-comment">-- | An effect of @MaruEvaluator@, this is same as `IO` in `Eff`</span><span>
+</span><a name="line-236"></a><span class="hs-keyword">type</span><span> </span><a name="IOEff"><a href="Maru.Type.Eval.html#IOEff"><span class="hs-identifier">IOEff</span></a></a><span>      </span><span class="hs-glyph">=</span><span> </span><a href="Maru.Type.Eval.html#IOEffKey"><span class="hs-identifier hs-type">IOEffKey</span></a><span> </span><span class="hs-operator">&gt;:</span><span> </span><a href="Maru.Type.Eval.html#IOEffValue"><span class="hs-identifier hs-type">IOEffValue</span></a><span>
+</span><a name="line-237"></a><span class="hs-keyword">type</span><span> </span><a name="IOEffKey"><a href="Maru.Type.Eval.html#IOEffKey"><span class="hs-identifier">IOEffKey</span></a></a><span>   </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;ioEff&quot;</span><span>
+</span><a name="line-238"></a><span class="hs-keyword">type</span><span> </span><a name="IOEffValue"><a href="Maru.Type.Eval.html#IOEffValue"><span class="hs-identifier">IOEffValue</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">IO</span><span>
+</span><a name="line-239"></a><span class="hs-keyword">type</span><span> </span><a name="IOEffAssociation"><a href="Maru.Type.Eval.html#IOEffAssociation"><span class="hs-identifier">IOEffAssociation</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Associate</span><span> </span><a href="Maru.Type.Eval.html#IOEffKey"><span class="hs-identifier hs-type">IOEffKey</span></a><span> </span><a href="Maru.Type.Eval.html#IOEffValue"><span class="hs-identifier hs-type">IOEffValue</span></a><span>
+</span><a name="line-240"></a><span>
+</span><a name="line-241"></a><span class="hs-comment">-- | `liftEff` for `IOEff`</span><span>
+</span><a name="line-242"></a><span class="hs-identifier">liftIOEff</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Maru.Type.Eval.html#IOEffAssociation"><span class="hs-identifier hs-type">IOEffAssociation</span></a><span> </span><a href="#local-6989586621679212467"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">IO</span><span> </span><a href="#local-6989586621679212468"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><a href="#local-6989586621679212467"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679212468"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-243"></a><a name="liftIOEff"><a href="Maru.Type.Eval.html#liftIOEff"><span class="hs-identifier">liftIOEff</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">liftEff</span><span> </span><span class="hs-operator">#</span><span class="hs-identifier">ioEff</span><span>
+</span><a name="line-244"></a><span>
+</span><a name="line-245"></a><span>
+</span><a name="line-246"></a><span class="hs-comment">-- | A monad for evaluating a maru's program</span><span>
+</span><a name="line-247"></a><span class="hs-keyword">type</span><span> </span><a name="MaruEvaluator"><a href="Maru.Type.Eval.html#MaruEvaluator"><span class="hs-identifier">MaruEvaluator</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Eff</span><span> </span><span class="hs-char">'[Fail, MaruScopes, SimplifSteps, IOEff]
+
+instance MonadFail MaruEvaluator where
+  fail = throwFail . T.pack
+
+
+-- | Run an evaluation of @MaruEvaluator a@
+runMaruEvaluator :: MaruEvaluator a -&gt; MaruEnv -&gt; IO (Either ExceptionCause a, MaruEnv, SimplificationSteps)
+runMaruEvaluator m env = flatten &lt;$&gt; runMaruEvaluator' m env
+  where
+    runMaruEvaluator' :: MaruEvaluator a -&gt; MaruEnv -&gt; IO (((Either ExceptionCause a), MaruEnv), [SExpr])
+    runMaruEvaluator' m env = retractEff . runWriterEff . flip runStateEff env $ runEitherEff m
+    flatten :: ((a, b), c) -&gt; (a, b, c)
+    flatten ((x, y), z) = (x, y, z)
+
+-- |
+-- Create a symbol of the variable name,
+-- it is unique (is not duplicated) in the runtime.
+newSymbol :: MaruEvaluator MaruSymbol
+newSymbol = (&quot;n&quot; &lt;&gt;) &lt;$&gt; newSymbol' &quot;&quot;
+  where
+    -- Take a base of the name.
+    newSymbol' :: MaruSymbol -&gt; MaruEvaluator MaruSymbol
+    newSymbol' baseName = do
+      name &lt;- liftIOEff $ (baseName &lt;&gt;) . MTS.pack . show . hashUnique &lt;$&gt; newUnique
+      env &lt;- getMaruEnv
+      case lookup name env of
+           Nothing -&gt; newSymbol' name
+           Just  _ -&gt; return name
+
+--NOTE: Can this is alternated by some lens's function ?
+-- |
+-- This is like `Prism`'s accessor,
+-- but don't return result as `Maybe`.
+--
+-- Similar to 'x &lt;&amp;&gt; review f' but Nothing is included as a failure of the whole of `MaruEvaluator`.
+--
+-- `Typeable` for the error message.
+(^$) :: (Typeable s, Typeable a) =&gt; MaruEvaluator s -&gt; Getting (First a) s a -&gt; MaruEvaluator a
+(m :: MaruEvaluator s) ^$ (acs :: Getting (First a) s a) = do
+  let typeNameOfS = T.pack . show $ typeRep (Proxy :: Proxy s)
+      typeNameOfA = T.pack . show $ typeRep (Proxy :: Proxy a)
+      cause = &quot;(^$): `&quot; &lt;&gt; typeNameOfA &lt;&gt; &quot;` couldn't be getten from `&quot; &lt;&gt; typeNameOfS &lt;&gt; &quot;`&quot;
+  includeFail cause $ m &lt;&amp;&gt; preview acs
+
+
+-- |
+-- This has effects of the part of `MaruEvaluator`.
+-- Calculate pure functions.
+type MaruCalculator = Eff '[Fail]
+
+instance MonadFail MaruCalculator where
+  fail = throwFail . T.pack
+
+-- | Extract the pure calculation from `MaruCalculator`
+runMaruCalculator :: MaruCalculator a -&gt; Either ExceptionCause a
+runMaruCalculator = leaveEff . runEitherEff
+
+
+-- | Simular to `First`, but using '`Either` `ExceptionCause`' instead of `Maybe`
+newtype First' a = First'
+  { getFirst' :: Either ExceptionCause a
+  } deriving (Functor)
+
+instance Monoid (First' a) where
+  mempty = First' $ Left &quot;mempty: `First'` couldn't find the right value&quot;
+  w@(First' (Right _)) `mappend` _ = w
+  _ `mappend` w@(First' (Right _)) = w
+  _ `mappend` _                    = mempty
+
+
+-- |
+-- Like a consturctor, but from '`Maybe` a'.
+-- If `Nothing` is given, return `mempty`.
+first' :: Maybe a -&gt; First' a
+first' (Just a) = First' $ Right a
+first' Nothing  = mempty
+
+
+-- |
+-- A function of maru.
+-- This keeps the purity, don't happen effects.
+--
+-- Take [`SExpr`] as arguments, its length is checked by each function.
+-- If it is not the expected length, `Nothing` maybe given.
+--
+-- Notice:
+--
+-- The function is Haskell's function, is represented by Haskell.
+-- The function is not maru's (runtime's) function (cannot be defined in the runtime).
+newtype MaruFunc = MaruFunc
+  { execFunc :: [SExpr] -&gt; MaruCalculator SExpr
+  }
+
+-- |
+-- A macro of maru,
+-- this means the impure function.
+--
+-- Similar to `MaruFunc`,
+-- but this is possibility to update the state of the environment.
+newtype MaruMacro = MaruMacro
+  { execMacro :: SExpr -&gt; MaruEvaluator SExpr
+  }
+
+
+-- |
+-- Take a variable from `MaruScopes` effect.
+-- If `sym` is not exists, the whole of this `Eff` to be failed
+lookupVar :: forall xs.
+             ( FailAssociation xs
+             , MaruScopesAssociation xs
+             ) =&gt; MaruSymbol -&gt; Eff xs SExpr
+lookupVar sym = do
+  env &lt;- getMaruEnv
+  let cause = &quot;A symbol '&quot; &lt;&gt; unMaruSymbol sym &lt;&gt; &quot;' is not found&quot;
+  includeFail cause . return $ lookup sym env
+
+
+-- |
+-- Expand the value of the variables, but these are not evaluated.
+--
+-- And +, -, *, and / are not expanded
+-- (because it is regarded as like the axioms)
+--
+-- simply expanding
+--
+-- &gt;&gt;&gt; (sexpr, _, _) &lt;- flip runMaruEvaluator E.initialEnv $ newScope &quot;x&quot; (AtomInt 10) &gt;&gt; expandVars (AtomSymbol &quot;x&quot;)
+-- &gt;&gt;&gt; sexpr
+-- Right (AtomInt 10)
+--
+-- multi variables
+--
+-- &gt;&gt;&gt; (sexpr, _, _) &lt;- flip runMaruEvaluator E.initialEnv $ newScope &quot;x&quot; (AtomInt 10) &gt;&gt; newScope &quot;y&quot; (AtomBool True) &gt;&gt; expandVars (Cons (AtomSymbol &quot;x&quot;) (Cons (AtomSymbol &quot;y&quot;) Nil))
+-- &gt;&gt;&gt; sexpr
+-- Right (Cons (AtomInt 10) (Cons (AtomBool True) Nil))
+--
+-- nested expanding
+--
+-- &gt;&gt;&gt; (sexpr, _, _) &lt;- flip runMaruEvaluator E.initialEnv $ newScope &quot;x&quot; (AtomInt 10) &gt;&gt; newScope &quot;y&quot; (AtomSymbol &quot;x&quot;) &gt;&gt; expandVars (AtomSymbol &quot;y&quot;)
+-- &gt;&gt;&gt; sexpr
+-- Right (AtomInt 10)
+expandVars :: (MaruScopesAssociation xs, FailAssociation xs) =&gt; SExpr -&gt; Eff xs SExpr
+expandVars (AtomSymbol &quot;+&quot;) = return $ AtomSymbol &quot;+&quot;
+expandVars (AtomSymbol &quot;-&quot;) = return $ AtomSymbol &quot;-&quot;
+expandVars (AtomSymbol &quot;*&quot;) = return $ AtomSymbol &quot;*&quot;
+expandVars (AtomSymbol &quot;/&quot;) = return $ AtomSymbol &quot;/&quot;
+expandVars Nil = return Nil
+expandVars (AtomInt x) = return $ AtomInt x
+expandVars (AtomBool x) = return $ AtomBool x
+expandVars (Cons x y) = Cons &lt;$&gt; expandVars x &lt;*&gt; expandVars y
+expandVars (AtomSymbol var) = lookupVar var &gt;&gt;= expandVars
+
+
+-- |
+-- Substitute a value to a variable.
+--
+-- &quot;x&quot; is substituted by `AtomInt 10` in `Cons (AtomInt 1) (Cons (AtomSymbol &quot;x&quot;) Nil)`.
+--
+-- &gt;&gt;&gt; substituteVar &quot;x&quot; (AtomInt 10) $ Cons (AtomInt 1) (Cons (AtomSymbol &quot;x&quot;) Nil)
+-- Cons (AtomInt 1) (Cons (AtomInt 10) Nil)
+--
+-- &gt;&gt;&gt; substituteVar &quot;x&quot; (AtomInt 10) $ Cons (AtomSymbol &quot;x&quot;) (Cons (AtomSymbol &quot;x&quot;) Nil)
+-- Cons (AtomInt 10) (Cons (AtomInt 10) Nil)
+substituteVar :: MaruSymbol -&gt; SExpr -&gt; SExpr -&gt; SExpr
+substituteVar var val (AtomSymbol var') =
+  if var == var' then val
+                 else AtomSymbol var'
+substituteVar _ _ Nil = Nil
+substituteVar _ _ (AtomInt x) = AtomInt x
+substituteVar _ _ (AtomBool x) = AtomBool x
+substituteVar var val (Cons x y) = Cons (substituteVar var val x) (substituteVar var val y)
+</span></pre></body></html>

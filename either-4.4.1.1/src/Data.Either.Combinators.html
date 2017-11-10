@@ -1,0 +1,329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Data.Either.Combinators</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2010-2014 Gregory Crosswhite, Chris Done, Edward Kmett</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  ekmett@gmail.com</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Functions for probing and unwrapping values inside of 'Either'.</span><span>
+</span><a name="line-12"></a><span class="hs-comment">--</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- Most of these combinators are provided for pedagogical purposes and exist</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- in more general forms in other libraries. To that end alternative definitions</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-- are supplied below.</span><span>
+</span><a name="line-16"></a><span class="hs-comment">--</span><span>
+</span><a name="line-17"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Either</span><span class="hs-operator">.</span><span class="hs-identifier">Combinators</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.Either.Combinators.html#isLeft"><span class="hs-identifier hs-var">isLeft</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#isRight"><span class="hs-identifier hs-var">isRight</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#fromLeft"><span class="hs-identifier hs-var">fromLeft</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#fromRight"><span class="hs-identifier hs-var">fromRight</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#fromLeft%27"><span class="hs-identifier hs-var">fromLeft'</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#fromRight%27"><span class="hs-identifier hs-var">fromRight'</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#mapBoth"><span class="hs-identifier hs-var">mapBoth</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#mapLeft"><span class="hs-identifier hs-var">mapLeft</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#mapRight"><span class="hs-identifier hs-var">mapRight</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#whenLeft"><span class="hs-identifier hs-var">whenLeft</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#whenRight"><span class="hs-identifier hs-var">whenRight</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#unlessLeft"><span class="hs-identifier hs-var">unlessLeft</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#unlessRight"><span class="hs-identifier hs-var">unlessRight</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#leftToMaybe"><span class="hs-identifier hs-var">leftToMaybe</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#rightToMaybe"><span class="hs-identifier hs-var">rightToMaybe</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#eitherToError"><span class="hs-identifier hs-var">eitherToError</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Either.Combinators.html#swapEither"><span class="hs-identifier hs-var">swapEither</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-38"></a><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Applicative</span><span>
+</span><a name="line-40"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Error</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">MonadError</span><span class="hs-special">(</span><span class="hs-identifier hs-var">throwError</span><span class="hs-special">)</span><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-comment">-- ---------------------------------------------------------------------------</span><span>
+</span><a name="line-43"></a><span class="hs-comment">-- Functions over Either</span><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-comment">-- |The 'isLeft' function returns 'True' iff its argument is of the form @'Left' _@.</span><span>
+</span><a name="line-46"></a><span class="hs-comment">--</span><span>
+</span><a name="line-47"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-48"></a><span class="hs-comment">--</span><span>
+</span><a name="line-49"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-50"></a><span class="hs-comment">-- 'isLeft' &#8801; has _Left</span><span>
+</span><a name="line-51"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-52"></a><span class="hs-comment">--</span><span>
+</span><a name="line-53"></a><span class="hs-comment">-- &gt;&gt;&gt; isLeft (Left 12)</span><span>
+</span><a name="line-54"></a><span class="hs-comment">-- True</span><span>
+</span><a name="line-55"></a><span class="hs-comment">--</span><span>
+</span><a name="line-56"></a><span class="hs-comment">-- &gt;&gt;&gt; isLeft (Right 12)</span><span>
+</span><a name="line-57"></a><span class="hs-comment">-- False</span><span>
+</span><a name="line-58"></a><span class="hs-identifier">isLeft</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052604"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052605"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-59"></a><a name="isLeft"><a href="Data.Either.Combinators.html#isLeft"><span class="hs-identifier">isLeft</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">True</span><span>
+</span><a name="line-60"></a><span class="hs-identifier">isLeft</span><span> </span><span class="hs-identifier">_</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-61"></a><span>
+</span><a name="line-62"></a><span class="hs-comment">-- |The 'isRight' function returns 'True' iff its argument is of the form @'Right' _@.</span><span>
+</span><a name="line-63"></a><span class="hs-comment">--</span><span>
+</span><a name="line-64"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-65"></a><span class="hs-comment">--</span><span>
+</span><a name="line-66"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-67"></a><span class="hs-comment">-- 'isRight' &#8801; has _Right</span><span>
+</span><a name="line-68"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-69"></a><span class="hs-comment">--</span><span>
+</span><a name="line-70"></a><span class="hs-comment">-- &gt;&gt;&gt; isRight (Left 12)</span><span>
+</span><a name="line-71"></a><span class="hs-comment">-- False</span><span>
+</span><a name="line-72"></a><span class="hs-comment">--</span><span>
+</span><a name="line-73"></a><span class="hs-comment">-- &gt;&gt;&gt; isRight (Right 12)</span><span>
+</span><a name="line-74"></a><span class="hs-comment">-- True</span><span>
+</span><a name="line-75"></a><span class="hs-identifier">isRight</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052602"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052603"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-76"></a><a name="isRight"><a href="Data.Either.Combinators.html#isRight"><span class="hs-identifier">isRight</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">True</span><span>
+</span><a name="line-77"></a><span class="hs-identifier">isRight</span><span> </span><span class="hs-identifier">_</span><span>         </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">False</span><span>
+</span><a name="line-78"></a><span>
+</span><a name="line-79"></a><span class="hs-comment">-- | Extracts the element out of a 'Left' and</span><span>
+</span><a name="line-80"></a><span class="hs-comment">-- throws an error if its argument take the form  @'Right' _@.</span><span>
+</span><a name="line-81"></a><span class="hs-comment">--</span><span>
+</span><a name="line-82"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-83"></a><span class="hs-comment">--</span><span>
+</span><a name="line-84"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-85"></a><span class="hs-comment">-- 'fromLeft'' x &#8801; x^?!_Left</span><span>
+</span><a name="line-86"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-87"></a><span class="hs-comment">--</span><span>
+</span><a name="line-88"></a><span class="hs-comment">-- &gt;&gt;&gt; fromLeft' (Left 12)</span><span>
+</span><a name="line-89"></a><span class="hs-comment">-- 12</span><span>
+</span><a name="line-90"></a><span class="hs-identifier">fromLeft'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052600"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052601"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052600"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-91"></a><a name="fromLeft%27"><a href="Data.Either.Combinators.html#fromLeft%27"><span class="hs-identifier">fromLeft'</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">error</span><span> </span><span class="hs-string">&quot;Data.Either.Combinators.fromLeft: Argument takes form 'Right _'&quot;</span><span> </span><span class="hs-comment">-- yuck</span><span>
+</span><a name="line-92"></a><span class="hs-identifier">fromLeft'</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><a name="local-6989586621679052635"><a href="#local-6989586621679052635"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052635"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-93"></a><span>
+</span><a name="line-94"></a><span class="hs-comment">-- | Extracts the element out of a 'Right' and</span><span>
+</span><a name="line-95"></a><span class="hs-comment">-- throws an error if its argument take the form @'Left' _@.</span><span>
+</span><a name="line-96"></a><span class="hs-comment">--</span><span>
+</span><a name="line-97"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-98"></a><span class="hs-comment">--</span><span>
+</span><a name="line-99"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-100"></a><span class="hs-comment">-- 'fromRight'' x &#8801; x^?!_Right</span><span>
+</span><a name="line-101"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-102"></a><span class="hs-comment">--</span><span>
+</span><a name="line-103"></a><span class="hs-comment">-- &gt;&gt;&gt; fromRight' (Right 12)</span><span>
+</span><a name="line-104"></a><span class="hs-comment">-- 12</span><span>
+</span><a name="line-105"></a><span class="hs-identifier">fromRight'</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052598"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052599"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052599"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-106"></a><a name="fromRight%27"><a href="Data.Either.Combinators.html#fromRight%27"><span class="hs-identifier">fromRight'</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">error</span><span> </span><span class="hs-string">&quot;Data.Either.Combinators.fromRight: Argument takes form 'Left _'&quot;</span><span> </span><span class="hs-comment">-- yuck</span><span>
+</span><a name="line-107"></a><span class="hs-identifier">fromRight'</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><a name="local-6989586621679052636"><a href="#local-6989586621679052636"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052636"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-108"></a><span>
+</span><a name="line-109"></a><span class="hs-comment">-- | The 'mapBoth' function takes two functions and applies the first if iff the value</span><span>
+</span><a name="line-110"></a><span class="hs-comment">-- takes the form @'Left' _@ and the second if the value takes the form @'Right' _@.</span><span>
+</span><a name="line-111"></a><span class="hs-comment">--</span><span>
+</span><a name="line-112"></a><span class="hs-comment">-- Using @Data.Bifunctor@:</span><span>
+</span><a name="line-113"></a><span class="hs-comment">--</span><span>
+</span><a name="line-114"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-115"></a><span class="hs-comment">-- 'mapBoth' = bimap</span><span>
+</span><a name="line-116"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-117"></a><span class="hs-comment">--</span><span>
+</span><a name="line-118"></a><span class="hs-comment">-- Using @Control.Arrow@:</span><span>
+</span><a name="line-119"></a><span class="hs-comment">--</span><span>
+</span><a name="line-120"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-121"></a><span class="hs-comment">-- 'mapBoth' = ('Control.Arrow.+++')</span><span>
+</span><a name="line-122"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-123"></a><span class="hs-comment">--</span><span>
+</span><a name="line-124"></a><span class="hs-comment">-- &gt;&gt;&gt; mapBoth (*2) (*3) (Left 4)</span><span>
+</span><a name="line-125"></a><span class="hs-comment">-- Left 8</span><span>
+</span><a name="line-126"></a><span class="hs-comment">--</span><span>
+</span><a name="line-127"></a><span class="hs-comment">-- &gt;&gt;&gt; mapBoth (*2) (*3) (Right 4)</span><span>
+</span><a name="line-128"></a><span class="hs-comment">-- Right 12</span><span>
+</span><a name="line-129"></a><span class="hs-identifier">mapBoth</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052594"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052595"><span class="hs-identifier hs-type">c</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052596"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052597"><span class="hs-identifier hs-type">d</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052594"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052596"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052595"><span class="hs-identifier hs-type">c</span></a><span> </span><a href="#local-6989586621679052597"><span class="hs-identifier hs-type">d</span></a><span>
+</span><a name="line-130"></a><a name="mapBoth"><a href="Data.Either.Combinators.html#mapBoth"><span class="hs-identifier">mapBoth</span></a></a><span> </span><a name="local-6989586621679052637"><a href="#local-6989586621679052637"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><a name="local-6989586621679052638"><a href="#local-6989586621679052638"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Left</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052637"><span class="hs-identifier hs-var">f</span></a><span> </span><a href="#local-6989586621679052638"><span class="hs-identifier hs-var">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-131"></a><span class="hs-identifier">mapBoth</span><span> </span><span class="hs-identifier">_</span><span> </span><a name="local-6989586621679052639"><a href="#local-6989586621679052639"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><a name="local-6989586621679052640"><a href="#local-6989586621679052640"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Right</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052639"><span class="hs-identifier hs-var">f</span></a><span> </span><a href="#local-6989586621679052640"><span class="hs-identifier hs-var">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-132"></a><span>
+</span><a name="line-133"></a><span class="hs-comment">-- | The 'mapLeft' function takes a function and applies it to an Either value</span><span>
+</span><a name="line-134"></a><span class="hs-comment">-- iff the value takes the form @'Left' _@.</span><span>
+</span><a name="line-135"></a><span class="hs-comment">--</span><span>
+</span><a name="line-136"></a><span class="hs-comment">-- Using @Data.Bifunctor@:</span><span>
+</span><a name="line-137"></a><span class="hs-comment">--</span><span>
+</span><a name="line-138"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-139"></a><span class="hs-comment">-- 'mapLeft' = first</span><span>
+</span><a name="line-140"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-141"></a><span class="hs-comment">--</span><span>
+</span><a name="line-142"></a><span class="hs-comment">-- Using @Control.Arrow@:</span><span>
+</span><a name="line-143"></a><span class="hs-comment">--</span><span>
+</span><a name="line-144"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-145"></a><span class="hs-comment">-- 'mapLeft' = ('Control.Arrow.left')</span><span>
+</span><a name="line-146"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-147"></a><span class="hs-comment">--</span><span>
+</span><a name="line-148"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-149"></a><span class="hs-comment">--</span><span>
+</span><a name="line-150"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-151"></a><span class="hs-comment">-- 'mapLeft' = over _Left</span><span>
+</span><a name="line-152"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-153"></a><span class="hs-comment">--</span><span>
+</span><a name="line-154"></a><span class="hs-comment">-- &gt;&gt;&gt; mapLeft (*2) (Left 4)</span><span>
+</span><a name="line-155"></a><span class="hs-comment">-- Left 8</span><span>
+</span><a name="line-156"></a><span class="hs-comment">--</span><span>
+</span><a name="line-157"></a><span class="hs-comment">-- &gt;&gt;&gt; mapLeft (*2) (Right &quot;hello&quot;)</span><span>
+</span><a name="line-158"></a><span class="hs-comment">-- Right &quot;hello&quot;</span><span>
+</span><a name="line-159"></a><span class="hs-identifier">mapLeft</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052591"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052592"><span class="hs-identifier hs-type">c</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052591"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052593"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052592"><span class="hs-identifier hs-type">c</span></a><span> </span><a href="#local-6989586621679052593"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-160"></a><a name="mapLeft"><a href="Data.Either.Combinators.html#mapLeft"><span class="hs-identifier">mapLeft</span></a></a><span> </span><a name="local-6989586621679052641"><a href="#local-6989586621679052641"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Either.Combinators.html#mapBoth"><span class="hs-identifier hs-var">mapBoth</span></a><span> </span><a href="#local-6989586621679052641"><span class="hs-identifier hs-var">f</span></a><span> </span><span class="hs-identifier hs-var">id</span><span>
+</span><a name="line-161"></a><span>
+</span><a name="line-162"></a><span class="hs-comment">-- | The 'mapRight' function takes a function and applies it to an Either value</span><span>
+</span><a name="line-163"></a><span class="hs-comment">-- iff the value takes the form @'Right' _@.</span><span>
+</span><a name="line-164"></a><span class="hs-comment">--</span><span>
+</span><a name="line-165"></a><span class="hs-comment">-- Using @Data.Bifunctor@:</span><span>
+</span><a name="line-166"></a><span class="hs-comment">--</span><span>
+</span><a name="line-167"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-168"></a><span class="hs-comment">-- 'mapRight' = second</span><span>
+</span><a name="line-169"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-170"></a><span class="hs-comment">--</span><span>
+</span><a name="line-171"></a><span class="hs-comment">-- Using @Control.Arrow@:</span><span>
+</span><a name="line-172"></a><span class="hs-comment">--</span><span>
+</span><a name="line-173"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-174"></a><span class="hs-comment">-- 'mapRight' = ('Control.Arrow.right')</span><span>
+</span><a name="line-175"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-176"></a><span class="hs-comment">--</span><span>
+</span><a name="line-177"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-178"></a><span class="hs-comment">--</span><span>
+</span><a name="line-179"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-180"></a><span class="hs-comment">-- 'mapRight' = over _Right</span><span>
+</span><a name="line-181"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-182"></a><span class="hs-comment">--</span><span>
+</span><a name="line-183"></a><span class="hs-comment">-- &gt;&gt;&gt; mapRight (*2) (Left &quot;hello&quot;)</span><span>
+</span><a name="line-184"></a><span class="hs-comment">-- Left &quot;hello&quot;</span><span>
+</span><a name="line-185"></a><span class="hs-comment">--</span><span>
+</span><a name="line-186"></a><span class="hs-comment">-- &gt;&gt;&gt; mapRight (*2) (Right 4)</span><span>
+</span><a name="line-187"></a><span class="hs-comment">-- Right 8</span><span>
+</span><a name="line-188"></a><span class="hs-identifier">mapRight</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052588"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052589"><span class="hs-identifier hs-type">c</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052590"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052588"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052590"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052589"><span class="hs-identifier hs-type">c</span></a><span>
+</span><a name="line-189"></a><a name="mapRight"><a href="Data.Either.Combinators.html#mapRight"><span class="hs-identifier">mapRight</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Either.Combinators.html#mapBoth"><span class="hs-identifier hs-var">mapBoth</span></a><span> </span><span class="hs-identifier hs-var">id</span><span>
+</span><a name="line-190"></a><span>
+</span><a name="line-191"></a><span class="hs-comment">-- | The 'whenLeft' function takes an 'Either' value and a function which returns a monad.</span><span>
+</span><a name="line-192"></a><span class="hs-comment">-- The monad is only executed when the given argument takes the form @'Left' _@, otherwise</span><span>
+</span><a name="line-193"></a><span class="hs-comment">-- it does nothing.</span><span>
+</span><a name="line-194"></a><span class="hs-comment">--</span><span>
+</span><a name="line-195"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-196"></a><span class="hs-comment">--</span><span>
+</span><a name="line-197"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-198"></a><span class="hs-comment">-- 'whenLeft' &#8801; forOf_ _Left</span><span>
+</span><a name="line-199"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-200"></a><span class="hs-comment">--</span><span>
+</span><a name="line-201"></a><span class="hs-comment">-- &gt;&gt;&gt; whenLeft (Left 12) print</span><span>
+</span><a name="line-202"></a><span class="hs-comment">-- 12</span><span>
+</span><a name="line-203"></a><span class="hs-identifier">whenLeft</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621679052585"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052586"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052587"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052586"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052585"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052585"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-204"></a><a name="whenLeft"><a href="Data.Either.Combinators.html#whenLeft"><span class="hs-identifier">whenLeft</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><a name="local-6989586621679052642"><a href="#local-6989586621679052642"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><a name="local-6989586621679052643"><a href="#local-6989586621679052643"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052643"><span class="hs-identifier hs-var">f</span></a><span> </span><a href="#local-6989586621679052642"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-205"></a><span class="hs-identifier">whenLeft</span><span> </span><span class="hs-identifier">_</span><span>        </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">pure</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-206"></a><span>
+</span><a name="line-207"></a><span class="hs-comment">-- | The 'whenRight' function takes an 'Either' value and a function which returns a monad.</span><span>
+</span><a name="line-208"></a><span class="hs-comment">-- The monad is only executed when the given argument takes the form @'Right' _@, otherwise</span><span>
+</span><a name="line-209"></a><span class="hs-comment">-- it does nothing.</span><span>
+</span><a name="line-210"></a><span class="hs-comment">--</span><span>
+</span><a name="line-211"></a><span class="hs-comment">-- Using @Data.Foldable@:</span><span>
+</span><a name="line-212"></a><span class="hs-comment">--</span><span>
+</span><a name="line-213"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-214"></a><span class="hs-comment">-- 'whenRight' &#8801; 'forM_'</span><span>
+</span><a name="line-215"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-216"></a><span class="hs-comment">--</span><span>
+</span><a name="line-217"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-218"></a><span class="hs-comment">--</span><span>
+</span><a name="line-219"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-220"></a><span class="hs-comment">-- 'whenRight' &#8801; forOf_ _Right</span><span>
+</span><a name="line-221"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-222"></a><span class="hs-comment">--</span><span>
+</span><a name="line-223"></a><span class="hs-comment">-- &gt;&gt;&gt; whenRight (Right 12) print</span><span>
+</span><a name="line-224"></a><span class="hs-comment">-- 12</span><span>
+</span><a name="line-225"></a><span class="hs-identifier">whenRight</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621679052582"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052583"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052584"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052584"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052582"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052582"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-226"></a><a name="whenRight"><a href="Data.Either.Combinators.html#whenRight"><span class="hs-identifier">whenRight</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><a name="local-6989586621679052644"><a href="#local-6989586621679052644"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><a name="local-6989586621679052645"><a href="#local-6989586621679052645"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052645"><span class="hs-identifier hs-var">f</span></a><span> </span><a href="#local-6989586621679052644"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-227"></a><span class="hs-identifier">whenRight</span><span> </span><span class="hs-identifier">_</span><span>         </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">pure</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-228"></a><span>
+</span><a name="line-229"></a><span class="hs-comment">-- | A synonym of 'whenRight'.</span><span>
+</span><a name="line-230"></a><span class="hs-identifier">unlessLeft</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621679052579"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052580"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052581"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052581"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052579"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052579"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-231"></a><a name="unlessLeft"><a href="Data.Either.Combinators.html#unlessLeft"><span class="hs-identifier">unlessLeft</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Either.Combinators.html#whenRight"><span class="hs-identifier hs-var">whenRight</span></a><span>
+</span><a name="line-232"></a><span>
+</span><a name="line-233"></a><span class="hs-comment">-- | A synonym of 'whenLeft'.</span><span>
+</span><a name="line-234"></a><span class="hs-identifier">unlessRight</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Applicative</span><span> </span><a href="#local-6989586621679052576"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052577"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052578"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679052577"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052576"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052576"><span class="hs-identifier hs-type">m</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-235"></a><a name="unlessRight"><a href="Data.Either.Combinators.html#unlessRight"><span class="hs-identifier">unlessRight</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Either.Combinators.html#whenLeft"><span class="hs-identifier hs-var">whenLeft</span></a><span>
+</span><a name="line-236"></a><span>
+</span><a name="line-237"></a><span class="hs-comment">-- | Extract the left value or a default.</span><span>
+</span><a name="line-238"></a><span class="hs-comment">--</span><span>
+</span><a name="line-239"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-240"></a><span class="hs-comment">-- 'fromLeft' b &#8801; 'either' 'id' ('const' b)</span><span>
+</span><a name="line-241"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-242"></a><span class="hs-comment">--</span><span>
+</span><a name="line-243"></a><span class="hs-comment">-- &gt;&gt;&gt; fromLeft &quot;hello&quot; (Right 42)</span><span>
+</span><a name="line-244"></a><span class="hs-comment">-- &quot;hello&quot;</span><span>
+</span><a name="line-245"></a><span class="hs-comment">--</span><span>
+</span><a name="line-246"></a><span class="hs-comment">-- &gt;&gt;&gt; fromLeft &quot;hello&quot; (Left &quot;world&quot;)</span><span>
+</span><a name="line-247"></a><span class="hs-comment">-- &quot;world&quot;</span><span>
+</span><a name="line-248"></a><span class="hs-identifier">fromLeft</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679052574"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052574"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052575"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052574"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-249"></a><a name="fromLeft"><a href="Data.Either.Combinators.html#fromLeft"><span class="hs-identifier">fromLeft</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Left</span><span> </span><a name="local-6989586621679052646"><a href="#local-6989586621679052646"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052646"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-250"></a><span class="hs-identifier">fromLeft</span><span> </span><a name="local-6989586621679052647"><a href="#local-6989586621679052647"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052647"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-251"></a><span>
+</span><a name="line-252"></a><span class="hs-comment">-- | Extract the right value or a default.</span><span>
+</span><a name="line-253"></a><span class="hs-comment">--</span><span>
+</span><a name="line-254"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-255"></a><span class="hs-comment">-- 'fromRight' b &#8801; 'either' ('const' b) 'id'</span><span>
+</span><a name="line-256"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-257"></a><span class="hs-comment">--</span><span>
+</span><a name="line-258"></a><span class="hs-comment">-- &gt;&gt;&gt; fromRight &quot;hello&quot; (Right &quot;world&quot;)</span><span>
+</span><a name="line-259"></a><span class="hs-comment">-- &quot;world&quot;</span><span>
+</span><a name="line-260"></a><span class="hs-comment">--</span><span>
+</span><a name="line-261"></a><span class="hs-comment">-- &gt;&gt;&gt; fromRight &quot;hello&quot; (Left 42)</span><span>
+</span><a name="line-262"></a><span class="hs-comment">-- &quot;hello&quot;</span><span>
+</span><a name="line-263"></a><span class="hs-identifier">fromRight</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679052572"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052573"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052572"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052572"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-264"></a><a name="fromRight"><a href="Data.Either.Combinators.html#fromRight"><span class="hs-identifier">fromRight</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Right</span><span> </span><a name="local-6989586621679052648"><a href="#local-6989586621679052648"><span class="hs-identifier">x</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052648"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-265"></a><span class="hs-identifier">fromRight</span><span> </span><a name="local-6989586621679052649"><a href="#local-6989586621679052649"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679052649"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-266"></a><span>
+</span><a name="line-267"></a><span class="hs-comment">-- | Maybe get the 'Left' side of an 'Either'.</span><span>
+</span><a name="line-268"></a><span class="hs-comment">--</span><span>
+</span><a name="line-269"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-270"></a><span class="hs-comment">-- 'leftToMaybe' &#8801; 'either' 'Just' ('const' 'Nothing')</span><span>
+</span><a name="line-271"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-272"></a><span class="hs-comment">--</span><span>
+</span><a name="line-273"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-274"></a><span class="hs-comment">--</span><span>
+</span><a name="line-275"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-276"></a><span class="hs-comment">-- 'leftToMaybe' &#8801; preview _Left</span><span>
+</span><a name="line-277"></a><span class="hs-comment">-- 'leftToMaybe' x &#8801; x^?_Left</span><span>
+</span><a name="line-278"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-279"></a><span class="hs-comment">--</span><span>
+</span><a name="line-280"></a><span class="hs-comment">-- &gt;&gt;&gt; leftToMaybe (Left 12)</span><span>
+</span><a name="line-281"></a><span class="hs-comment">-- Just 12</span><span>
+</span><a name="line-282"></a><span class="hs-comment">--</span><span>
+</span><a name="line-283"></a><span class="hs-comment">-- &gt;&gt;&gt; leftToMaybe (Right 12)</span><span>
+</span><a name="line-284"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-285"></a><span class="hs-identifier">leftToMaybe</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052570"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052571"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="#local-6989586621679052570"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-286"></a><a name="leftToMaybe"><a href="Data.Either.Combinators.html#leftToMaybe"><span class="hs-identifier">leftToMaybe</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">either</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">const</span><span> </span><span class="hs-identifier hs-var">Nothing</span><span class="hs-special">)</span><span>
+</span><a name="line-287"></a><span>
+</span><a name="line-288"></a><span class="hs-comment">-- | Maybe get the 'Right' side of an 'Either'.</span><span>
+</span><a name="line-289"></a><span class="hs-comment">--</span><span>
+</span><a name="line-290"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-291"></a><span class="hs-comment">-- 'rightToMaybe' &#8801; 'either' ('const' 'Nothing') 'Just'</span><span>
+</span><a name="line-292"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-293"></a><span class="hs-comment">--</span><span>
+</span><a name="line-294"></a><span class="hs-comment">-- Using @Control.Lens@:</span><span>
+</span><a name="line-295"></a><span class="hs-comment">--</span><span>
+</span><a name="line-296"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-297"></a><span class="hs-comment">-- 'rightToMaybe' &#8801; preview _Right</span><span>
+</span><a name="line-298"></a><span class="hs-comment">-- 'rightToMaybe' x &#8801; x^?_Right</span><span>
+</span><a name="line-299"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-300"></a><span class="hs-comment">--</span><span>
+</span><a name="line-301"></a><span class="hs-comment">-- &gt;&gt;&gt; rightToMaybe (Left 12)</span><span>
+</span><a name="line-302"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-303"></a><span class="hs-comment">--</span><span>
+</span><a name="line-304"></a><span class="hs-comment">-- &gt;&gt;&gt; rightToMaybe (Right 12)</span><span>
+</span><a name="line-305"></a><span class="hs-comment">-- Just 12</span><span>
+</span><a name="line-306"></a><span class="hs-identifier">rightToMaybe</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052568"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052569"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="#local-6989586621679052569"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-307"></a><a name="rightToMaybe"><a href="Data.Either.Combinators.html#rightToMaybe"><span class="hs-identifier">rightToMaybe</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">either</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">const</span><span> </span><span class="hs-identifier hs-var">Nothing</span><span class="hs-special">)</span><span> </span><span class="hs-identifier hs-var">Just</span><span>
+</span><a name="line-308"></a><span>
+</span><a name="line-309"></a><span>
+</span><a name="line-310"></a><span class="hs-comment">-- | Generalize @Either e@ as @MonadError e m@.</span><span>
+</span><a name="line-311"></a><span class="hs-comment">--</span><span>
+</span><a name="line-312"></a><span class="hs-comment">-- If the argument has form @Left e@, an error is produced in the monad via</span><span>
+</span><a name="line-313"></a><span class="hs-comment">-- 'throwError'. Otherwise, the @Right a@ part is forwarded.</span><span>
+</span><a name="line-314"></a><span class="hs-identifier">eitherToError</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">MonadError</span><span> </span><a href="#local-6989586621679052565"><span class="hs-identifier hs-type">e</span></a><span> </span><a href="#local-6989586621679052566"><span class="hs-identifier hs-type">m</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052565"><span class="hs-identifier hs-type">e</span></a><span> </span><a href="#local-6989586621679052567"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679052566"><span class="hs-identifier hs-type">m</span></a><span> </span><a href="#local-6989586621679052567"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-315"></a><a name="eitherToError"><a href="Data.Either.Combinators.html#eitherToError"><span class="hs-identifier">eitherToError</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">either</span><span> </span><span class="hs-identifier hs-var">throwError</span><span> </span><span class="hs-identifier hs-var">return</span><span>
+</span><a name="line-316"></a><span>
+</span><a name="line-317"></a><span class="hs-comment">-- | Swap the 'Left' and 'Right' sides of an 'Either'.</span><span>
+</span><a name="line-318"></a><span class="hs-comment">--</span><span>
+</span><a name="line-319"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-320"></a><span class="hs-comment">-- &gt;&gt;&gt; swapEither (Right 3)</span><span>
+</span><a name="line-321"></a><span class="hs-comment">-- Left 3</span><span>
+</span><a name="line-322"></a><span class="hs-comment">--</span><span>
+</span><a name="line-323"></a><span class="hs-comment">-- &gt;&gt;&gt; swapEither (Left &quot;error&quot;)</span><span>
+</span><a name="line-324"></a><span class="hs-comment">-- Right &quot;error&quot;</span><span>
+</span><a name="line-325"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-326"></a><span class="hs-identifier">swapEither</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052563"><span class="hs-identifier hs-type">e</span></a><span> </span><a href="#local-6989586621679052564"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Either</span><span> </span><a href="#local-6989586621679052564"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679052563"><span class="hs-identifier hs-type">e</span></a><span>
+</span><a name="line-327"></a><a name="swapEither"><a href="Data.Either.Combinators.html#swapEither"><span class="hs-identifier">swapEither</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">either</span><span> </span><span class="hs-identifier hs-var">Right</span><span> </span><span class="hs-identifier hs-var">Left</span><span>
+</span><a name="line-328"></a><span class="hs-pragma">{-# INLINE swapEither #-}</span><span>
+</span><a name="line-329"></a></pre></body></html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP               #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell   #-}</span><span>
+</span><a name="line-4"></a><span>
+</span><a name="line-5"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 706</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds         #-}</span><span>
+</span><a name="line-7"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-8"></a><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-10"></a><span>
+</span><a name="line-11"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Proxy
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instance for 'Proxy'.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Proxy</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Proxy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span class="hs-special">,</span><span>
+</span><a name="line-29"></a><span>                             </span><a href="TextShow.TH.Internal.html#makeShowtPrec"><span class="hs-identifier hs-var">makeShowtPrec</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowtlPrec"><span class="hs-identifier hs-var">makeShowtlPrec</span></a><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621680310807"><span class="hs-identifier hs-type">s</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-33"></a><span>    </span><a name="local-8214565720323866142"><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier">showbPrec</span></a></a><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span>  </span><span class="hs-char">''Proxy)
+    showtPrec  = $(makeShowtPrec  ''Proxy)
+    showtlPrec = $(makeShowtlPrec ''Proxy)
+    {-# INLINE showbPrec #-}
+    {-# INLINE showtPrec #-}
+    {-# INLINE showtlPrec #-}
+
+-- | /Since: 2/
+$(deriveTextShow1 ''Proxy)
+</span></pre></body></html>

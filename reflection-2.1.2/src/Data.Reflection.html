@@ -1,0 +1,631 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE EmptyDataDecls #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE KindSignatures #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE PatternGuards #-}</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE Rank2Types #-}</span><span>
+</span><a name="line-10"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><a name="line-11"></a><span class="hs-cpp">#if defined(__GLASGOW_HASKELL__) &amp;&amp; __GLASGOW_HASKELL__ &gt;= 706</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds #-}</span><span>
+</span><a name="line-14"></a><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><a name="line-15"></a><span class="hs-cpp">#define USE_TYPE_LITS 1</span><span>
+</span><a name="line-16"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-17"></a><span class="hs-cpp">#ifdef MIN_VERSION_template_haskell</span><span>
+</span><a name="line-18"></a><span class="hs-cpp"># if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-19"></a><span class="hs-comment">-- TH-subset that works with stage1 &amp; unregisterised GHCs</span><span>
+</span><a name="line-20"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskellQuotes #-}</span><span>
+</span><a name="line-21"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-22"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-23"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-24"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><a name="line-29"></a><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><a name="line-30"></a><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-cse #-}</span><span>
+</span><a name="line-33"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-full-laziness #-}</span><span>
+</span><a name="line-34"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-float-in #-}</span><span>
+</span><a name="line-35"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-unused-binds #-}</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-cpp">#ifndef MIN_VERSION_base</span><span>
+</span><a name="line-38"></a><span class="hs-cpp">#define MIN_VERSION_base(x,y,z) 1</span><span>
+</span><a name="line-39"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-40"></a><span>
+</span><a name="line-41"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-42"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-43"></a><span class="hs-comment">-- Module     : Data.Reflection</span><span>
+</span><a name="line-44"></a><span class="hs-comment">-- Copyright  : 2009-2015 Edward Kmett,</span><span>
+</span><a name="line-45"></a><span class="hs-comment">--              2012 Elliott Hird,</span><span>
+</span><a name="line-46"></a><span class="hs-comment">--              2004 Oleg Kiselyov and Chung-chieh Shan</span><span>
+</span><a name="line-47"></a><span class="hs-comment">-- License    : BSD3</span><span>
+</span><a name="line-48"></a><span class="hs-comment">--</span><span>
+</span><a name="line-49"></a><span class="hs-comment">-- Maintainer  : Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-50"></a><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><a name="line-51"></a><span class="hs-comment">-- Portability : non-portable</span><span>
+</span><a name="line-52"></a><span class="hs-comment">--</span><span>
+</span><a name="line-53"></a><span class="hs-comment">-- Reifies arbitrary terms at the type level. Based on the Functional</span><span>
+</span><a name="line-54"></a><span class="hs-comment">-- Pearl: Implicit Configurations paper by Oleg Kiselyov and</span><span>
+</span><a name="line-55"></a><span class="hs-comment">-- Chung-chieh Shan.</span><span>
+</span><a name="line-56"></a><span class="hs-comment">--</span><span>
+</span><a name="line-57"></a><span class="hs-comment">-- &lt;http://okmij.org/ftp/Haskell/tr-15-04.pdf&gt;</span><span>
+</span><a name="line-58"></a><span class="hs-comment">--</span><span>
+</span><a name="line-59"></a><span class="hs-comment">-- The approach from the paper was modified to work with Data.Proxy</span><span>
+</span><a name="line-60"></a><span class="hs-comment">-- and to cheat by using knowledge of GHC's internal representations</span><span>
+</span><a name="line-61"></a><span class="hs-comment">-- by Edward Kmett and Elliott Hird.</span><span>
+</span><a name="line-62"></a><span class="hs-comment">--</span><span>
+</span><a name="line-63"></a><span class="hs-comment">-- Usage comes down to two combinators, 'reify' and 'reflect'.</span><span>
+</span><a name="line-64"></a><span class="hs-comment">--</span><span>
+</span><a name="line-65"></a><span class="hs-comment">-- &gt;&gt;&gt; reify 6 (\p -&gt; reflect p + reflect p)</span><span>
+</span><a name="line-66"></a><span class="hs-comment">-- 12</span><span>
+</span><a name="line-67"></a><span class="hs-comment">--</span><span>
+</span><a name="line-68"></a><span class="hs-comment">-- The argument passed along by reify is just a @data 'Proxy' t =</span><span>
+</span><a name="line-69"></a><span class="hs-comment">-- Proxy@, so all of the information needed to reconstruct your value</span><span>
+</span><a name="line-70"></a><span class="hs-comment">-- has been moved to the type level.  This enables it to be used when</span><span>
+</span><a name="line-71"></a><span class="hs-comment">-- constructing instances (see @examples/Monoid.hs@).</span><span>
+</span><a name="line-72"></a><span class="hs-comment">--</span><span>
+</span><a name="line-73"></a><span class="hs-comment">-- In addition, a simpler API is offered for working with singleton</span><span>
+</span><a name="line-74"></a><span class="hs-comment">-- values such as a system configuration, etc.</span><span>
+</span><a name="line-75"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-76"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Reflection</span><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-special">(</span><span>
+</span><a name="line-78"></a><span>    </span><span class="hs-comment">-- * Reflection</span><span>
+</span><a name="line-79"></a><span>      </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-80"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reify"><span class="hs-identifier hs-var">reify</span></a><span>
+</span><a name="line-81"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 708</span><span>
+</span><a name="line-82"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reifyNat"><span class="hs-identifier hs-var">reifyNat</span></a><span>
+</span><a name="line-83"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reifySymbol"><span class="hs-identifier hs-var">reifySymbol</span></a><span>
+</span><a name="line-84"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reifyTypeable"><span class="hs-identifier hs-var">reifyTypeable</span></a><span>
+</span><a name="line-86"></a><span>    </span><span class="hs-comment">-- * Given</span><span>
+</span><a name="line-87"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#Given"><span class="hs-identifier hs-type">Given</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-88"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#give"><span class="hs-identifier hs-var">give</span></a><span>
+</span><a name="line-89"></a><span class="hs-cpp">#ifdef MIN_VERSION_template_haskell</span><span>
+</span><a name="line-90"></a><span>    </span><span class="hs-comment">-- * Template Haskell reflection</span><span>
+</span><a name="line-91"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#int"><span class="hs-identifier hs-var">int</span></a><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#nat"><span class="hs-identifier hs-var">nat</span></a><span>
+</span><a name="line-92"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-93"></a><span>    </span><span class="hs-comment">-- * Useful compile time naturals</span><span>
+</span><a name="line-94"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#Z"><span class="hs-identifier hs-type">Z</span></a><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#D"><span class="hs-identifier hs-type">D</span></a><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#SD"><span class="hs-identifier hs-type">SD</span></a><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#PD"><span class="hs-identifier hs-type">PD</span></a><span>
+</span><a name="line-95"></a><span>
+</span><a name="line-96"></a><span>    </span><span class="hs-comment">-- * Reified Monoids</span><span>
+</span><a name="line-97"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#ReifiedMonoid"><span class="hs-identifier hs-type">ReifiedMonoid</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-98"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#ReflectedMonoid"><span class="hs-identifier hs-type">ReflectedMonoid</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-99"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reifyMonoid"><span class="hs-identifier hs-var">reifyMonoid</span></a><span>
+</span><a name="line-100"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#foldMapBy"><span class="hs-identifier hs-var">foldMapBy</span></a><span>
+</span><a name="line-101"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#foldBy"><span class="hs-identifier hs-var">foldBy</span></a><span>
+</span><a name="line-102"></a><span>
+</span><a name="line-103"></a><span>    </span><span class="hs-comment">-- * Reified Applicatives</span><span>
+</span><a name="line-104"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#ReifiedApplicative"><span class="hs-identifier hs-type">ReifiedApplicative</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-105"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#ReflectedApplicative"><span class="hs-identifier hs-type">ReflectedApplicative</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-106"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#reifyApplicative"><span class="hs-identifier hs-var">reifyApplicative</span></a><span>
+</span><a name="line-107"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#traverseBy"><span class="hs-identifier hs-var">traverseBy</span></a><span>
+</span><a name="line-108"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="Data.Reflection.html#sequenceBy"><span class="hs-identifier hs-var">sequenceBy</span></a><span>
+</span><a name="line-109"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-110"></a><span>
+</span><a name="line-111"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Applicative</span><span>
+</span><a name="line-112"></a><span>
+</span><a name="line-113"></a><span class="hs-cpp">#ifdef MIN_VERSION_template_haskell</span><span>
+</span><a name="line-114"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span>
+</span><a name="line-115"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-116"></a><span>
+</span><a name="line-117"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Bits</span><span>
+</span><a name="line-118"></a><span>
+</span><a name="line-119"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 710</span><span>
+</span><a name="line-120"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Foldable</span><span>
+</span><a name="line-121"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span>
+</span><a name="line-122"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-123"></a><span>
+</span><a name="line-124"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Proxy</span><span>
+</span><a name="line-125"></a><span>
+</span><a name="line-126"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 710</span><span>
+</span><a name="line-127"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Traversable</span><span>
+</span><a name="line-128"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-129"></a><span>
+</span><a name="line-130"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span>
+</span><a name="line-131"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Word</span><span>
+</span><a name="line-132"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Ptr</span><span>
+</span><a name="line-133"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">StablePtr</span><span>
+</span><a name="line-134"></a><span>
+</span><a name="line-135"></a><span class="hs-cpp">#if (defined(__GLASGOW_HASKELL__) &amp;&amp; __GLASGOW_HASKELL__ &gt;= 707) || (defined(MIN_VERSION_template_haskell) &amp;&amp; USE_TYPE_LITS)</span><span>
+</span><a name="line-136"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">TypeLits</span><span>
+</span><a name="line-137"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-138"></a><span>
+</span><a name="line-139"></a><span class="hs-cpp">#ifdef __HUGS__</span><span>
+</span><a name="line-140"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Hugs</span><span class="hs-operator">.</span><span class="hs-identifier">IOExts</span><span>
+</span><a name="line-141"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-142"></a><span>
+</span><a name="line-143"></a><span class="hs-cpp">#ifdef MIN_VERSION_template_haskell</span><span>
+</span><a name="line-144"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">reify</span><span class="hs-special">)</span><span>
+</span><a name="line-145"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-146"></a><span>
+</span><a name="line-147"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span class="hs-operator">.</span><span class="hs-identifier">Unsafe</span><span>
+</span><a name="line-148"></a><span>
+</span><a name="line-149"></a><span class="hs-cpp">#ifndef __HUGS__</span><span>
+</span><a name="line-150"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Unsafe</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-151"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-152"></a><span>
+</span><a name="line-153"></a><span class="hs-cpp">#ifdef HLINT</span><span>
+</span><a name="line-154"></a><span class="hs-pragma">{-# ANN module &quot;HLint: ignore Avoid lambda&quot; #-}</span><span>
+</span><a name="line-155"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-156"></a><span>
+</span><a name="line-157"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-158"></a><span class="hs-comment">-- Reifies</span><span>
+</span><a name="line-159"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-160"></a><span>
+</span><a name="line-161"></a><span class="hs-keyword">class</span><span> </span><a name="Reifies"><a href="Data.Reflection.html#Reifies"><span class="hs-identifier">Reifies</span></a></a><span> </span><a name="local-6989586621679022571"><a href="#local-6989586621679022571"><span class="hs-identifier">s</span></a></a><span> </span><a name="local-6989586621679022572"><a href="#local-6989586621679022572"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-162"></a><span>  </span><span class="hs-comment">-- | Recover a value inside a 'reify' context, given a proxy for its</span><span>
+</span><a name="line-163"></a><span>  </span><span class="hs-comment">-- reified type.</span><span>
+</span><a name="line-164"></a><span>  </span><span class="hs-identifier">reflect</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679022573"><span class="hs-identifier hs-type">proxy</span></a><span> </span><a href="#local-6989586621679022571"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679022572"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-165"></a><span>
+</span><a name="line-166"></a><span class="hs-keyword">newtype</span><span> </span><a name="Magic"><a href="Data.Reflection.html#Magic"><span class="hs-identifier">Magic</span></a></a><span> </span><a name="local-6989586621679022568"><a href="#local-6989586621679022568"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679022569"><a href="#local-6989586621679022569"><span class="hs-identifier">r</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="Magic"><a href="Data.Reflection.html#Magic"><span class="hs-identifier">Magic</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679022570"><a href="#local-6989586621679022570"><span class="hs-identifier">s</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679022570"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679022568"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679022570"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679022569"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span>
+</span><a name="line-167"></a><span>
+</span><a name="line-168"></a><span class="hs-comment">-- | Reify a value at the type level, to be recovered with 'reflect'.</span><span>
+</span><a name="line-169"></a><span class="hs-identifier">reify</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679034975"><a href="#local-6989586621679034975"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679034976"><a href="#local-6989586621679034976"><span class="hs-identifier">r</span></a></a><span class="hs-operator">.</span><span> </span><a href="#local-6989586621679034975"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679034977"><a href="#local-6989586621679034977"><span class="hs-identifier">s</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679034977"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679034975"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034977"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034976"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034976"><span class="hs-identifier hs-type">r</span></a><span>
+</span><a name="line-170"></a><a name="reify"><a href="Data.Reflection.html#reify"><span class="hs-identifier">reify</span></a></a><span> </span><a name="local-6989586621679034978"><a href="#local-6989586621679034978"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679034979"><a href="#local-6989586621679034979"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafeCoerce</span><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#Magic"><span class="hs-identifier hs-var">Magic</span></a><span> </span><a href="#local-6989586621679034979"><span class="hs-identifier hs-var">k</span></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Reflection.html#Magic"><span class="hs-identifier hs-type">Magic</span></a><span> </span><a href="#local-6989586621679034975"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679034976"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">const</span><span> </span><a href="#local-6989586621679034978"><span class="hs-identifier hs-var">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-171"></a><span class="hs-pragma">{-# INLINE reify #-}</span><span>
+</span><a name="line-172"></a><span>
+</span><a name="line-173"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 707</span><span>
+</span><a name="line-174"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier hs-type">KnownNat</span><span> </span><a href="#local-6989586621679038935"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679038935"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-identifier hs-type">Integer</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-175"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">natVal</span><span>
+</span><a name="line-176"></a><span>
+</span><a name="line-177"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier hs-type">KnownSymbol</span><span> </span><a href="#local-6989586621679038934"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679038934"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-178"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">symbolVal</span><span>
+</span><a name="line-179"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-180"></a><span>
+</span><a name="line-181"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 708</span><span>
+</span><a name="line-182"></a><span>
+</span><a name="line-183"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-184"></a><span class="hs-comment">-- KnownNat</span><span>
+</span><a name="line-185"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-186"></a><span>
+</span><a name="line-187"></a><span class="hs-keyword">newtype</span><span> </span><a name="MagicNat"><a href="Data.Reflection.html#MagicNat"><span class="hs-identifier">MagicNat</span></a></a><span> </span><a name="local-6989586621679022566"><a href="#local-6989586621679022566"><span class="hs-identifier">r</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="MagicNat"><a href="Data.Reflection.html#MagicNat"><span class="hs-identifier">MagicNat</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679022567"><a href="#local-6989586621679022567"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Nat</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">KnownNat</span><span> </span><a href="#local-6989586621679022567"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679022567"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679022566"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span>
+</span><a name="line-188"></a><span>
+</span><a name="line-189"></a><span class="hs-comment">-- | This upgraded version of 'reify' can be used to generate a 'KnownNat' suitable for use with other APIs.</span><span>
+</span><a name="line-190"></a><span class="hs-comment">--</span><span>
+</span><a name="line-191"></a><span class="hs-comment">-- /Available only on GHC 7.8+/</span><span>
+</span><a name="line-192"></a><span class="hs-comment">--</span><span>
+</span><a name="line-193"></a><span class="hs-comment">-- &gt;&gt;&gt; reifyNat 4 natVal</span><span>
+</span><a name="line-194"></a><span class="hs-comment">-- 4</span><span>
+</span><a name="line-195"></a><span class="hs-comment">--</span><span>
+</span><a name="line-196"></a><span class="hs-comment">-- &gt;&gt;&gt; reifyNat 4 reflect</span><span>
+</span><a name="line-197"></a><span class="hs-comment">-- 4</span><span>
+</span><a name="line-198"></a><span>
+</span><a name="line-199"></a><span class="hs-identifier">reifyNat</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679034568"><a href="#local-6989586621679034568"><span class="hs-identifier">r</span></a></a><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">Integer</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679034974"><a href="#local-6989586621679034974"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Nat</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">KnownNat</span><span> </span><a href="#local-6989586621679034974"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034974"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034568"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034568"><span class="hs-identifier hs-type">r</span></a><span>
+</span><a name="line-200"></a><a name="reifyNat"><a href="Data.Reflection.html#reifyNat"><span class="hs-identifier">reifyNat</span></a></a><span> </span><a name="local-6989586621679034980"><a href="#local-6989586621679034980"><span class="hs-identifier">n</span></a></a><span> </span><a name="local-6989586621679034981"><a href="#local-6989586621679034981"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafeCoerce</span><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#MagicNat"><span class="hs-identifier hs-var">MagicNat</span></a><span> </span><a href="#local-6989586621679034981"><span class="hs-identifier hs-var">k</span></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Reflection.html#MagicNat"><span class="hs-identifier hs-type">MagicNat</span></a><span> </span><a href="#local-6989586621679034568"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679034980"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-201"></a><span>
+</span><a name="line-202"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-203"></a><span class="hs-comment">-- KnownSymbol</span><span>
+</span><a name="line-204"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-205"></a><span>
+</span><a name="line-206"></a><span class="hs-keyword">newtype</span><span> </span><a name="MagicSymbol"><a href="Data.Reflection.html#MagicSymbol"><span class="hs-identifier">MagicSymbol</span></a></a><span> </span><a name="local-6989586621679022124"><a href="#local-6989586621679022124"><span class="hs-identifier">r</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="MagicSymbol"><a href="Data.Reflection.html#MagicSymbol"><span class="hs-identifier">MagicSymbol</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679022565"><a href="#local-6989586621679022565"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Symbol</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">KnownSymbol</span><span> </span><a href="#local-6989586621679022565"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679022565"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679022124"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span>
+</span><a name="line-207"></a><span>
+</span><a name="line-208"></a><span class="hs-comment">-- | This upgraded version of 'reify' can be used to generate a 'KnownSymbol' suitable for use with other APIs.</span><span>
+</span><a name="line-209"></a><span class="hs-comment">--</span><span>
+</span><a name="line-210"></a><span class="hs-comment">-- /Available only on GHC 7.8+/</span><span>
+</span><a name="line-211"></a><span class="hs-comment">--</span><span>
+</span><a name="line-212"></a><span class="hs-comment">-- &gt;&gt;&gt; reifySymbol &quot;hello&quot; symbolVal</span><span>
+</span><a name="line-213"></a><span class="hs-comment">-- &quot;hello&quot;</span><span>
+</span><a name="line-214"></a><span class="hs-comment">--</span><span>
+</span><a name="line-215"></a><span class="hs-comment">-- &gt;&gt;&gt; reifySymbol &quot;hello&quot; reflect</span><span>
+</span><a name="line-216"></a><span class="hs-comment">-- &quot;hello&quot;</span><span>
+</span><a name="line-217"></a><span class="hs-identifier">reifySymbol</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679034566"><a href="#local-6989586621679034566"><span class="hs-identifier">r</span></a></a><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679034567"><a href="#local-6989586621679034567"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Symbol</span><span class="hs-special">)</span><span class="hs-operator">.</span><span> </span><span class="hs-identifier hs-type">KnownSymbol</span><span> </span><a href="#local-6989586621679034567"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034567"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034566"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034566"><span class="hs-identifier hs-type">r</span></a><span>
+</span><a name="line-218"></a><a name="reifySymbol"><a href="Data.Reflection.html#reifySymbol"><span class="hs-identifier">reifySymbol</span></a></a><span> </span><a name="local-6989586621679034982"><a href="#local-6989586621679034982"><span class="hs-identifier">n</span></a></a><span> </span><a name="local-6989586621679034983"><a href="#local-6989586621679034983"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafeCoerce</span><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#MagicSymbol"><span class="hs-identifier hs-var">MagicSymbol</span></a><span> </span><a href="#local-6989586621679034983"><span class="hs-identifier hs-var">k</span></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Reflection.html#MagicSymbol"><span class="hs-identifier hs-type">MagicSymbol</span></a><span> </span><a href="#local-6989586621679034566"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679034982"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-219"></a><span>
+</span><a name="line-220"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-221"></a><span>
+</span><a name="line-222"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-223"></a><span class="hs-comment">-- Given</span><span>
+</span><a name="line-224"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-225"></a><span>
+</span><a name="line-226"></a><span class="hs-comment">-- | This is a version of 'Reifies' that allows for only a single value.</span><span>
+</span><a name="line-227"></a><span class="hs-comment">--</span><span>
+</span><a name="line-228"></a><span class="hs-comment">-- This is easier to work with than 'Reifies' and permits extended defaulting,</span><span>
+</span><a name="line-229"></a><span class="hs-comment">-- but it only offers a single reflected value of a given type at a time.</span><span>
+</span><a name="line-230"></a><span class="hs-keyword">class</span><span> </span><a name="Given"><a href="Data.Reflection.html#Given"><span class="hs-identifier">Given</span></a></a><span> </span><a name="local-6989586621679022123"><a href="#local-6989586621679022123"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-231"></a><span>  </span><span class="hs-comment">-- | Recover the value of a given type previously encoded with 'give'.</span><span>
+</span><a name="line-232"></a><span>  </span><span class="hs-identifier">given</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679022123"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-233"></a><span>
+</span><a name="line-234"></a><span class="hs-keyword">newtype</span><span> </span><a name="Gift"><a href="Data.Reflection.html#Gift"><span class="hs-identifier">Gift</span></a></a><span> </span><a name="local-6989586621679022121"><a href="#local-6989586621679022121"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679022122"><a href="#local-6989586621679022122"><span class="hs-identifier">r</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="Gift"><a href="Data.Reflection.html#Gift"><span class="hs-identifier">Gift</span></a></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#Given"><span class="hs-identifier hs-type">Given</span></a><span> </span><a href="#local-6989586621679022121"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679022122"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span>
+</span><a name="line-235"></a><span>
+</span><a name="line-236"></a><span class="hs-comment">-- | Reify a value into an instance to be recovered with 'given'.</span><span>
+</span><a name="line-237"></a><span class="hs-comment">--</span><span>
+</span><a name="line-238"></a><span class="hs-comment">-- You should /only/ 'give' a single value for each type. If multiple instances</span><span>
+</span><a name="line-239"></a><span class="hs-comment">-- are in scope, then the behavior is implementation defined.</span><span>
+</span><a name="line-240"></a><span class="hs-identifier">give</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679034564"><a href="#local-6989586621679034564"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679034565"><a href="#local-6989586621679034565"><span class="hs-identifier">r</span></a></a><span class="hs-operator">.</span><span> </span><a href="#local-6989586621679034564"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#Given"><span class="hs-identifier hs-type">Given</span></a><span> </span><a href="#local-6989586621679034564"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679034565"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034565"><span class="hs-identifier hs-type">r</span></a><span>
+</span><a name="line-241"></a><a name="give"><a href="Data.Reflection.html#give"><span class="hs-identifier">give</span></a></a><span> </span><a name="local-6989586621679034984"><a href="#local-6989586621679034984"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679034985"><a href="#local-6989586621679034985"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">unsafeCoerce</span><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#Gift"><span class="hs-identifier hs-var">Gift</span></a><span> </span><a href="#local-6989586621679034985"><span class="hs-identifier hs-var">k</span></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Reflection.html#Gift"><span class="hs-identifier hs-type">Gift</span></a><span> </span><a href="#local-6989586621679034564"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679034565"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679034984"><span class="hs-identifier hs-var">a</span></a><span>
+</span><a name="line-242"></a><span class="hs-pragma">{-# INLINE give #-}</span><span>
+</span><a name="line-243"></a><span>
+</span><a name="line-244"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-245"></a><span class="hs-comment">-- Explicit Numeric Reflection</span><span>
+</span><a name="line-246"></a><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><a name="line-247"></a><span>
+</span><a name="line-248"></a><span class="hs-keyword">data</span><span> </span><a name="Z"><a href="Data.Reflection.html#Z"><span class="hs-identifier">Z</span></a></a><span> </span><span class="hs-comment">-- 0</span><span>
+</span><a name="line-249"></a><span class="hs-keyword">data</span><span> </span><a name="D"><a href="Data.Reflection.html#D"><span class="hs-identifier">D</span></a></a><span>  </span><span class="hs-special">(</span><a name="local-6989586621679022120"><a href="#local-6989586621679022120"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- 2n</span><span>
+</span><a name="line-250"></a><span class="hs-keyword">data</span><span> </span><a name="SD"><a href="Data.Reflection.html#SD"><span class="hs-identifier">SD</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679022119"><a href="#local-6989586621679022119"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- 2n+1</span><span>
+</span><a name="line-251"></a><span class="hs-keyword">data</span><span> </span><a name="PD"><a href="Data.Reflection.html#PD"><span class="hs-identifier">PD</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679022118"><a href="#local-6989586621679022118"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-comment">-- 2n-1</span><span>
+</span><a name="line-252"></a><span>
+</span><a name="line-253"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="Data.Reflection.html#Z"><span class="hs-identifier hs-type">Z</span></a><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-254"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-number">0</span><span>
+</span><a name="line-255"></a><span>  </span><span class="hs-pragma">{-# INLINE reflect #-}</span><span>
+</span><a name="line-256"></a><span>
+</span><a name="line-257"></a><span class="hs-identifier">retagD</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034561"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034562"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034563"><span class="hs-identifier hs-type">proxy</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#D"><span class="hs-identifier hs-type">D</span></a><span> </span><a href="#local-6989586621679034561"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034562"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-258"></a><a name="retagD"><a href="Data.Reflection.html#retagD"><span class="hs-identifier">retagD</span></a></a><span> </span><a name="local-6989586621679034986"><a href="#local-6989586621679034986"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679034986"><span class="hs-identifier hs-var">f</span></a><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-259"></a><span class="hs-pragma">{-# INLINE retagD #-}</span><span>
+</span><a name="line-260"></a><span>
+</span><a name="line-261"></a><span class="hs-identifier">retagSD</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034558"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034559"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034560"><span class="hs-identifier hs-type">proxy</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#SD"><span class="hs-identifier hs-type">SD</span></a><span> </span><a href="#local-6989586621679034558"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034559"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-262"></a><a name="retagSD"><a href="Data.Reflection.html#retagSD"><span class="hs-identifier">retagSD</span></a></a><span> </span><a name="local-6989586621679034987"><a href="#local-6989586621679034987"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679034987"><span class="hs-identifier hs-var">f</span></a><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-263"></a><span class="hs-pragma">{-# INLINE retagSD #-}</span><span>
+</span><a name="line-264"></a><span>
+</span><a name="line-265"></a><span class="hs-identifier">retagPD</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679034555"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034556"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034557"><span class="hs-identifier hs-type">proxy</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#PD"><span class="hs-identifier hs-type">PD</span></a><span> </span><a href="#local-6989586621679034555"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679034556"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-266"></a><a name="retagPD"><a href="Data.Reflection.html#retagPD"><span class="hs-identifier">retagPD</span></a></a><span> </span><a name="local-6989586621679034988"><a href="#local-6989586621679034988"><span class="hs-identifier">f</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679034988"><span class="hs-identifier hs-var">f</span></a><span> </span><span class="hs-identifier hs-var">Proxy</span><span>
+</span><a name="line-267"></a><span class="hs-pragma">{-# INLINE retagPD #-}</span><span>
+</span><a name="line-268"></a><span>
+</span><a name="line-269"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679038932"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#D"><span class="hs-identifier hs-type">D</span></a><span> </span><a href="#local-6989586621679038932"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-270"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><a name="local-6989586621679038933"><a href="#local-6989586621679038933"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679038933"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-operator hs-var">+</span><span> </span><a href="#local-6989586621679038933"><span class="hs-identifier hs-var">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">fmap</span><span class="hs-special">`</span><span> </span><a href="Data.Reflection.html#retagD"><span class="hs-identifier hs-var">retagD</span></a><span> </span><a href="Data.Reflection.html#reflect"><span class="hs-identifier hs-var">reflect</span></a><span>
+</span><a name="line-271"></a><span>  </span><span class="hs-pragma">{-# INLINE reflect #-}</span><span>
+</span><a name="line-272"></a><span>
+</span><a name="line-273"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679038930"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#SD"><span class="hs-identifier hs-type">SD</span></a><span> </span><a href="#local-6989586621679038930"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-274"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><a name="local-6989586621679038931"><a href="#local-6989586621679038931"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679038931"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-operator hs-var">+</span><span> </span><a href="#local-6989586621679038931"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-operator hs-var">+</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">fmap</span><span class="hs-special">`</span><span> </span><a href="Data.Reflection.html#retagSD"><span class="hs-identifier hs-var">retagSD</span></a><span> </span><a href="Data.Reflection.html#reflect"><span class="hs-identifier hs-var">reflect</span></a><span>
+</span><a name="line-275"></a><span>  </span><span class="hs-pragma">{-# INLINE reflect #-}</span><span>
+</span><a name="line-276"></a><span>
+</span><a name="line-277"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><a href="#local-6989586621679038928"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Reflection.html#Reifies"><span class="hs-identifier hs-type">Reifies</span></a><span> </span><span class="hs-special">(</span><a href="Data.Reflection.html#PD"><span class="hs-identifier hs-type">PD</span></a><span> </span><a href="#local-6989586621679038928"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-278"></a><span>  </span><a name="local-8214565720323796207"><a href="Data.Reflection.html#reflect"><span class="hs-identifier">reflect</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><a name="local-6989586621679038929"><a href="#local-6989586621679038929"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679038929"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-operator hs-var">+</span><span> </span><a href="#local-6989586621679038929"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-glyph">-</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span> </span><span class="hs-special">`</span><span class="hs-identifier hs-var">fmap</span><span class="hs-special">`</span><span> </span><a href="Data.Reflection.html#retagPD"><span class="hs-identifier hs-var">retagPD</span></a><span> </span><a href="Data.Reflection.html#reflect"><span class="hs-identifier hs-var">reflect</span></a><span>
+</span><a name="line-279"></a><span>  </span><span class="hs-pragma">{-# INLINE reflect #-}</span><span>
+</span><a name="line-280"></a><span>
+</span><a name="line-281"></a><span class="hs-cpp">#ifdef MIN_VERSION_template_haskell</span><span>
+</span><a name="line-282"></a><span class="hs-comment">-- | This can be used to generate a template haskell splice for a type level version of a given 'int'.</span><span>
+</span><a name="line-283"></a><span class="hs-comment">--</span><span>
+</span><a name="line-284"></a><span class="hs-comment">-- This does not use GHC TypeLits, instead it generates a numeric type by hand similar to the ones used</span><span>
+</span><a name="line-285"></a><span class="hs-comment">-- in the \&quot;Functional Pearl: Implicit Configurations\&quot; paper by Oleg Kiselyov and Chung-Chieh Shan.</span><span>
+</span><a name="line-286"></a><span class="hs-comment">--</span><span>
+</span><a name="line-287"></a><span class="hs-comment">-- @instance Num (Q Exp)@ provided in this package allows writing @$(3)@</span><span>
+</span><a name="line-288"></a><span class="hs-comment">-- instead of @$(int 3)@. Sometimes the two will produce the same</span><span>
+</span><a name="line-289"></a><span class="hs-comment">-- representation (if compiled without the @-DUSE_TYPE_LITS@ preprocessor</span><span>
+</span><a name="line-290"></a><span class="hs-comment">-- directive).</span><span>
+</span><a name="line-291"></a><span class="hs-identifier">int</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TypeQ</span><span>
+</span><a name="line-292"></a><a name="int"><a href="Data.Reflection.html#int"><span class="hs-identifier">int</span></a></a><span> </span><a name="local-6989586621679034989"><a href="#local-6989586621679034989"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-identifier hs-var">quotRem</span><span> </span><a href="#local-6989586621679034989"><span class="hs-identifier hs-var">n</span></a><span> </span><span class="hs-number">2</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-293"></a><span>  </span><span class="hs-special">(</span><span class="hs-number">0</span><span class="hs-special">,</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">conT</span><span> </span><span class="hs-char">''Z
+  (q,-1) -&gt; conT ''PD `appT` int q
+  (q, 0) -&gt; conT ''D  `appT` int q
+  (q, 1) -&gt; conT ''SD `appT` int q
+  _     -&gt; error &quot;ghc is bad at math&quot;
+
+-- | This is a restricted version of 'int' that can only generate natural numbers. Attempting to generate
+-- a negative number results in a compile time error. Also the resulting sequence will consist entirely of
+-- Z, D, and SD constructors representing the number in zeroless binary.
+nat :: Int -&gt; TypeQ
+nat n
+  | n &gt;= 0 = int n
+  | otherwise = error &quot;nat: negative&quot;
+
+#if defined(__GLASGOW_HASKELL__) &amp;&amp; __GLASGOW_HASKELL__ &lt; 704
+instance Show (Q a) where
+  show _ = &quot;Q&quot;
+instance Eq (Q a) where
+  _ == _ = False
+#endif
+instance Num a =&gt; Num (Q a) where
+  (+) = liftM2 (+)
+  (*) = liftM2 (*)
+  (-) = liftM2 (-)
+  negate = fmap negate
+  abs = fmap abs
+  signum = fmap signum
+  fromInteger = return . fromInteger
+
+instance Fractional a =&gt; Fractional (Q a) where
+  (/) = liftM2 (/)
+  recip = fmap recip
+  fromRational = return . fromRational
+
+-- | This permits the use of $(5) as a type splice.
+instance Num Type where
+#ifdef USE_TYPE_LITS
+  LitT (NumTyLit a) + LitT (NumTyLit b) = LitT (NumTyLit (a+b))
+  a + b = AppT (AppT (VarT ''(+)) a) b
+
+  LitT (NumTyLit a) * LitT (NumTyLit b) = LitT (NumTyLit (a*b))
+  (*) a b = AppT (AppT (VarT ''(*)) a) b
+#if MIN_VERSION_base(4,8,0)
+  a - b = AppT (AppT (VarT ''(-)) a) b
+#else
+  (-) = error &quot;Type.(-): undefined&quot;
+#endif
+  fromInteger = LitT . NumTyLit
+#else
+  (+) = error &quot;Type.(+): undefined&quot;
+  (*) = error &quot;Type.(*): undefined&quot;
+  (-) = error &quot;Type.(-): undefined&quot;
+  fromInteger n = case quotRem n 2 of
+      (0, 0) -&gt; ConT ''Z
+      (q,-1) -&gt; ConT ''PD `AppT` fromInteger q
+      (q, 0) -&gt; ConT ''D  `AppT` fromInteger q
+      (q, 1) -&gt; ConT ''SD `AppT` fromInteger q
+      _ -&gt; error &quot;ghc is bad at math&quot;
+#endif
+  abs = error &quot;Type.abs&quot;
+  signum = error &quot;Type.signum&quot;
+
+onProxyType1 :: (Type -&gt; Type) -&gt; (Exp -&gt; Exp)
+onProxyType1 f
+    (SigE _ ta@(AppT (ConT proxyName)  (VarT _)))
+    | proxyName == ''Proxy = ConE 'Proxy `SigE` (ConT ''Proxy `AppT` f ta)
+onProxyType1 f a =
+        LamE [SigP WildP na] body `AppE` a
+    where 
+          body = ConE 'Proxy `SigE` (ConT ''Proxy `AppT` f na)
+          na = VarT (mkName &quot;na&quot;)
+
+onProxyType2 :: Name -&gt; (Type -&gt; Type -&gt; Type) -&gt; (Exp -&gt; Exp -&gt; Exp)
+onProxyType2 _fName f
+    (SigE _ (AppT (ConT proxyName)  ta))
+    (SigE _ (AppT (ConT proxyName') tb))
+    | proxyName == ''Proxy,
+      proxyName' == ''Proxy = ConE 'Proxy `SigE`
+                                        (ConT ''Proxy `AppT` f ta tb)
+-- the above case should only match for things like $(2 + 2)
+onProxyType2 fName _f a b = VarE fName `AppE` a `AppE` b
+
+-- | This permits the use of $(5) as an expression splice,
+-- which stands for @Proxy :: Proxy $(5)@
+instance Num Exp where
+  (+) = onProxyType2 'addProxy (+)
+  (*) = onProxyType2 'mulProxy (*)
+  (-) = onProxyType2 'subProxy (-)
+  negate = onProxyType1 negate
+  abs = onProxyType1 abs
+  signum = onProxyType1 signum
+  fromInteger n = ConE 'Proxy `SigE` (ConT ''Proxy `AppT` fromInteger n)
+
+#ifdef USE_TYPE_LITS
+addProxy :: Proxy a -&gt; Proxy b -&gt; Proxy (a + b)
+addProxy _ _ = Proxy
+mulProxy :: Proxy a -&gt; Proxy b -&gt; Proxy (a * b)
+mulProxy _ _ = Proxy
+#if MIN_VERSION_base(4,8,0)
+subProxy :: Proxy a -&gt; Proxy b -&gt; Proxy (a - b)
+subProxy _ _ = Proxy
+#else
+subProxy :: Proxy a -&gt; Proxy b -&gt; Proxy c
+subProxy _ _ = error &quot;Exp.(-): undefined&quot;
+#endif
+--  fromInteger = LitT . NumTyLit
+#else
+addProxy :: Proxy a -&gt; Proxy b -&gt; Proxy c
+addProxy _ _ = error &quot;Exp.(+): undefined&quot;
+mulProxy :: Proxy a -&gt; Proxy b -&gt; Proxy c
+mulProxy _ _ = error &quot;Exp.(*): undefined&quot;
+subProxy :: Proxy a -&gt; Proxy b -&gt; Proxy c
+subProxy _ _ = error &quot;Exp.(-): undefined&quot;
+#endif
+
+#endif
+
+--------------------------------------------------------------------------------
+-- * Typeable Reflection
+--------------------------------------------------------------------------------
+
+
+class Typeable s =&gt; B s where
+  reflectByte :: proxy s -&gt; IntPtr
+
+#define BYTES(GO) \
+  GO(T0,0) GO(T1,1) GO(T2,2) GO(T3,3) GO(T4,4) GO(T5,5) GO(T6,6) GO(T7,7) GO(T8,8) GO(T9,9) GO(T10,10) GO(T11,11) \
+  GO(T12,12) GO(T13,13) GO(T14,14) GO(T15,15) GO(T16,16) GO(T17,17) GO(T18,18) GO(T19,19) GO(T20,20) GO(T21,21) GO(T22,22) \
+  GO(T23,23) GO(T24,24) GO(T25,25) GO(T26,26) GO(T27,27) GO(T28,28) GO(T29,29) GO(T30,30) GO(T31,31) GO(T32,32) GO(T33,33) \
+  GO(T34,34) GO(T35,35) GO(T36,36) GO(T37,37) GO(T38,38) GO(T39,39) GO(T40,40) GO(T41,41) GO(T42,42) GO(T43,43) GO(T44,44) \
+  GO(T45,45) GO(T46,46) GO(T47,47) GO(T48,48) GO(T49,49) GO(T50,50) GO(T51,51) GO(T52,52) GO(T53,53) GO(T54,54) GO(T55,55) \
+  GO(T56,56) GO(T57,57) GO(T58,58) GO(T59,59) GO(T60,60) GO(T61,61) GO(T62,62) GO(T63,63) GO(T64,64) GO(T65,65) GO(T66,66) \
+  GO(T67,67) GO(T68,68) GO(T69,69) GO(T70,70) GO(T71,71) GO(T72,72) GO(T73,73) GO(T74,74) GO(T75,75) GO(T76,76) GO(T77,77) \
+  GO(T78,78) GO(T79,79) GO(T80,80) GO(T81,81) GO(T82,82) GO(T83,83) GO(T84,84) GO(T85,85) GO(T86,86) GO(T87,87) GO(T88,88) \
+  GO(T89,89) GO(T90,90) GO(T91,91) GO(T92,92) GO(T93,93) GO(T94,94) GO(T95,95) GO(T96,96) GO(T97,97) GO(T98,98) GO(T99,99) \
+  GO(T100,100) GO(T101,101) GO(T102,102) GO(T103,103) GO(T104,104) GO(T105,105) GO(T106,106) GO(T107,107) GO(T108,108) \
+  GO(T109,109) GO(T110,110) GO(T111,111) GO(T112,112) GO(T113,113) GO(T114,114) GO(T115,115) GO(T116,116) GO(T117,117) \
+  GO(T118,118) GO(T119,119) GO(T120,120) GO(T121,121) GO(T122,122) GO(T123,123) GO(T124,124) GO(T125,125) GO(T126,126) \
+  GO(T127,127) GO(T128,128) GO(T129,129) GO(T130,130) GO(T131,131) GO(T132,132) GO(T133,133) GO(T134,134) GO(T135,135) \
+  GO(T136,136) GO(T137,137) GO(T138,138) GO(T139,139) GO(T140,140) GO(T141,141) GO(T142,142) GO(T143,143) GO(T144,144) \
+  GO(T145,145) GO(T146,146) GO(T147,147) GO(T148,148) GO(T149,149) GO(T150,150) GO(T151,151) GO(T152,152) GO(T153,153) \
+  GO(T154,154) GO(T155,155) GO(T156,156) GO(T157,157) GO(T158,158) GO(T159,159) GO(T160,160) GO(T161,161) GO(T162,162) \
+  GO(T163,163) GO(T164,164) GO(T165,165) GO(T166,166) GO(T167,167) GO(T168,168) GO(T169,169) GO(T170,170) GO(T171,171) \
+  GO(T172,172) GO(T173,173) GO(T174,174) GO(T175,175) GO(T176,176) GO(T177,177) GO(T178,178) GO(T179,179) GO(T180,180) \
+  GO(T181,181) GO(T182,182) GO(T183,183) GO(T184,184) GO(T185,185) GO(T186,186) GO(T187,187) GO(T188,188) GO(T189,189) \
+  GO(T190,190) GO(T191,191) GO(T192,192) GO(T193,193) GO(T194,194) GO(T195,195) GO(T196,196) GO(T197,197) GO(T198,198) \
+  GO(T199,199) GO(T200,200) GO(T201,201) GO(T202,202) GO(T203,203) GO(T204,204) GO(T205,205) GO(T206,206) GO(T207,207) \
+  GO(T208,208) GO(T209,209) GO(T210,210) GO(T211,211) GO(T212,212) GO(T213,213) GO(T214,214) GO(T215,215) GO(T216,216) \
+  GO(T217,217) GO(T218,218) GO(T219,219) GO(T220,220) GO(T221,221) GO(T222,222) GO(T223,223) GO(T224,224) GO(T225,225) \
+  GO(T226,226) GO(T227,227) GO(T228,228) GO(T229,229) GO(T230,230) GO(T231,231) GO(T232,232) GO(T233,233) GO(T234,234) \
+  GO(T235,235) GO(T236,236) GO(T237,237) GO(T238,238) GO(T239,239) GO(T240,240) GO(T241,241) GO(T242,242) GO(T243,243) \
+  GO(T244,244) GO(T245,245) GO(T246,246) GO(T247,247) GO(T248,248) GO(T249,249) GO(T250,250) GO(T251,251) GO(T252,252) \
+  GO(T253,253) GO(T254,254) GO(T255,255)
+
+#define GO(Tn,n) \
+  newtype Tn = Tn Tn deriving Typeable; \
+  instance B Tn where { \
+    reflectByte _ = n \
+  };
+BYTES(GO)
+#undef GO
+
+impossible :: a
+impossible = error &quot;Data.Reflection.reifyByte: impossible&quot;
+
+reifyByte :: Word8 -&gt; (forall (s :: *). B s =&gt; Proxy s -&gt; r) -&gt; r
+reifyByte w k = case w of {
+#define GO(Tn,n) n -&gt; k (Proxy :: Proxy Tn);
+BYTES(GO)
+#undef GO
+_ -&gt; impossible
+}
+
+newtype W (b0 :: *) (b1 :: *) (b2 :: *) (b3 :: *) = W (W b0 b1 b2 b3) deriving Typeable
+newtype Stable (w0 :: *) (w1 :: *) (a :: *) = Stable (Stable w0 w1 a) deriving Typeable
+
+stable :: p b0 -&gt; p b1 -&gt; p b2 -&gt; p b3 -&gt; p b4 -&gt; p b5 -&gt; p b6 -&gt; p b7
+       -&gt; Proxy (Stable (W b0 b1 b2 b3) (W b4 b5 b6 b7) a)
+stable _ _ _ _ _ _ _ _ = Proxy
+{-# INLINE stable #-}
+
+stablePtrToIntPtr :: StablePtr a -&gt; IntPtr
+stablePtrToIntPtr = ptrToIntPtr . castStablePtrToPtr
+{-# INLINE stablePtrToIntPtr #-}
+
+intPtrToStablePtr :: IntPtr -&gt; StablePtr a
+intPtrToStablePtr = castPtrToStablePtr . intPtrToPtr
+{-# INLINE intPtrToStablePtr #-}
+
+byte0 :: p (Stable (W b0 b1 b2 b3) w1 a) -&gt; Proxy b0
+byte0 _ = Proxy
+
+byte1 :: p (Stable (W b0 b1 b2 b3) w1 a) -&gt; Proxy b1
+byte1 _ = Proxy
+
+byte2 :: p (Stable (W b0 b1 b2 b3) w1 a) -&gt; Proxy b2
+byte2 _ = Proxy
+
+byte3 :: p (Stable (W b0 b1 b2 b3) w1 a) -&gt; Proxy b3
+byte3 _ = Proxy
+
+byte4 :: p (Stable w0 (W b4 b5 b6 b7) a) -&gt; Proxy b4
+byte4 _ = Proxy
+
+byte5 :: p (Stable w0 (W b4 b5 b6 b7) a) -&gt; Proxy b5
+byte5 _ = Proxy
+
+byte6 :: p (Stable w0 (W b4 b5 b6 b7) a) -&gt; Proxy b6
+byte6 _ = Proxy
+
+byte7 :: p (Stable w0 (W b4 b5 b6 b7) a) -&gt; Proxy b7
+byte7 _ = Proxy
+
+argument :: (p s -&gt; r) -&gt; Proxy s
+argument _ = Proxy
+
+instance (B b0, B b1, B b2, B b3, B b4, B b5, B b6, B b7, w0 ~ W b0 b1 b2 b3, w1 ~ W b4 b5 b6 b7)
+    =&gt; Reifies (Stable w0 w1 a) a where
+  reflect = r where
+      r = unsafePerformIO $ const &lt;$&gt; deRefStablePtr p &lt;* freeStablePtr p
+      s = argument r
+      p = intPtrToStablePtr $
+        reflectByte (byte0 s) .|.
+        (reflectByte (byte1 s) `shiftL` 8) .|.
+        (reflectByte (byte2 s) `shiftL` 16) .|.
+        (reflectByte (byte3 s) `shiftL` 24) .|.
+        (reflectByte (byte4 s) `shiftL` 32) .|.
+        (reflectByte (byte5 s) `shiftL` 40) .|.
+        (reflectByte (byte6 s) `shiftL` 48) .|.
+        (reflectByte (byte7 s) `shiftL` 56)
+  {-# NOINLINE reflect #-}
+
+-- This had to be moved to the top level, due to an apparent bug in
+-- the ghc inliner introduced in ghc 7.0.x
+reflectBefore :: forall (proxy :: * -&gt; *) s b. (Proxy s -&gt; b) -&gt; proxy s -&gt; b
+reflectBefore f = const $! f Proxy
+{-# NOINLINE reflectBefore #-}
+
+-- | Reify a value at the type level in a 'Typeable'-compatible fashion, to be recovered with 'reflect'.
+--
+-- This can be necessary to work around the changes to @Data.Typeable@ in GHC HEAD.
+reifyTypeable :: Typeable a =&gt; a -&gt; (forall (s :: *). (Typeable s, Reifies s a) =&gt; Proxy s -&gt; r) -&gt; r
+#if MIN_VERSION_base(4,4,0)
+reifyTypeable a k = unsafeDupablePerformIO $ do
+#else
+reifyTypeable a k = unsafePerformIO $ do
+#endif
+  p &lt;- newStablePtr a
+  let n = stablePtrToIntPtr p
+  reifyByte (fromIntegral n) (\s0 -&gt;
+    reifyByte (fromIntegral (n `shiftR` 8)) (\s1 -&gt;
+      reifyByte (fromIntegral (n `shiftR` 16)) (\s2 -&gt;
+        reifyByte (fromIntegral (n `shiftR` 24)) (\s3 -&gt;
+          reifyByte (fromIntegral (n `shiftR` 32)) (\s4 -&gt;
+            reifyByte (fromIntegral (n `shiftR` 40)) (\s5 -&gt;
+              reifyByte (fromIntegral (n `shiftR` 48)) (\s6 -&gt;
+                reifyByte (fromIntegral (n `shiftR` 56)) (\s7 -&gt;
+                  reflectBefore (fmap return k) $
+                    stable s0 s1 s2 s3 s4 s5 s6 s7))))))))
+
+
+data ReifiedMonoid a = ReifiedMonoid { reifiedMappend :: a -&gt; a -&gt; a, reifiedMempty :: a }
+
+instance Reifies s (ReifiedMonoid a) =&gt; Monoid (ReflectedMonoid a s) where
+  mappend (ReflectedMonoid x) (ReflectedMonoid y) = reflectResult (\m -&gt; ReflectedMonoid (reifiedMappend m x y))
+  mempty = reflectResult (\m -&gt; ReflectedMonoid (reifiedMempty  m    ))
+
+reflectResult :: forall f s a. Reifies s a =&gt; (a -&gt; f s) -&gt; f s
+reflectResult f = f (reflect (Proxy :: Proxy s))
+
+newtype ReflectedMonoid a s = ReflectedMonoid a
+
+unreflectedMonoid :: ReflectedMonoid a s -&gt; proxy s -&gt; a
+unreflectedMonoid (ReflectedMonoid a) _ = a
+
+reifyMonoid :: (a -&gt; a -&gt; a) -&gt; a -&gt; (forall (s :: *). Reifies s (ReifiedMonoid a) =&gt; t -&gt; ReflectedMonoid a s) -&gt; t -&gt; a
+reifyMonoid f z m xs = reify (ReifiedMonoid f z) (unreflectedMonoid (m xs))
+
+-- | Fold a value using its 'Foldable' instance using
+-- explicitly provided 'Monoid' operations. This is like 'fold'
+-- where the 'Monoid' instance can be manually specified.
+--
+-- @
+-- 'foldBy' 'mappend' 'mempty' &#8801; 'fold'
+-- @
+--
+-- &gt;&gt;&gt; foldBy (++) [] [&quot;hello&quot;,&quot;world&quot;]
+-- &quot;helloworld&quot;
+foldBy :: Foldable t =&gt; (a -&gt; a -&gt; a) -&gt; a -&gt; t a -&gt; a
+foldBy f z = reifyMonoid f z (foldMap ReflectedMonoid)
+
+-- | Fold a value using its 'Foldable' instance using
+-- explicitly provided 'Monoid' operations. This is like 'foldMap'
+-- where the 'Monoid' instance can be manually specified.
+--
+-- @
+-- 'foldMapBy' 'mappend' 'mempty' &#8801; 'foldMap'
+-- @
+--
+-- &gt;&gt;&gt; foldMapBy (+) 0 length [&quot;hello&quot;,&quot;world&quot;]
+-- 10
+foldMapBy :: Foldable t =&gt; (r -&gt; r -&gt; r) -&gt; r -&gt; (a -&gt; r) -&gt; t a -&gt; r
+foldMapBy f z g = reifyMonoid f z (foldMap (ReflectedMonoid #. g))
+
+data ReifiedApplicative f = ReifiedApplicative { reifiedPure :: forall a. a -&gt; f a, reifiedAp :: forall a b. f (a -&gt; b) -&gt; f a -&gt; f b }
+
+newtype ReflectedApplicative f s a = ReflectedApplicative (f a)
+
+instance Reifies s (ReifiedApplicative f) =&gt; Functor (ReflectedApplicative f s) where
+  fmap = liftA
+
+instance Reifies s (ReifiedApplicative f) =&gt; Applicative (ReflectedApplicative f s) where
+  pure a = reflectResult1 (\m -&gt; ReflectedApplicative (reifiedPure m a))
+  ReflectedApplicative x &lt;*&gt; ReflectedApplicative y = reflectResult1 (\m -&gt; ReflectedApplicative (reifiedAp m x y))
+
+reflectResult1 :: forall f s a b. Reifies s a =&gt; (a -&gt; f s b) -&gt; f s b
+reflectResult1 f = f (reflect (Proxy :: Proxy s))
+
+unreflectedApplicative :: ReflectedApplicative f s a -&gt; proxy s -&gt; f a
+unreflectedApplicative (ReflectedApplicative a) _ = a
+
+reifyApplicative :: (forall x. x -&gt; f x) -&gt; (forall x y. f (x -&gt; y) -&gt; f x -&gt; f y) -&gt; (forall (s :: *). Reifies s (ReifiedApplicative f) =&gt; t -&gt; ReflectedApplicative f s a) -&gt; t -&gt; f a
+reifyApplicative f g m xs = reify (ReifiedApplicative f g) (unreflectedApplicative (m xs))
+
+-- | Traverse a container using its 'Traversable' instance using
+-- explicitly provided 'Applicative' operations. This is like 'traverse'
+-- where the 'Applicative' instance can be manually specified.
+traverseBy :: Traversable t =&gt; (forall x. x -&gt; f x) -&gt; (forall x y. f (x -&gt; y) -&gt; f x -&gt; f y) -&gt; (a -&gt; f b) -&gt; t a -&gt; f (t b)
+traverseBy pur app f = reifyApplicative pur app (traverse (ReflectedApplicative #. f))
+
+-- | Sequence a container using its 'Traversable' instance using
+-- explicitly provided 'Applicative' operations. This is like 'sequence'
+-- where the 'Applicative' instance can be manually specified.
+sequenceBy :: Traversable t =&gt; (forall x. x -&gt; f x) -&gt; (forall x y. f (x -&gt; y) -&gt; f x -&gt; f y) -&gt; t (f a) -&gt; f (t a)
+sequenceBy pur app = reifyApplicative pur app (traverse ReflectedApplicative)
+
+(#.) :: (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+(#.) _ = unsafeCoerce
+</span></pre></body></html>

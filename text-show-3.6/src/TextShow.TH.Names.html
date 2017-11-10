@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-comment">{-|
+Module:      TextShow.TH.Names
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Template Haskell names to eliminate some boilerplate.
+-}</span><span>
+</span><a name="line-14"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Names</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-15"></a><span class="hs-cpp">#if MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-16"></a><span>    </span><a href="TextShow.TH.Names.html#evtCloseValName"><span class="hs-identifier hs-var">evtCloseValName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-17"></a><span>    </span><a href="TextShow.TH.Names.html#eventIsValName"><span class="hs-identifier hs-var">eventIsValName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-18"></a><span>    </span><a href="TextShow.TH.Names.html#fdKeyTypeName"><span class="hs-identifier hs-var">fdKeyTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-19"></a><span>    </span><a href="TextShow.TH.Names.html#uniqueTypeName"><span class="hs-identifier hs-var">uniqueTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-20"></a><span>    </span><a href="TextShow.TH.Names.html#asInt64ValName"><span class="hs-identifier hs-var">asInt64ValName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-21"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-22"></a><span class="hs-cpp">#if MIN_VERSION_base(4,6,0)</span><span>
+</span><a name="line-23"></a><span>    </span><a href="TextShow.TH.Names.html#numberTypeName"><span class="hs-identifier hs-var">numberTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-24"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-25"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-26"></a><span>    </span><a href="TextShow.TH.Names.html#giveGCStatsTypeName"><span class="hs-identifier hs-var">giveGCStatsTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-27"></a><span>    </span><a href="TextShow.TH.Names.html#doCostCentresTypeName"><span class="hs-identifier hs-var">doCostCentresTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-28"></a><span>    </span><a href="TextShow.TH.Names.html#doHeapProfileTypeName"><span class="hs-identifier hs-var">doHeapProfileTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-29"></a><span>    </span><a href="TextShow.TH.Names.html#doTraceTypeName"><span class="hs-identifier hs-var">doTraceTypeName</span></a><span class="hs-special">,</span><span>
+</span><a name="line-30"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-31"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-cpp">#if MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Syntax</span><span>
+</span><a name="line-35"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-cpp">#if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Read</span><span class="hs-operator">.</span><span class="hs-identifier">Lex</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Number</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-40"></a><span>
+</span><a name="line-41"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,2)</span><span>
+</span><a name="line-42"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">RTS</span><span class="hs-operator">.</span><span class="hs-identifier">Flags</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">GiveGCStats</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">DoCostCentres</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">DoHeapProfile</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">DoTrace</span><span class="hs-special">)</span><span>
+</span><a name="line-43"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span class="hs-cpp">#if MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-48"></a><span class="hs-comment">-- | Creates a 'Name' for a value from the &quot;GHC.Event.Internal&quot; module.</span><span>
+</span><a name="line-49"></a><span class="hs-identifier">mkEventName_v</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-50"></a><a name="mkEventName_v"><a href="TextShow.TH.Names.html#mkEventName_v"><span class="hs-identifier">mkEventName_v</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mkNameG_v</span><span> </span><span class="hs-string">&quot;base&quot;</span><span> </span><span class="hs-string">&quot;GHC.Event.Internal&quot;</span><span>
+</span><a name="line-51"></a><span>
+</span><a name="line-52"></a><span class="hs-comment">-- | The 'Name' of 'evtClose'.</span><span>
+</span><a name="line-53"></a><span class="hs-identifier">evtCloseValName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-54"></a><a name="evtCloseValName"><a href="TextShow.TH.Names.html#evtCloseValName"><span class="hs-identifier">evtCloseValName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Names.html#mkEventName_v"><span class="hs-identifier hs-var">mkEventName_v</span></a><span> </span><span class="hs-string">&quot;evtClose&quot;</span><span>
+</span><a name="line-55"></a><span>
+</span><a name="line-56"></a><span class="hs-comment">-- | The 'Name' of 'eventIs'.</span><span>
+</span><a name="line-57"></a><span class="hs-identifier">eventIsValName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-58"></a><a name="eventIsValName"><a href="TextShow.TH.Names.html#eventIsValName"><span class="hs-identifier">eventIsValName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.TH.Names.html#mkEventName_v"><span class="hs-identifier hs-var">mkEventName_v</span></a><span> </span><span class="hs-string">&quot;eventIs&quot;</span><span>
+</span><a name="line-59"></a><span>
+</span><a name="line-60"></a><span class="hs-comment">-- | The 'Name' of 'FdKey'.</span><span>
+</span><a name="line-61"></a><span class="hs-identifier">fdKeyTypeName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-62"></a><a name="fdKeyTypeName"><a href="TextShow.TH.Names.html#fdKeyTypeName"><span class="hs-identifier">fdKeyTypeName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mkNameG_tc</span><span> </span><span class="hs-string">&quot;base&quot;</span><span> </span><span class="hs-string">&quot;GHC.Event.Manager&quot;</span><span> </span><span class="hs-string">&quot;FdKey&quot;</span><span>
+</span><a name="line-63"></a><span>
+</span><a name="line-64"></a><span class="hs-comment">-- | The 'Name' of 'Unique'.</span><span>
+</span><a name="line-65"></a><span class="hs-identifier">uniqueTypeName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-66"></a><a name="uniqueTypeName"><a href="TextShow.TH.Names.html#uniqueTypeName"><span class="hs-identifier">uniqueTypeName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mkNameG_tc</span><span> </span><span class="hs-string">&quot;base&quot;</span><span> </span><span class="hs-string">&quot;GHC.Event.Unique&quot;</span><span> </span><span class="hs-string">&quot;Unique&quot;</span><span>
+</span><a name="line-67"></a><span>
+</span><a name="line-68"></a><span class="hs-comment">-- | The 'Name' of 'asInt64' (or, 'asInt' on @base-4.10.0.0@ or later).</span><span>
+</span><a name="line-69"></a><span class="hs-identifier">asInt64ValName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-70"></a><span class="hs-cpp"># if MIN_VERSION_base(4,10,0)</span><span>
+</span><a name="line-71"></a><span class="hs-identifier">asInt64ValName</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">mkNameG_v</span><span> </span><span class="hs-string">&quot;base&quot;</span><span> </span><span class="hs-string">&quot;GHC.Event.Unique&quot;</span><span> </span><span class="hs-string">&quot;asInt&quot;</span><span>
+</span><a name="line-72"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-73"></a><a name="asInt64ValName"><a href="TextShow.TH.Names.html#asInt64ValName"><span class="hs-identifier">asInt64ValName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">mkNameG_v</span><span> </span><span class="hs-string">&quot;base&quot;</span><span> </span><span class="hs-string">&quot;GHC.Event.Unique&quot;</span><span> </span><span class="hs-string">&quot;asInt64&quot;</span><span>
+</span><a name="line-74"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-75"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-76"></a><span>
+</span><a name="line-77"></a><span class="hs-cpp">#if MIN_VERSION_base(4,6,0)</span><span>
+</span><a name="line-78"></a><span class="hs-comment">-- | The 'Name' of 'Number'.</span><span>
+</span><a name="line-79"></a><span class="hs-identifier">numberTypeName</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Name</span><span>
+</span><a name="line-80"></a><span class="hs-cpp"># if MIN_VERSION_base(4,7,0)</span><span>
+</span><a name="line-81"></a><a name="numberTypeName"><a href="TextShow.TH.Names.html#numberTypeName"><span class="hs-identifier">numberTypeName</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-char">''Number
+# else
+numberTypeName = mkNameG_tc &quot;base&quot; &quot;Text.Read.Lex&quot; &quot;Number&quot;
+# endif
+#endif
+
+#if MIN_VERSION_base(4,8,0)
+-- | The 'Name' of 'GiveGCStats'.
+giveGCStatsTypeName :: Name
+# if MIN_VERSION_base(4,8,2)
+giveGCStatsTypeName = ''GiveGCStats
+# else
+giveGCStatsTypeName = mkFlagsName_tc &quot;GiveGCStats&quot;
+# endif
+
+-- | The 'Name' of 'DoCostCentres'.
+doCostCentresTypeName :: Name
+# if MIN_VERSION_base(4,8,2)
+doCostCentresTypeName = ''DoCostCentres
+# else
+doCostCentresTypeName = mkFlagsName_tc &quot;DoCostCentres&quot;
+# endif
+
+-- | The 'Name' of 'DoHeapProfile'.
+doHeapProfileTypeName :: Name
+# if MIN_VERSION_base(4,8,2)
+doHeapProfileTypeName = ''DoHeapProfile
+# else
+doHeapProfileTypeName = mkFlagsName_tc &quot;DoHeapProfile&quot;
+# endif
+
+-- | The 'Name' of 'DoTrace'.
+doTraceTypeName :: Name
+# if MIN_VERSION_base(4,8,2)
+doTraceTypeName = ''DoTrace
+# else
+doTraceTypeName = mkFlagsName_tc &quot;DoTrace&quot;
+# endif
+
+-- | Creates a 'Name' for a type from the &quot;GHC.RTS.Flags&quot; module.
+# if !(MIN_VERSION_base(4,8,2))
+mkFlagsName_tc :: String -&gt; Name
+mkFlagsName_tc = mkNameG_tc &quot;base&quot; &quot;GHC.RTS.Flags&quot;
+# endif
+#endif
+</span></pre></body></html>

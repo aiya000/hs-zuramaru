@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE Trustworthy #-}</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- Module      :  Data.Extensible.HList</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-8"></a><span class="hs-comment">--</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Heterogeneous list</span><span>
+</span><a name="line-12"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-13"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">HList</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-16"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Unsafe</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">data</span><span> </span><a name="HList"><a href="Data.Extensible.HList.html#HList"><span class="hs-identifier">HList</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679107095"><a href="#local-6989586621679107095"><span class="hs-identifier">h</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679107094"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679107096"><a href="#local-6989586621679107096"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679107094"><span class="hs-identifier hs-type">k</span></a><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-19"></a><span>  </span><a name="HNil"><a href="Data.Extensible.HList.html#HNil"><span class="hs-identifier">HNil</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Extensible.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a><span> </span><a href="#local-6989586621679107097"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-char">'[]
+  HCons :: h x -&gt; HList h xs -&gt; HList h (x ': xs)
+
+infixr 5 `HCons`
+
+htraverse :: Applicative f =&gt; (forall x. g x -&gt; f (h x)) -&gt; HList g xs -&gt; f (HList h xs)
+htraverse _ HNil = pure HNil
+htraverse f (HCons h xs) = HCons &lt;$&gt; f h &lt;*&gt; htraverse f xs
+
+htraverseWithIndex :: forall f g h xs. Applicative f
+    =&gt; (forall x. Membership xs x -&gt; g x -&gt; f (h x)) -&gt; HList g xs -&gt; f (HList h xs)
+htraverseWithIndex f = go 0 where
+  go :: Int -&gt; HList g t -&gt; f (HList h t)
+  go !k (HCons x xs) = HCons &lt;$&gt; f (unsafeCoerce k) x &lt;*&gt; go (k + 1) xs
+  go _ HNil = pure HNil
+{-# INLINE htraverseWithIndex #-}
+
+hfoldrWithIndex :: forall h r xs. (forall x. Membership xs x -&gt; h x -&gt; r -&gt; r) -&gt; r -&gt; HList h xs -&gt; r
+hfoldrWithIndex f r = go 0 where
+  go :: Int -&gt; HList h t -&gt; r
+  go !k (HCons x xs) = f (unsafeCoerce k) x $ go (k + 1) xs
+  go _ HNil = r
+{-# INLINE hfoldrWithIndex #-}
+
+hlength :: HList h xs -&gt; Int
+hlength = go 0 where
+  go :: Int -&gt; HList h xs -&gt; Int
+  go n HNil = n
+  go n (HCons _ xs) = let !n' = n + 1 in go n' xs
+{-# INLINE hlength #-}
+</span></pre></body></html>

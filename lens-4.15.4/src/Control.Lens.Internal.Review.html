@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Module      :  Control.Lens.Internal.Review</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Copyright   :  (C) 2012-2016 Edward Kmett</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- Portability :  non-portable</span><span>
+</span><a name="line-14"></a><span class="hs-comment">--</span><span>
+</span><a name="line-15"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-16"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Review</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">(</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-comment">-- * Internal Classes</span><span>
+</span><a name="line-19"></a><span>    </span><a href="Control.Lens.Internal.Review.html#Reviewable"><span class="hs-identifier hs-type">Reviewable</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-comment">-- * Reviews</span><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Control.Lens.Internal.Review.html#retagged"><span class="hs-identifier hs-var">retagged</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Bifunctor</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Profunctor</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Void</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-comment">-- | This class is provided mostly for backwards compatibility with lens 3.8,</span><span>
+</span><a name="line-29"></a><span class="hs-comment">-- but it can also shorten type signatures.</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Profunctor</span><span> </span><a href="#local-6989586621679072398"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Bifunctor</span><span> </span><a href="#local-6989586621679072398"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a name="Reviewable"><a href="Control.Lens.Internal.Review.html#Reviewable"><span class="hs-identifier">Reviewable</span></a></a><span> </span><a name="local-6989586621679072398"><a href="#local-6989586621679072398"><span class="hs-identifier">p</span></a></a><span>
+</span><a name="line-31"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Profunctor</span><span> </span><a href="#local-6989586621679072403"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Bifunctor</span><span> </span><a href="#local-6989586621679072403"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Control.Lens.Internal.Review.html#Reviewable"><span class="hs-identifier hs-type">Reviewable</span></a><span> </span><a href="#local-6989586621679072403"><span class="hs-identifier hs-type">p</span></a><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-34"></a><span class="hs-comment">-- Review: Reviewed</span><span>
+</span><a name="line-35"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-comment">-- | This is a profunctor used internally to implement &quot;Review&quot;</span><span>
+</span><a name="line-38"></a><span class="hs-comment">--</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- It plays a role similar to that of 'Control.Lens.Internal.Getter.Accessor'</span><span>
+</span><a name="line-40"></a><span class="hs-comment">-- or 'Const' do for &quot;Control.Lens.Getter&quot;</span><span>
+</span><a name="line-41"></a><span class="hs-identifier">retagged</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Profunctor</span><span> </span><a href="#local-6989586621679072399"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Bifunctor</span><span> </span><a href="#local-6989586621679072399"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="#local-6989586621679072399"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679072400"><span class="hs-identifier hs-type">a</span></a><span> </span><a href="#local-6989586621679072401"><span class="hs-identifier hs-type">b</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679072399"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679072402"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679072401"><span class="hs-identifier hs-type">b</span></a><span>
+</span><a name="line-42"></a><a name="retagged"><a href="Control.Lens.Internal.Review.html#retagged"><span class="hs-identifier">retagged</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">first</span><span> </span><span class="hs-identifier hs-var">absurd</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">lmap</span><span> </span><span class="hs-identifier hs-var">absurd</span><span>
+</span><a name="line-43"></a></pre></body></html>

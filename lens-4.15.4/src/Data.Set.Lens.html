@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE Rank2Types #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-cpp">#ifndef MIN_VERSION_containers</span><span>
+</span><a name="line-5"></a><span class="hs-cpp">#define MIN_VERSION_containers(x,y,z) 1</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Module      :  Data.Set.Lens</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- Copyright   :  (C) 2012-16 Edward Kmett</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-15"></a><span class="hs-comment">--</span><span>
+</span><a name="line-16"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-17"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Set</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.Set.Lens.html#setmapped"><span class="hs-identifier hs-var">setmapped</span></a><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Set.Lens.html#setOf"><span class="hs-identifier hs-var">setOf</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.Getter.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Getter</span></a><span> </span><span class="hs-special">(</span><span> </span><a href="Control.Lens.Getter.html#Getting"><span class="hs-identifier hs-type">Getting</span></a><span class="hs-special">,</span><span> </span><a href="Control.Lens.Getter.html#views"><span class="hs-identifier hs-var">views</span></a><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.Setter.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Setter</span></a><span> </span><span class="hs-special">(</span><span> </span><a href="Control.Lens.Setter.html#setting"><span class="hs-identifier hs-var">setting</span></a><span> </span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.Type.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Set</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Set</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-comment">-- $setup</span><span>
+</span><a name="line-29"></a><span class="hs-comment">-- &gt;&gt;&gt; :set -XNoOverloadedStrings</span><span>
+</span><a name="line-30"></a><span class="hs-comment">-- &gt;&gt;&gt; import Control.Lens</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-comment">-- | This 'Setter' can be used to change the type of a 'Set' by mapping</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- the elements to new values.</span><span>
+</span><a name="line-34"></a><span class="hs-comment">--</span><span>
+</span><a name="line-35"></a><span class="hs-comment">-- Sadly, you can't create a valid 'Traversal' for a 'Set', but you can</span><span>
+</span><a name="line-36"></a><span class="hs-comment">-- manipulate it by reading using 'Control.Lens.Fold.folded' and reindexing it via 'setmapped'.</span><span>
+</span><a name="line-37"></a><span class="hs-comment">--</span><span>
+</span><a name="line-38"></a><span class="hs-comment">-- &gt;&gt;&gt; over setmapped (+1) (fromList [1,2,3,4])</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- fromList [2,3,4,5]</span><span>
+</span><a name="line-40"></a><span class="hs-cpp">#if MIN_VERSION_containers(0,5,2)</span><span>
+</span><a name="line-41"></a><span class="hs-identifier">setmapped</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Ord</span><span> </span><a href="#local-6989586621679177406"><span class="hs-identifier hs-type">j</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Control.Lens.Type.html#IndexPreservingSetter"><span class="hs-identifier hs-type">IndexPreservingSetter</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Set</span><span> </span><a href="#local-6989586621679177407"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Set</span><span> </span><a href="#local-6989586621679177406"><span class="hs-identifier hs-type">j</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679177407"><span class="hs-identifier hs-type">i</span></a><span> </span><a href="#local-6989586621679177406"><span class="hs-identifier hs-type">j</span></a><span>
+</span><a name="line-42"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-43"></a><span class="hs-identifier">setmapped</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Ord</span><span> </span><span class="hs-identifier">i</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">Ord</span><span> </span><span class="hs-identifier">j</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier">IndexPreservingSetter</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Set</span><span> </span><span class="hs-identifier">i</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Set</span><span> </span><span class="hs-identifier">j</span><span class="hs-special">)</span><span> </span><span class="hs-identifier">i</span><span> </span><span class="hs-identifier">j</span><span>
+</span><a name="line-44"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-45"></a><a name="setmapped"><a href="Data.Set.Lens.html#setmapped"><span class="hs-identifier">setmapped</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Setter.html#setting"><span class="hs-identifier hs-var">setting</span></a><span> </span><span class="hs-identifier hs-var">Set</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">map</span><span>
+</span><a name="line-46"></a><span class="hs-pragma">{-# INLINE setmapped #-}</span><span>
+</span><a name="line-47"></a><span>
+</span><a name="line-48"></a><span class="hs-comment">-- | Construct a set from a 'Getter', 'Control.Lens.Fold.Fold', 'Control.Lens.Traversal.Traversal', 'Control.Lens.Lens.Lens' or 'Control.Lens.Iso.Iso'.</span><span>
+</span><a name="line-49"></a><span class="hs-comment">--</span><span>
+</span><a name="line-50"></a><span class="hs-comment">-- &gt;&gt;&gt; setOf folded [&quot;hello&quot;,&quot;world&quot;]</span><span>
+</span><a name="line-51"></a><span class="hs-comment">-- fromList [&quot;hello&quot;,&quot;world&quot;]</span><span>
+</span><a name="line-52"></a><span class="hs-comment">--</span><span>
+</span><a name="line-53"></a><span class="hs-comment">-- &gt;&gt;&gt; setOf (folded._2) [(&quot;hello&quot;,1),(&quot;world&quot;,2),(&quot;!!!&quot;,3)]</span><span>
+</span><a name="line-54"></a><span class="hs-comment">-- fromList [1,2,3]</span><span>
+</span><a name="line-55"></a><span class="hs-comment">--</span><span>
+</span><a name="line-56"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-57"></a><span class="hs-comment">-- 'setOf' ::          'Getter' s a     -&gt; s -&gt; 'Set' a</span><span>
+</span><a name="line-58"></a><span class="hs-comment">-- 'setOf' :: 'Ord' a =&gt; 'Fold' s a       -&gt; s -&gt; 'Set' a</span><span>
+</span><a name="line-59"></a><span class="hs-comment">-- 'setOf' ::          'Iso'' s a       -&gt; s -&gt; 'Set' a</span><span>
+</span><a name="line-60"></a><span class="hs-comment">-- 'setOf' ::          'Lens'' s a      -&gt; s -&gt; 'Set' a</span><span>
+</span><a name="line-61"></a><span class="hs-comment">-- 'setOf' :: 'Ord' a =&gt; 'Traversal'' s a -&gt; s -&gt; 'Set' a</span><span>
+</span><a name="line-62"></a><span class="hs-comment">-- @</span><span>
+</span><a name="line-63"></a><span class="hs-identifier">setOf</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Control.Lens.Getter.html#Getting"><span class="hs-identifier hs-type">Getting</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Set</span><span> </span><a href="#local-6989586621679177404"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><a href="#local-6989586621679177405"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679177404"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679177405"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Set</span><span> </span><a href="#local-6989586621679177404"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-64"></a><a name="setOf"><a href="Data.Set.Lens.html#setOf"><span class="hs-identifier">setOf</span></a></a><span> </span><a name="local-6989586621679177408"><a href="#local-6989586621679177408"><span class="hs-identifier">l</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Getter.html#views"><span class="hs-identifier hs-var">views</span></a><span> </span><a href="#local-6989586621679177408"><span class="hs-identifier hs-var">l</span></a><span> </span><span class="hs-identifier hs-var">Set</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">singleton</span><span>
+</span><a name="line-65"></a><span class="hs-pragma">{-# INLINE setOf #-}</span><span>
+</span><a name="line-66"></a></pre></body></html>

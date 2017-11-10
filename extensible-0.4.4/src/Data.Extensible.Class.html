@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances, ScopedTypeVariables, TypeFamilies #-}</span><span>
+</span><a name="line-2"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE UndecidableSuperClasses #-}</span><span>
+</span><a name="line-4"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Module      :  Data.Extensible.Class</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-12"></a><span class="hs-comment">--</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-14"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-comment">-- * Class</span><span>
+</span><a name="line-16"></a><span>   </span><a href="Data.Extensible.Class.html#Extensible"><span class="hs-identifier hs-type">Extensible</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#piece"><span class="hs-identifier hs-var">piece</span></a><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#pieceAssoc"><span class="hs-identifier hs-var">pieceAssoc</span></a><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#itemAt"><span class="hs-identifier hs-var">itemAt</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#item"><span class="hs-identifier hs-var">item</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#itemAssoc"><span class="hs-identifier hs-var">itemAssoc</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-comment">-- * Membership</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Membership"><span class="hs-identifier hs-type">Membership</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#mkMembership"><span class="hs-identifier hs-var">mkMembership</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#compareMembership"><span class="hs-identifier hs-var">compareMembership</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#leadership"><span class="hs-identifier hs-var">leadership</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-comment">-- * Member</span><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Member"><span class="hs-identifier hs-type">Member</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#remember"><span class="hs-identifier hs-var">remember</span></a><span>
+</span><a name="line-30"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">type</span><span> </span><span class="hs-special">(</span><span class="">&#8712;</span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="">&#8712;</span><span class="hs-special">)</span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#FindType"><span class="hs-identifier hs-type">FindType</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-comment">-- * Generation</span><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Generate"><span class="hs-identifier hs-type">Generate</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Forall"><span class="hs-identifier hs-type">Forall</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#ForallF"><span class="hs-identifier hs-type">ForallF</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-comment">-- * Association</span><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Assoc"><span class="hs-identifier hs-type">Assoc</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-keyword">type</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Internal.html#%3E%3A"><span class="hs-operator hs-type">&gt;:</span></a><span class="hs-special">)</span><span>
+</span><a name="line-44"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator">&gt;:</span><span class="hs-special">)</span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-46"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Associate"><span class="hs-identifier hs-type">Associate</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-48"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#FindAssoc"><span class="hs-identifier hs-type">FindAssoc</span></a><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-comment">-- * Sugar</span><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Elaborate"><span class="hs-identifier hs-type">Elaborate</span></a><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Internal.html#Elaborated"><span class="hs-identifier hs-type">Elaborated</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-53"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Constraint</span><span>
+</span><a name="line-54"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.HList.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">HList</span></a><span>
+</span><a name="line-55"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-56"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.Rig.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Rig</span></a><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Internal.Rig.html#Optic%27"><span class="hs-identifier hs-type">Optic'</span></a><span class="hs-special">)</span><span>
+</span><a name="line-57"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Wrapper.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Wrapper</span></a><span>
+</span><a name="line-58"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Profunctor</span><span>
+</span><a name="line-59"></a><span>
+</span><a name="line-60"></a><span class="hs-comment">-- | This class allows us to use 'pieceAt' for both sums and products.</span><span>
+</span><a name="line-61"></a><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Functor</span><span> </span><a href="#local-6989586621679116906"><span class="hs-identifier hs-type">f</span></a><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Profunctor</span><span> </span><a href="#local-6989586621679116907"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a name="Extensible"><a href="Data.Extensible.Class.html#Extensible"><span class="hs-identifier">Extensible</span></a></a><span> </span><a name="local-6989586621679116906"><a href="#local-6989586621679116906"><span class="hs-identifier">f</span></a></a><span> </span><a name="local-6989586621679116907"><a href="#local-6989586621679116907"><span class="hs-identifier">p</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679116909"><a href="#local-6989586621679116909"><span class="hs-identifier">t</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116908"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679116908"><span class="hs-identifier hs-type">k</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-62"></a><span>  </span><span class="hs-identifier">pieceAt</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Extensible.Internal.html#Membership"><span class="hs-identifier hs-type">Membership</span></a><span> </span><a href="#local-6989586621679116910"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679116911"><span class="hs-identifier hs-type">x</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.Internal.Rig.html#Optic%27"><span class="hs-identifier hs-type">Optic'</span></a><span> </span><a href="#local-6989586621679116907"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679116906"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116909"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679116912"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679116910"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116912"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679116911"><span class="hs-identifier hs-type">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-63"></a><span>
+</span><a name="line-64"></a><span class="hs-comment">-- | Accessor for an element.</span><span>
+</span><a name="line-65"></a><span class="hs-identifier">piece</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116944"><span class="hs-identifier hs-type">x</span></a><span> </span><span class="">&#8712;</span><span> </span><a href="#local-6989586621679116945"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Extensible"><span class="hs-identifier hs-type">Extensible</span></a><span> </span><a href="#local-6989586621679116946"><span class="hs-identifier hs-type">f</span></a><span> </span><a href="#local-6989586621679116947"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679116948"><span class="hs-identifier hs-type">t</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Extensible.Internal.Rig.html#Optic%27"><span class="hs-identifier hs-type">Optic'</span></a><span> </span><a href="#local-6989586621679116947"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679116946"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116948"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679116949"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679116945"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116949"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679116944"><span class="hs-identifier hs-type">x</span></a><span class="hs-special">)</span><span>
+</span><a name="line-66"></a><a name="piece"><a href="Data.Extensible.Class.html#piece"><span class="hs-identifier">piece</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Extensible.Class.html#pieceAt"><span class="hs-identifier hs-var">pieceAt</span></a><span> </span><a href="Data.Extensible.Internal.html#membership"><span class="hs-identifier hs-var">membership</span></a><span>
+</span><a name="line-67"></a><span class="hs-pragma">{-# INLINE piece #-}</span><span>
+</span><a name="line-68"></a><span>
+</span><a name="line-69"></a><span class="hs-comment">-- | Like 'piece', but reckon membership from its key.</span><span>
+</span><a name="line-70"></a><span class="hs-identifier">pieceAssoc</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Internal.html#Associate"><span class="hs-identifier hs-type">Associate</span></a><span> </span><a href="#local-6989586621679116937"><span class="hs-identifier hs-type">k</span></a><span> </span><a href="#local-6989586621679116938"><span class="hs-identifier hs-type">v</span></a><span> </span><a href="#local-6989586621679116939"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Extensible"><span class="hs-identifier hs-type">Extensible</span></a><span> </span><a href="#local-6989586621679116940"><span class="hs-identifier hs-type">f</span></a><span> </span><a href="#local-6989586621679116941"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679116942"><span class="hs-identifier hs-type">t</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Data.Extensible.Internal.Rig.html#Optic%27"><span class="hs-identifier hs-type">Optic'</span></a><span> </span><a href="#local-6989586621679116941"><span class="hs-identifier hs-type">p</span></a><span> </span><a href="#local-6989586621679116940"><span class="hs-identifier hs-type">f</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116942"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679116943"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679116939"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116943"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679116937"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-char">':&gt; v))
+pieceAssoc = pieceAt association
+{-# INLINE pieceAssoc #-}
+
+-- | Access a specified element through a wrapper.
+itemAt :: (Wrapper h, Extensible f p t) =&gt; Membership xs x -&gt; Optic' p f (t h xs) (Repr h x)
+itemAt m = pieceAt m . _Wrapper
+{-# INLINE itemAt #-}
+
+-- | Access an element through a wrapper.
+item :: (Wrapper h, Extensible f p t, x &#8712; xs) =&gt; proxy x -&gt; Optic' p f (t h xs) (Repr h x)
+item p = piece . _WrapperAs p
+{-# INLINE item #-}
+
+-- | Access an element specified by the key type through a wrapper.
+itemAssoc :: (Wrapper h, Extensible f p t, Associate k v xs)
+  =&gt; proxy k -&gt; Optic' p f (t h xs) (Repr h (k ':&gt; v))
+itemAssoc p = pieceAssoc . _WrapperAs (proxyKey p)
+{-# INLINE itemAssoc #-}
+
+proxyKey :: proxy k -&gt; Proxy (k ':&gt; v)
+proxyKey _ = Proxy
+{-# INLINE proxyKey #-}
+
+-- | Every type-level list is an instance of 'Generate'.
+class Generate (xs :: [k]) where
+  -- | Enumerate all possible 'Membership's of @xs@.
+  henumerate :: (forall x. Membership xs x -&gt; r -&gt; r) -&gt; r -&gt; r
+
+  -- | Count the number of memberships.
+  hcount :: proxy xs -&gt; Int
+
+  -- | Enumerate 'Membership's and construct an 'HList'.
+  hgenerateList :: Applicative f
+    =&gt; (forall x. Membership xs x -&gt; f (h x)) -&gt; f (HList h xs)
+
+instance Generate '[] where
+  henumerate _ r = r
+
+  hcount _ = 0
+
+  hgenerateList _ = pure HNil
+
+instance Generate xs =&gt; Generate (x ': xs) where
+  henumerate f r = f here $ henumerate (f . navNext) r
+
+  hcount _ = 1 + hcount (Proxy :: Proxy xs)
+
+  -- | Enumerate 'Membership's and construct an 'HList'.
+  hgenerateList f = HCons &lt;$&gt; f here &lt;*&gt; hgenerateList (f . navNext)
+
+-- | Every element in @xs@ satisfies @c@
+class (ForallF c xs, Generate xs) =&gt; Forall (c :: k -&gt; Constraint) (xs :: [k]) where
+  -- | Enumerate all possible 'Membership's of @xs@ with an additional context.
+  henumerateFor :: proxy c -&gt; proxy' xs -&gt; (forall x. c x =&gt; Membership xs x -&gt; r -&gt; r) -&gt; r -&gt; r
+
+  hgenerateListFor :: Applicative f
+    =&gt; proxy c -&gt; (forall x. c x =&gt; Membership xs x -&gt; f (h x)) -&gt; f (HList h xs)
+
+instance Forall c '[] where
+  henumerateFor _ _ _ r = r
+
+  hgenerateListFor _ _ = pure HNil
+
+instance (c x, Forall c xs) =&gt; Forall c (x ': xs) where
+  henumerateFor p _ f r = f here $ henumerateFor p (Proxy :: Proxy xs) (f . navNext) r
+
+  hgenerateListFor p f = HCons &lt;$&gt; f here &lt;*&gt; hgenerateListFor p (f . navNext)
+
+type family ForallF (c :: k -&gt; Constraint) (xs :: [k]) :: Constraint where
+  ForallF c '[] = ()
+  ForallF c (x ': xs) = (c x, Forall c xs)
+</span></pre></body></html>

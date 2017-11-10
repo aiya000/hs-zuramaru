@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-4"></a><span>
+</span><a name="line-5"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 710</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE PatternSynonyms #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE ViewPatterns #-}</span><span>
+</span><a name="line-8"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Module      :  Data.Dynamic.Lens</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Copyright   :  (C) 2012-2016 Edward Kmett</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-- Stability   :  experimental</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- Portability :  non-portable</span><span>
+</span><a name="line-17"></a><span class="hs-comment">--</span><span>
+</span><a name="line-18"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-19"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Dynamic</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.Dynamic.Lens.html#AsDynamic"><span class="hs-identifier hs-type">AsDynamic</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 710</span><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier">pattern</span><span> </span><a href="Data.Dynamic.Lens.html#Dynamic"><span class="hs-identifier hs-var">Data</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">Dynamic</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">Lens</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">Dynamic</span></a><span>
+</span><a name="line-23"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Exception</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Exception.Lens.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Exception</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Dynamic</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-comment">-- | Any 'Dynamic' can be thrown as an 'Exception'</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">class</span><span> </span><a name="AsDynamic"><a href="Data.Dynamic.Lens.html#AsDynamic"><span class="hs-identifier">AsDynamic</span></a></a><span> </span><a name="local-6989586621679346126"><a href="#local-6989586621679346126"><span class="hs-identifier">t</span></a></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-comment">-- | This 'Prism' allows you to traverse the typed value contained in a</span><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-comment">-- 'Dynamic' where the type required by your function matches that</span><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-comment">-- of the contents of the 'Dynamic', or construct a 'Dynamic' value</span><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-comment">-- out of whole cloth. It can also be used to catch or throw a 'Dynamic'</span><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-comment">-- value as 'SomeException'.</span><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-comment">--</span><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-comment">-- @</span><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-comment">-- '_Dynamic' :: 'Typeable' a =&gt; 'Prism'' 'Dynamic'       a</span><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-comment">-- '_Dynamic' :: 'Typeable' a =&gt; 'Prism'' 'SomeException' a</span><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-comment">-- @</span><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-identifier">_Dynamic</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span> </span><a href="#local-6989586621679346127"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><a href="Control.Lens.Type.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a><span> </span><a href="#local-6989586621679346126"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679346127"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Dynamic.Lens.html#AsDynamic"><span class="hs-identifier hs-type">AsDynamic</span></a><span> </span><span class="hs-identifier hs-type">Dynamic</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-46"></a><span>  </span><a name="local-8214565720324121035"><a href="Data.Dynamic.Lens.html#_Dynamic"><span class="hs-identifier">_Dynamic</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Prism.html#prism%27"><span class="hs-identifier hs-var">prism'</span></a><span> </span><span class="hs-identifier hs-var">toDyn</span><span> </span><span class="hs-identifier hs-var">fromDynamic</span><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-pragma">{-# INLINE _Dynamic #-}</span><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span class="hs-keyword">instance</span><span> </span><a href="Data.Dynamic.Lens.html#AsDynamic"><span class="hs-identifier hs-type">AsDynamic</span></a><span> </span><span class="hs-identifier hs-type">SomeException</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-50"></a><span>  </span><a name="local-8214565720324121035"><a href="Data.Dynamic.Lens.html#_Dynamic"><span class="hs-identifier">_Dynamic</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Exception.Lens.html#exception"><span class="hs-identifier hs-var">exception</span></a><span class="hs-operator hs-var">.</span><a href="Control.Lens.Prism.html#prism%27"><span class="hs-identifier hs-var">prism'</span></a><span> </span><span class="hs-identifier hs-var">toDyn</span><span> </span><span class="hs-identifier hs-var">fromDynamic</span><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-pragma">{-# INLINE _Dynamic #-}</span><span>
+</span><a name="line-52"></a><span>
+</span><a name="line-53"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 710</span><span>
+</span><a name="line-54"></a><span class="hs-identifier">pattern</span><span> </span><span class="hs-identifier">Dynamic</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">(</span><a href="Control.Lens.Fold.html#preview"><span class="hs-identifier hs-var">preview</span></a><span> </span><a href="Data.Dynamic.Lens.html#_Dynamic"><span class="hs-identifier hs-var">_Dynamic</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">Just</span><span> </span><a name="local-6989586621679346128"><a href="#local-6989586621679346128"><span class="hs-identifier">a</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-identifier">Dynamic</span><span> </span><a name="local-6989586621679346129"><a href="#local-6989586621679346129"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Review.html#review"><span class="hs-identifier hs-var">review</span></a><span> </span><a href="Data.Dynamic.Lens.html#_Dynamic"><span class="hs-identifier hs-var">_Dynamic</span></a><span> </span><a href="#local-6989586621679346129"><span class="hs-identifier hs-var">a</span></a><span>
+</span><a name="line-56"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-57"></a></pre></body></html>

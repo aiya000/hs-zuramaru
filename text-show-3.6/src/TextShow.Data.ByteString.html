@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns    #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE MagicHash       #-}</span><span>
+</span><a name="line-4"></a><span class="hs-cpp">#if !(MIN_VERSION_bytestring(0,10,0))</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-8"></a><span>
+</span><a name="line-9"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.ByteString
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for data types in the @bytestring@ library.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-21"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span>      </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">BS</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">BL</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Short</span><span>         </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">SBS</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span class="hs-operator">.</span><span class="hs-identifier">Short</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">ShortByteString</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">ByteArray</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Char</span><span class="hs-special">(</span><span class="hs-identifier hs-var">C</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">(</span><span class="hs-identifier hs-var">I</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">indexCharArray</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.Char.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.List.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span>
+</span><a name="line-34"></a><span class="hs-cpp">#if !(MIN_VERSION_bytestring(0,10,0))</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Word</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Word8</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">ForeignPtr</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">withForeignPtr</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Ptr</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">plusPtr</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Storable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">peek</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">peekByteOff</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">deriveTextShow</span><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-43"></a><span>
+</span><a name="line-44"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-45"></a><span class="hs-comment">-- Primop wrappers</span><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span class="hs-keyword">data</span><span> </span><a name="BA"><a href="TextShow.Data.ByteString.html#BA"><span class="hs-identifier">BA</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="BA%23"><a href="TextShow.Data.ByteString.html#BA%23"><span class="hs-identifier">BA</span><span class="hs-operator">#</span></a></a><span> </span><span class="hs-identifier hs-type">ByteArray</span><span class="hs-operator hs-type">#</span><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span class="hs-identifier">indexCharArray</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Data.ByteString.html#BA"><span class="hs-identifier hs-type">BA</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Char</span><span>
+</span><a name="line-50"></a><a name="indexCharArray"><a href="TextShow.Data.ByteString.html#indexCharArray"><span class="hs-identifier">indexCharArray</span></a></a><span> </span><span class="hs-special">(</span><a href="TextShow.Data.ByteString.html#BA%23"><span class="hs-identifier hs-var">BA</span><span class="hs-operator hs-var">#</span></a><span> </span><a name="local-6989586621679838265"><a href="#local-6989586621679838265"><span class="hs-identifier">ba</span><span class="hs-operator">#</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">I</span><span class="hs-operator hs-var">#</span><span> </span><a name="local-6989586621679838266"><a href="#local-6989586621679838266"><span class="hs-identifier">i</span><span class="hs-operator">#</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">C</span><span class="hs-operator hs-var">#</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">indexCharArray</span><span class="hs-operator hs-var">#</span><span> </span><a href="#local-6989586621679838265"><span class="hs-identifier hs-var">ba</span><span class="hs-operator hs-var">#</span></a><span> </span><a href="#local-6989586621679838266"><span class="hs-identifier hs-var">i</span><span class="hs-operator hs-var">#</span></a><span class="hs-special">)</span><span>
+</span><a name="line-51"></a><span>
+</span><a name="line-52"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-53"></a><span class="hs-comment">-- Internal utils</span><span>
+</span><a name="line-54"></a><span>
+</span><a name="line-55"></a><span class="hs-identifier">asBA</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">ShortByteString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="TextShow.Data.ByteString.html#BA"><span class="hs-identifier hs-type">BA</span></a><span>
+</span><a name="line-56"></a><a name="asBA"><a href="TextShow.Data.ByteString.html#asBA"><span class="hs-identifier">asBA</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">SBS</span><span> </span><a name="local-6989586621679838267"><a href="#local-6989586621679838267"><span class="hs-identifier">ba</span><span class="hs-operator">#</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.ByteString.html#BA%23"><span class="hs-identifier hs-var">BA</span><span class="hs-operator hs-var">#</span></a><span> </span><a href="#local-6989586621679838267"><span class="hs-identifier hs-var">ba</span><span class="hs-operator hs-var">#</span></a><span>
+</span><a name="line-57"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-58"></a><span>
+</span><a name="line-59"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-60"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">BS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">ByteString</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-61"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-62"></a><span class="hs-cpp">#if MIN_VERSION_bytestring(0,10,0)</span><span>
+</span><a name="line-63"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showb"><span class="hs-identifier hs-var">showb</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">BS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpackChars</span><span>
+</span><a name="line-64"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-identifier">showb</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">showb</span><span> </span><span class="hs-operator">.</span><span> </span><span class="hs-identifier">unpackWith</span><span> </span><span class="hs-identifier">BS</span><span class="hs-operator">.</span><span class="hs-identifier">w2c</span><span>
+</span><a name="line-66"></a><span>
+</span><a name="line-67"></a><span class="hs-comment">-- | /O(n)/ Converts a 'ByteString' to a '[a]', using a conversion function.</span><span>
+</span><a name="line-68"></a><span class="hs-identifier">unpackWith</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Word8</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">a</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">BS</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-identifier">a</span><span class="hs-special">]</span><span>
+</span><a name="line-69"></a><span class="hs-identifier">unpackWith</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">BS</span><span class="hs-operator">.</span><span class="hs-identifier">PS</span><span> </span><span class="hs-identifier">_</span><span>  </span><span class="hs-identifier">_</span><span> </span><span class="hs-number">0</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a name="line-70"></a><span class="hs-identifier">unpackWith</span><span> </span><span class="hs-identifier">k</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">BS</span><span class="hs-operator">.</span><span class="hs-identifier">PS</span><span> </span><span class="hs-identifier">ps</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-identifier">l</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">BS</span><span class="hs-operator">.</span><span class="hs-identifier">inlinePerformIO</span><span> </span><span class="hs-operator">$</span><span> </span><span class="hs-identifier">withForeignPtr</span><span> </span><span class="hs-identifier">ps</span><span> </span><span class="hs-operator">$</span><span> </span><span class="hs-glyph">\</span><span class="hs-identifier">p</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a name="line-71"></a><span>        </span><span class="hs-identifier">go</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">p</span><span> </span><span class="hs-special">`</span><span class="hs-identifier">plusPtr</span><span class="hs-special">`</span><span> </span><span class="hs-identifier">s</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">l</span><span> </span><span class="hs-glyph">-</span><span> </span><span class="hs-number">1</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-keyword">where</span><span>
+</span><a name="line-73"></a><span>        </span><span class="hs-identifier">go</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">p</span><span> </span><span class="hs-glyph">!</span><span class="hs-number">0</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">acc</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">peek</span><span> </span><span class="hs-identifier">p</span><span>          </span><span class="hs-operator">&gt;&gt;=</span><span> </span><span class="hs-glyph">\</span><span class="hs-identifier">e</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">return</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">k</span><span> </span><span class="hs-identifier">e</span><span> </span><span class="hs-glyph">:</span><span> </span><span class="hs-identifier">acc</span><span class="hs-special">)</span><span>
+</span><a name="line-74"></a><span>        </span><span class="hs-identifier">go</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">p</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">n</span><span> </span><span class="hs-glyph">!</span><span class="hs-identifier">acc</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">peekByteOff</span><span> </span><span class="hs-identifier">p</span><span> </span><span class="hs-identifier">n</span><span> </span><span class="hs-operator">&gt;&gt;=</span><span> </span><span class="hs-glyph">\</span><span class="hs-identifier">e</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">go</span><span> </span><span class="hs-identifier">p</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">n</span><span class="hs-glyph">-</span><span class="hs-number">1</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">k</span><span> </span><span class="hs-identifier">e</span><span> </span><span class="hs-glyph">:</span><span> </span><span class="hs-identifier">acc</span><span class="hs-special">)</span><span>
+</span><a name="line-75"></a><span class="hs-pragma">{-# INLINE unpackWith #-}</span><span>
+</span><a name="line-76"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-77"></a><span>
+</span><a name="line-78"></a><span class="hs-cpp">#if MIN_VERSION_bytestring(0,10,0)</span><span>
+</span><a name="line-79"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-80"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">BL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">ByteString</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-81"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showb"><span class="hs-identifier hs-var">showb</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">BL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpackChars</span><span>
+</span><a name="line-82"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-83"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-84"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-85"></a><span class="hs-operator">$</span><span class="hs-special">(</span><span class="hs-identifier">deriveTextShow</span><span> </span><span class="hs-char">''BL.ByteString)
+#endif
+
+-- | /Since: 2/
+instance TextShow ShortByteString where
+    showb = showb . unpackChars
+    {-# INLINE showb #-}
+
+-- Unpacking bytestrings into lists effeciently is a tradeoff: on the one hand
+-- we would like to write a tight loop that just blats the list into memory, on
+-- the other hand we want it to be unpacked lazily so we don't end up with a
+-- massive list data structure in memory.
+--
+-- Our strategy is to combine both: we will unpack lazily in reasonable sized
+-- chunks, where each chunk is unpacked strictly.
+--
+-- unpackChars does the lazy loop, while unpackAppendBytes and
+-- unpackAppendChars do the chunks strictly.
+
+unpackChars :: ShortByteString -&gt; [Char]
+unpackChars bs = unpackAppendCharsLazy bs []
+
+-- Why 100 bytes you ask? Because on a 64bit machine the list we allocate
+-- takes just shy of 4k which seems like a reasonable amount.
+-- (5 words per list element, 8 bytes per word, 100 elements = 4000 bytes)
+
+unpackAppendCharsLazy :: ShortByteString -&gt; [Char] -&gt; [Char]
+unpackAppendCharsLazy sbs cs0 =
+    go 0 (SBS.length sbs) cs0
+  where
+    sz = 100
+
+    go off len cs
+      | len &lt;= sz = unpackAppendCharsStrict sbs off len cs
+      | otherwise = unpackAppendCharsStrict sbs off sz  remainder
+                      where remainder = go (off+sz) (len-sz) cs
+
+-- For these unpack functions, since we're unpacking the whole list strictly we
+-- build up the result list in an accumulator. This means we have to build up
+-- the list starting at the end. So our traversal starts at the end of the
+-- buffer and loops down until we hit the sentinal:
+
+unpackAppendCharsStrict :: ShortByteString -&gt; Int -&gt; Int -&gt; [Char] -&gt; [Char]
+unpackAppendCharsStrict !sbs off len cs =
+    go (off-1) (off-1 + len) cs
+  where
+    go !sentinal !i !acc
+      | i == sentinal = acc
+      | otherwise     = let !c = indexCharArray (asBA sbs) i
+                        in go sentinal (i-1) (c:acc)
+</span></pre></body></html>

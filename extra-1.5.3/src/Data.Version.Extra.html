@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-comment">-- | This module extends &quot;Data.Version&quot; with extra utilities.</span><span>
+</span><a name="line-5"></a><span class="hs-comment">--   The package also exports the existing &quot;Data.Version&quot; functions.</span><span>
+</span><a name="line-6"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Version</span><span class="hs-operator">.</span><span class="hs-identifier">Extra</span><span class="hs-special">(</span><span>
+</span><a name="line-7"></a><span>    </span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Version</span><span class="hs-special">,</span><span>
+</span><a name="line-8"></a><span>    </span><span class="hs-identifier hs-var">makeVersion</span><span class="hs-special">,</span><span> </span><a href="Data.Version.Extra.html#readVersion"><span class="hs-identifier hs-var">readVersion</span></a><span>
+</span><a name="line-9"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-10"></a><span>
+</span><a name="line-11"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Version</span><span>
+</span><a name="line-12"></a><span class="hs-keyword">import</span><span> </span><a href="Data.List.Extra.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">Extra</span></a><span>
+</span><a name="line-13"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">ParserCombinators</span><span class="hs-operator">.</span><span class="hs-identifier">ReadP</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 710</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-comment">-- | Construct tag-less 'Version'</span><span>
+</span><a name="line-19"></a><span class="hs-comment">--</span><span>
+</span><a name="line-20"></a><span class="hs-comment">-- &gt; showVersion (makeVersion [1,2,3]) == &quot;1.2.3&quot;</span><span>
+</span><a name="line-21"></a><span class="hs-identifier">makeVersion</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-identifier">Int</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Version</span><span>
+</span><a name="line-22"></a><span class="hs-identifier">makeVersion</span><span> </span><span class="hs-identifier">b</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier">Version</span><span> </span><span class="hs-identifier">b</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-comment">-- | Read a 'Version' or throw an exception.</span><span>
+</span><a name="line-27"></a><span class="hs-comment">--</span><span>
+</span><a name="line-28"></a><span class="hs-comment">-- &gt; \x -&gt; readVersion (showVersion x) == x</span><span>
+</span><a name="line-29"></a><span class="hs-comment">-- &gt; readVersion &quot;hello&quot; == undefined</span><span>
+</span><a name="line-30"></a><span class="hs-identifier">readVersion</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Version</span><span>
+</span><a name="line-31"></a><a name="readVersion"><a href="Data.Version.Extra.html#readVersion"><span class="hs-identifier">readVersion</span></a></a><span> </span><a name="local-6989586621679042163"><a href="#local-6989586621679042163"><span class="hs-identifier">s</span></a></a><span> </span><span class="hs-glyph">=</span><span>
+</span><a name="line-32"></a><span>    </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">[</span><span> </span><a href="#local-6989586621679042164"><span class="hs-identifier hs-var">x</span></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><a name="local-6989586621679042164"><a href="#local-6989586621679042164"><span class="hs-identifier">x</span></a></a><span class="hs-special">,</span><span class="hs-string">&quot;&quot;</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-identifier hs-var">readP_to_S</span><span> </span><span class="hs-identifier hs-var">parseVersion</span><span> </span><span class="hs-operator hs-var">$</span><span> </span><a href="Data.List.Extra.html#trimEnd"><span class="hs-identifier hs-var">trimEnd</span></a><span> </span><a href="#local-6989586621679042163"><span class="hs-identifier hs-var">s</span></a><span class="hs-special">]</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-33"></a><span>        </span><span class="hs-special">[</span><a name="local-6989586621679042165"><a href="#local-6989586621679042165"><span class="hs-identifier">x</span></a></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679042165"><span class="hs-identifier hs-var">x</span></a><span>
+</span><a name="line-34"></a><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">error</span><span> </span><span class="hs-string">&quot;Data.Version.Extra.readVersion: no parse&quot;</span><span>
+</span><a name="line-35"></a><span>        </span><span class="hs-identifier">_</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-var">error</span><span> </span><span class="hs-string">&quot;Data.Version.Extra.readVersion: ambiguous parse&quot;</span><span>
+</span><a name="line-36"></a></pre></body></html>

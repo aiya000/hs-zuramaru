@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP             #-}</span><span>
+</span><a name="line-2"></a><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if !defined(__GHCJS__) &amp;&amp; defined(mingw32_HOST_OS)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-7"></a><span class="hs-comment">{-|
+Module:      TextShow.GHC.Conc.Windows
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instance for 'ConsoleEvent'.
+Only provided if using Windows, and not using GHCJS.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Conc</span><span class="hs-operator">.</span><span class="hs-identifier">Windows</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-cpp">#if !defined(__GHCJS__) &amp;&amp; defined(mingw32_HOST_OS)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Conc</span><span class="hs-operator">.</span><span class="hs-identifier">Windows</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">ConsoleEvent</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">deriveTextShow</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-27"></a><span class="hs-operator">$</span><span class="hs-special">(</span><span class="hs-identifier">deriveTextShow</span><span> </span><span class="hs-char">''ConsoleEvent)
+#endif
+</span></pre></body></html>

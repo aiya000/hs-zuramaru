@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP                #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell    #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TypeFamilies       #-}</span><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE DeriveGeneric      #-}</span><span>
+</span><a name="line-8"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-9"></a><span>
+</span><a name="line-10"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 706</span><span>
+</span><a name="line-11"></a><span class="hs-pragma">{-# LANGUAGE DataKinds          #-}</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds          #-}</span><span>
+</span><a name="line-13"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 708</span><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# LANGUAGE AutoDeriveTypeable #-}</span><span>
+</span><a name="line-17"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-20"></a><span class="hs-pragma">{-# LANGUAGE DeriveLift         #-}</span><span>
+</span><a name="line-21"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-comment">{-|
+Module:      TextShow.FromStringTextShow
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'Options' and related datatypes.
+
+/Since: 3.4/
+-}</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Options</span><span> </span><span class="hs-special">(</span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#GenTextMethods"><span class="hs-identifier hs-type">GenTextMethods</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Data</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Ix</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Ix</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span>
+</span><a name="line-40"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Generics</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span class="hs-cpp">#else</span><span>
+</span><a name="line-43"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Generics</span><span class="hs-operator">.</span><span class="hs-identifier">Deriving</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Generics</span><span>
+</span><a name="line-44"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-45"></a><span>
+</span><a name="line-46"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Language</span><span class="hs-operator">.</span><span class="hs-identifier">Haskell</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Lift</span><span>
+</span><a name="line-47"></a><span>
+</span><a name="line-48"></a><span class="hs-comment">-- | Options that specify how to derive 'TextShow' instances using Template Haskell.</span><span>
+</span><a name="line-49"></a><span class="hs-comment">--</span><span>
+</span><a name="line-50"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-51"></a><span class="hs-keyword">newtype</span><span> </span><a name="Options"><a href="TextShow.Options.html#Options"><span class="hs-identifier">Options</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="Options"><a href="TextShow.Options.html#Options"><span class="hs-identifier">Options</span></a></a><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">{</span><span> </span><a name="genTextMethods"><a href="TextShow.Options.html#genTextMethods"><span class="hs-identifier">genTextMethods</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Options.html#GenTextMethods"><span class="hs-identifier hs-type">GenTextMethods</span></a><span>
+</span><a name="line-53"></a><span>    </span><span class="hs-comment">-- ^ When Template Haskell should generate definitions for methods which</span><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-comment">--   return @Text@?</span><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">Data</span><span>
+</span><a name="line-56"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Eq</span><span>
+</span><a name="line-57"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Ord</span><span>
+</span><a name="line-58"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Read</span><span>
+</span><a name="line-59"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Show</span><span>
+</span><a name="line-60"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span>
+</span><a name="line-61"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-62"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Generic</span><span>
+</span><a name="line-63"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-64"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-65"></a><span>             </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Lift</span><span>
+</span><a name="line-66"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-67"></a><span>             </span><span class="hs-special">)</span><span>
+</span><a name="line-68"></a><span>
+</span><a name="line-69"></a><span class="hs-comment">-- | When should Template Haskell generate implementations for the methods of</span><span>
+</span><a name="line-70"></a><span class="hs-comment">-- 'TextShow' which return @Text@?</span><span>
+</span><a name="line-71"></a><span class="hs-comment">--</span><span>
+</span><a name="line-72"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-73"></a><span class="hs-keyword">data</span><span> </span><a name="GenTextMethods"><a href="TextShow.Options.html#GenTextMethods"><span class="hs-identifier">GenTextMethods</span></a></a><span>
+</span><a name="line-74"></a><span>  </span><span class="hs-glyph">=</span><span> </span><a name="AlwaysTextMethods"><a href="TextShow.Options.html#AlwaysTextMethods"><span class="hs-identifier">AlwaysTextMethods</span></a></a><span>    </span><span class="hs-comment">-- ^ Always generate them.</span><span>
+</span><a name="line-75"></a><span>  </span><span class="hs-glyph">|</span><span> </span><a name="SometimesTextMethods"><a href="TextShow.Options.html#SometimesTextMethods"><span class="hs-identifier">SometimesTextMethods</span></a></a><span> </span><span class="hs-comment">-- ^ Only generate when @text-show@ feels it's appropriate.</span><span>
+</span><a name="line-76"></a><span>  </span><span class="hs-glyph">|</span><span> </span><a name="NeverTextMethods"><a href="TextShow.Options.html#NeverTextMethods"><span class="hs-identifier">NeverTextMethods</span></a></a><span>     </span><span class="hs-comment">-- ^ Never generate them under any circumstances.</span><span>
+</span><a name="line-77"></a><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-identifier hs-type">Bounded</span><span>
+</span><a name="line-78"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Data</span><span>
+</span><a name="line-79"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Enum</span><span>
+</span><a name="line-80"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Eq</span><span>
+</span><a name="line-81"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Ix</span><span>
+</span><a name="line-82"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Ord</span><span>
+</span><a name="line-83"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Read</span><span>
+</span><a name="line-84"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Show</span><span>
+</span><a name="line-85"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span>
+</span><a name="line-86"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 702</span><span>
+</span><a name="line-87"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Generic</span><span>
+</span><a name="line-88"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-89"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-90"></a><span>           </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Lift</span><span>
+</span><a name="line-91"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-92"></a><span>           </span><span class="hs-special">)</span><span>
+</span><a name="line-93"></a><span>
+</span><a name="line-94"></a><span class="hs-comment">-- | Sensible default 'Options'.</span><span>
+</span><a name="line-95"></a><span class="hs-comment">--</span><span>
+</span><a name="line-96"></a><span class="hs-comment">-- /Since: 3.4/</span><span>
+</span><a name="line-97"></a><span class="hs-identifier">defaultOptions</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-type">Options</span></a><span>
+</span><a name="line-98"></a><a name="defaultOptions"><a href="TextShow.Options.html#defaultOptions"><span class="hs-identifier">defaultOptions</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Options.html#Options"><span class="hs-identifier hs-var">Options</span></a><span> </span><span class="hs-special">{</span><span> </span><span class="hs-identifier">genTextMethods</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Options.html#SometimesTextMethods"><span class="hs-identifier hs-var">SometimesTextMethods</span></a><span> </span><span class="hs-special">}</span><span>
+</span><a name="line-99"></a><span>
+</span><a name="line-100"></a><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><a name="line-101"></a><span>
+</span><a name="line-102"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 702</span><span>
+</span><a name="line-103"></a><span class="hs-operator">$</span><span class="hs-special">(</span><span class="hs-identifier">Generics</span><span class="hs-operator">.</span><span class="hs-identifier">deriveAll</span><span> </span><span class="hs-char">''Options)
+$(Generics.deriveAll ''GenTextMethods)
+#endif
+
+#if __GLASGOW_HASKELL__ &lt; 800
+$(deriveLift ''Options)
+$(deriveLift ''GenTextMethods)
+#endif
+</span></pre></body></html>

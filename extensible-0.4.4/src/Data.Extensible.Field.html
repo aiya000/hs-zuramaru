@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-5"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 800</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE UndecidableSuperClasses #-}</span><span>
+</span><a name="line-7"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- Module      :  Data.Extensible.Field</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-13"></a><span class="hs-comment">--</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-15"></a><span class="hs-comment">--</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- Flexible records and variants</span><span>
+</span><a name="line-17"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-18"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Field</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-19"></a><span>  </span><a href="Data.Extensible.Field.html#Field"><span class="hs-identifier hs-type">Field</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#%40%3D"><span class="hs-operator hs-var">@=</span></a><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#%3C%40%3D%3E"><span class="hs-operator hs-var">&lt;@=&gt;</span></a><span class="hs-special">)</span><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#%40%3A%3E"><span class="hs-operator hs-var">@:&gt;</span></a><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Field.html#%40%3D%3D"><span class="hs-operator hs-var">@==</span></a><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#FieldOptic"><span class="hs-identifier hs-type">FieldOptic</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#FieldName"><span class="hs-identifier hs-type">FieldName</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#liftField"><span class="hs-identifier hs-var">liftField</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#liftField2"><span class="hs-identifier hs-var">liftField2</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-comment">-- * Records and variants</span><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#RecordOf"><span class="hs-identifier hs-type">RecordOf</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#Record"><span class="hs-identifier hs-type">Record</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#emptyRecord"><span class="hs-identifier hs-var">emptyRecord</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#VariantOf"><span class="hs-identifier hs-type">VariantOf</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#Variant"><span class="hs-identifier hs-type">Variant</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-comment">-- * Matching</span><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#matchWithField"><span class="hs-identifier hs-var">matchWithField</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#matchField"><span class="hs-identifier hs-var">matchField</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-comment">-- * Key / value</span><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#AssocKey"><span class="hs-identifier hs-type">AssocKey</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#AssocValue"><span class="hs-identifier hs-type">AssocValue</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#KeyValue"><span class="hs-identifier hs-type">KeyValue</span></a><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#proxyAssocKey"><span class="hs-identifier hs-var">proxyAssocKey</span></a><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-comment">-- * Internal</span><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#LabelPhantom"><span class="hs-identifier hs-type">LabelPhantom</span></a><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#Labelling"><span class="hs-identifier hs-type">Labelling</span></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Field.html#Inextensible"><span class="hs-identifier hs-type">Inextensible</span></a><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-47"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">DeepSeq</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">NFData</span><span class="hs-special">)</span><span>
+</span><a name="line-48"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Coerce</span><span>
+</span><a name="line-49"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Class.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span></a><span>
+</span><a name="line-50"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Sum.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Sum</span></a><span>
+</span><a name="line-51"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Match.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Match</span></a><span>
+</span><a name="line-52"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Product.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Product</span></a><span>
+</span><a name="line-53"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-54"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.Rig.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Rig</span></a><span>
+</span><a name="line-55"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Profunctor</span><span class="hs-operator">.</span><span class="hs-identifier">Unsafe</span><span>
+</span><a name="line-56"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Constraint</span><span>
+</span><a name="line-57"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Wrapper.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Wrapper</span></a><span>
+</span><a name="line-58"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Functor</span><span class="hs-operator">.</span><span class="hs-identifier">Identity</span><span>
+</span><a name="line-59"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span>
+</span><a name="line-60"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-61"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Foreign</span><span class="hs-operator">.</span><span class="hs-identifier">Storable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Storable</span><span class="hs-special">)</span><span>
+</span><a name="line-62"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Generics</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Generic</span><span class="hs-special">)</span><span>
+</span><a name="line-63"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">TypeLits</span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Nat</span><span class="hs-special">)</span><span>
+</span><a name="line-64"></a><span>
+</span><a name="line-65"></a><span class="hs-comment">-- | Take the type of the key</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">family</span><span> </span><a name="AssocKey"><a href="Data.Extensible.Field.html#AssocKey"><span class="hs-identifier">AssocKey</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679180483"><a href="#local-6989586621679180483"><span class="hs-identifier">kv</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Extensible.Internal.html#Assoc"><span class="hs-identifier hs-type">Assoc</span></a><span> </span><a href="#local-6989586621679180481"><span class="hs-identifier hs-type">k</span></a><span> </span><a href="#local-6989586621679180482"><span class="hs-identifier hs-type">v</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679180481"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-67"></a><span>  </span><span class="hs-identifier">AssocKey</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679180484"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-char">':&gt; v) = k
+
+-- | Proxy-level 'AssocKey'. This is useful when using 'symbolVal'.
+proxyAssocKey :: proxy kv -&gt; Proxy (AssocKey kv)
+proxyAssocKey _ = Proxy
+
+-- | Take the type of the value
+type family AssocValue (kv :: Assoc k v) :: v where
+  AssocValue (k ':&gt; v) = v
+
+-- | Combined constraint for 'Assoc'
+class (pk (AssocKey kv), pv (AssocValue kv)) =&gt; KeyValue pk pv kv where
+
+instance (pk k, pv v) =&gt; KeyValue pk pv (k ':&gt; v)
+
+-- | A @'Field' h (k ':&gt; v)@ is @h v@ annotated with the field name @k@.
+--
+-- @'Field' :: (v -&gt; *) -&gt; Assoc k v -&gt; *@
+--
+newtype Field (h :: v -&gt; *) (kv :: Assoc k v) = Field { getField :: h (AssocValue kv) }
+  deriving (Typeable, Generic)
+#define ND_Field(c) deriving instance c (h (AssocValue kv)) =&gt; c (Field h kv)
+
+ND_Field(Eq)
+ND_Field(Ord)
+ND_Field(Num)
+ND_Field(Integral)
+ND_Field(Fractional)
+ND_Field(Floating)
+ND_Field(Real)
+ND_Field(RealFloat)
+ND_Field(RealFrac)
+ND_Field(Semigroup)
+ND_Field(Storable)
+ND_Field(Monoid)
+ND_Field(Enum)
+ND_Field(Bounded)
+ND_Field(NFData)
+
+-- | Lift a function for the content.
+liftField :: (g (AssocValue kv) -&gt; h (AssocValue kv)) -&gt; Field g kv -&gt; Field h kv
+liftField = coerce
+{-# INLINE liftField #-}
+
+-- | Lift a function for the content.
+liftField2 :: (f (AssocValue kv) -&gt; g (AssocValue kv) -&gt; h (AssocValue kv))
+    -&gt; Field f kv -&gt; Field g kv -&gt; Field h kv
+liftField2 = coerce
+{-# INLINE liftField2 #-}
+
+instance Wrapper h =&gt; Wrapper (Field h) where
+  type Repr (Field h) kv = Repr h (AssocValue kv)
+  _Wrapper = dimap getField (fmap Field) . _Wrapper
+  {-# INLINE _Wrapper #-}
+
+-- | Shows in @field \@= value@ style instead of the derived one.
+instance (KnownSymbol k, Wrapper h, Show (Repr h v)) =&gt; Show (Field h (k ':&gt; v)) where
+  showsPrec d (Field a) = showParen (d &gt;= 1) $ showString (symbolVal (Proxy :: Proxy k))
+    . showString &quot; @= &quot;
+    . showsPrec 1 (view _Wrapper a)
+
+-- | The type of records which contain several fields.
+--
+-- @RecordOf :: (v -&gt; *) -&gt; [Assoc k v] -&gt; *@
+--
+type RecordOf h = (:*) (Field h)
+
+-- | The dual of 'RecordOf'
+--
+-- @VariantOf :: (v -&gt; *) -&gt; [Assoc k v] -&gt; *@
+--
+type VariantOf h = (:|) (Field h)
+
+-- | Simple record
+type Record = RecordOf Identity
+
+-- | Simple variant
+type Variant = VariantOf Identity
+
+-- | An empty 'Record'.
+emptyRecord :: Record '[]
+emptyRecord = nil
+{-# INLINE emptyRecord #-}
+
+-- | Select a corresponding field of a variant.
+matchWithField :: (forall x. f x -&gt; g x -&gt; r) -&gt; RecordOf f xs -&gt; VariantOf g xs -&gt; r
+matchWithField h = matchWith (\(Field x) (Field y) -&gt; h x y)
+{-# INLINE matchWithField #-}
+
+-- | Pattern matching on a 'Variant'
+matchField :: RecordOf (Match h r) xs -&gt; VariantOf h xs -&gt; r
+matchField = matchWithField runMatch
+{-# INLINE matchField #-}
+
+-- | @FieldOptic s@ is a type of optics that points a field/constructor named @s@.
+--
+-- The yielding fields can be
+-- &lt;http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Lens Lens&gt;es
+-- for 'Record's and
+-- &lt;http://hackage.haskell.org/package/lens/docs/Control-Lens-Lens.html#t:Prism Prism&gt;s
+-- for 'Variant's.
+--
+-- @
+-- 'FieldOptic' &quot;foo&quot; = Associate &quot;foo&quot; a xs =&gt; Lens' ('Record' xs) a
+-- 'FieldOptic' &quot;foo&quot; = Associate &quot;foo&quot; a xs =&gt; Prism' ('Variant' xs) a
+-- @
+--
+-- 'FieldOptic's can be generated using 'mkField' defined in the &quot;Data.Extensible.TH&quot; module.
+--
+#if __GLASGOW_HASKELL__ &gt;= 800
+type FieldOptic k = forall kind. forall f p t xs (h :: kind -&gt; *) (v :: kind).
+#else
+type FieldOptic k = forall f p t xs (h :: kind -&gt; *) (v :: kind).
+#endif
+  (Extensible f p t
+  , Associate k v xs
+  , Labelling k p
+  , Wrapper h)
+  =&gt; Optic' p f (t (Field h) xs) (Repr h v)
+
+-- | The trivial inextensible data type
+data Inextensible (h :: k -&gt; *) (xs :: [k])
+
+instance (Functor f, Profunctor p) =&gt; Extensible f p Inextensible where
+  pieceAt _ _ = error &quot;Impossible&quot;
+
+-- | When you see this type as an argument, it expects a 'FieldLens'.
+-- This type is used to resolve the name of the field internally.
+type FieldName k = Optic' (LabelPhantom k) Proxy (Inextensible (Field Proxy) '[k ':&gt; ()]) ()
+
+-- | Signifies a field name internally
+type family Labelling s p :: Constraint where
+  Labelling s (LabelPhantom t) = s ~ t
+  Labelling s p = ()
+
+-- | A ghostly type which spells the field name
+data LabelPhantom s a b
+
+instance Profunctor (LabelPhantom s) where
+  dimap _ _ _ = error &quot;Impossible&quot;
+
+-- | Annotate a value by the field name.
+--
+-- @
+-- foo :: 'Record' '[&quot;num&quot; &gt;: Int, &quot;str&quot; &gt;: String]
+-- foo = #num @= 42
+--   &lt;: #str @= &quot;foo&quot;
+--   &lt;: nil
+-- @
+(@=) :: Wrapper h =&gt; FieldName k -&gt; Repr h v -&gt; Field h (k ':&gt; v)
+(@=) _ = Field #. review _Wrapper
+{-# INLINE (@=) #-}
+infix 1 @=
+
+-- | Lifted ('@=')
+-- @
+-- foo :: IO ('Record' '[&quot;num&quot; &gt;: Int, &quot;str&quot; &gt;: String])
+-- foo = hsequence
+--   $ #num &lt;@=&gt; readLn
+--   &lt;: #str &lt;@=&gt; getLine
+--   &lt;: nil
+-- @
+(&lt;@=&gt;) :: (Functor f, Wrapper h) =&gt; FieldName k -&gt; f (Repr h v) -&gt; Comp f (Field h) (k ':&gt; v)
+(&lt;@=&gt;) k = comp (k @=)
+{-# INLINE (&lt;@=&gt;) #-}
+infix 1 &lt;@=&gt;
+
+-- | Annotate a value by the field name without 'Wrapper'.
+(@:&gt;) :: FieldName k -&gt; h v -&gt; Field h (k ':&gt; v)
+(@:&gt;) _ = Field
+infix 1 @:&gt;
+
+-- | Kind-monomorphic, unwrapped version of @('@=')@
+(@==) :: FieldName (k :: Symbol) -&gt; v -&gt; Field Identity (k ':&gt; v)
+(@==) = (@=)
+{-# INLINE (@==) #-}
+infix 1 @==
+</span></pre></body></html>

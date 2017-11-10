@@ -1,0 +1,24 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- Module      :  Text.Megaparsec.Text.Lazy</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Copyright   :  &#169; 2015&#8211;2017 Megaparsec contributors</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- License     :  FreeBSD</span><span>
+</span><a name="line-5"></a><span class="hs-comment">--</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- Maintainer  :  Mark Karpov &lt;markkarpov92@gmail.com&gt;</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Stability   :  experimental</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- Convenience definitions for working with lazy 'Text'.</span><span>
+</span><a name="line-11"></a><span>
+</span><a name="line-12"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Megaparsec</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-special">(</span><a href="Text.Megaparsec.Text.Lazy.html#Parser"><span class="hs-identifier hs-type">Parser</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-13"></a><span>
+</span><a name="line-14"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span>
+</span><a name="line-15"></a><span class="hs-keyword">import</span><span> </span><a href="Text.Megaparsec.Error.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Megaparsec</span><span class="hs-operator">.</span><span class="hs-identifier">Error</span></a><span> </span><span class="hs-special">(</span><a href="Text.Megaparsec.Error.html#Dec"><span class="hs-identifier hs-type">Dec</span></a><span class="hs-special">)</span><span>
+</span><a name="line-16"></a><span class="hs-keyword">import</span><span> </span><a href="Text.Megaparsec.Prim.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Megaparsec</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span></a><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-comment">-- | Modules corresponding to various types of streams define 'Parser'</span><span>
+</span><a name="line-19"></a><span class="hs-comment">-- accordingly, so the user can use it to easily change type of the input</span><span>
+</span><a name="line-20"></a><span class="hs-comment">-- stream by importing different &#8220;type modules&#8221;. This one is for lazy</span><span>
+</span><a name="line-21"></a><span class="hs-comment">-- 'Text'.</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">type</span><span> </span><a name="Parser"><a href="Text.Megaparsec.Text.Lazy.html#Parser"><span class="hs-identifier">Parser</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Text.Megaparsec.Prim.html#Parsec"><span class="hs-identifier hs-type">Parsec</span></a><span> </span><a href="Text.Megaparsec.Error.html#Dec"><span class="hs-identifier hs-type">Dec</span></a><span> </span><span class="hs-identifier hs-type">Text</span><span>
+</span><a name="line-24"></a></pre></body></html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- Suppress warnings what is happend by TemplateHaskell</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unused-top-binds #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE DeriveDataTypeable #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE OverloadedLabels #-}</span><span>
+</span><a name="line-10"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-11"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><a name="line-14"></a><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><a name="line-15"></a><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances #-}</span><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Main</span><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Maru.Main.html#runRepl"><span class="hs-identifier hs-var">runRepl</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Exception</span><span class="hs-operator">.</span><span class="hs-identifier">Safe</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">SomeException</span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">view</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">%=</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">.=</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Iso'</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">iso</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">mapM</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">when</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">void</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">forM_</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">State</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">MonadState</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">gets</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Data</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Text</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span> </span><a href="Maru.TH.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span></a><span> </span><span class="hs-special">(</span><a href="Maru.TH.html#makeLensesA"><span class="hs-identifier hs-var">makeLensesA</span></a><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><a href="Maru.Type.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span></a><span>
+</span><a name="line-33"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Safe</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">tailMay</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">Console</span><span class="hs-operator">.</span><span class="hs-identifier">CmdArgs</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">cmdArgs</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">summary</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">program</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">help</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">name</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">explicit</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">&amp;=</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">showt</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">T</span><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">IO</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TIO</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><a href="Maru.Eval.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Eval</span></a><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">E</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><a href="Maru.Parser.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Parser</span></a><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">Parser</span><span>
+</span><a name="line-40"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><a href="Maru.Type.html"><span class="hs-identifier">Maru</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span></a><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">MT</span><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">System</span><span class="hs-operator">.</span><span class="hs-identifier">Console</span><span class="hs-operator">.</span><span class="hs-identifier">Readline</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">R</span><span>
+</span><a name="line-42"></a><span>
+</span><a name="line-43"></a><span class="hs-comment">-- | Command line options</span><span>
+</span><a name="line-44"></a><span class="hs-keyword">data</span><span> </span><a name="CliOptions"><a href="Maru.Main.html#CliOptions"><span class="hs-identifier">CliOptions</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="CliOptions"><a href="Maru.Main.html#CliOptions"><span class="hs-identifier">CliOptions</span></a></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">{</span><span> </span><a name="debugMode"><a href="Maru.Main.html#debugMode"><span class="hs-identifier">debugMode</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">,</span><span> </span><a name="doEval"><a href="Maru.Main.html#doEval"><span class="hs-identifier">doEval</span></a></a><span>    </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Show</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Data</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span class="hs-identifier hs-var">makeLensesA</span><span> </span><span class="hs-char">''CliOptions
+
+-- | Default of `CliOptions`
+cliOptions :: CliOptions
+cliOptions = CliOptions
+  { debugMode = False &amp;= name &quot;debug&quot;
+  , doEval    = True &amp;= name &quot;do-eval&quot;
+                     &amp;= help &quot;If you don't want to evaluation, disable this&quot;
+                     &amp;= explicit
+  }
+  &amp;= summary &quot;&#12510;&#12523;&#12398;Lisp&#20966;&#29702;&#31995;&#12378;&#12425;&#12316;&#12316;&quot;
+  &amp;= program &quot;maru&quot;
+
+
+-- |
+-- Logs of REPL.
+--
+-- This is collected in 'Read' and 'Eval' phase of REPL,
+-- and this is shown in 'Print' phase of REPL.
+--
+-- This is not shown if you doesn't specifiy --debug.
+data DebugLogs = DebugLogs
+  { readLogs :: [Text]
+  , evalLogs :: [Text]
+  } deriving (Show)
+
+makeLensesA ''DebugLogs
+
+-- | An empty value of `DebugLogs`
+emptyDebugLog :: DebugLogs
+emptyDebugLog = DebugLogs [] []
+
+
+-- | Integrate any type as @State@ of REPL.
+data ReplState = ReplState
+  { replOpts :: CliOptions -- ^ specified CLI options (not an initial value)
+  , replEnv  :: MaruEnv    -- ^ The symbols of zuramaru
+  , replLogs :: DebugLogs  -- ^ this value is appended in the runtime
+  }
+
+makeLensesA ''ReplState
+
+
+-- | For Lens Accessors
+instance Associate &quot;stateRepl&quot; (State ReplState) xs =&gt; MonadState ReplState (Eff xs) where
+  get = getEff #stateRepl
+  put = putEff #stateRepl
+
+
+-- |
+-- The eval phase do parse and evaluation,
+-- take its error or a rightly result
+data EvalPhaseResult = ParseError ParseErrorResult -- ^ An error is happened in the parse
+                     | EvalError SomeException     -- ^ An error is happend in the evaluation
+                     | RightResult SExpr           -- ^ A result is made by the parse and the evaulation without errors
+
+type Evaluator = MaruEnv -&gt; SExpr -&gt; IO (Either SomeException (SExpr, MaruEnv, SimplificationSteps))
+
+
+-- | Run REPL of zuramaru
+runRepl :: IO ()
+runRepl = do
+  options &lt;- cmdArgs cliOptions
+  let initialState = ReplState options E.initialEnv emptyDebugLog
+  void . retractEff @ IOEffKey $ runStateEff @ &quot;stateRepl&quot; repl initialState
+
+-- |
+-- Do 'Loop' of 'Read', 'eval', and 'Print',
+-- with the startup options.
+--
+-- The state of `ReplState` is initialized before the one of &quot;READ-EVAL-PRINT&quot; of the &quot;LOOP&quot; is ran.
+--
+-- If some command line arguments are given, enable debug mode.
+-- Debug mode shows the parse and the evaluation's optionally result.
+repl :: Eff '[&quot;stateRepl&quot; &gt;: State ReplState, IOEff] ()
+repl = do
+  loopIsRequired &lt;- view _iso &lt;$&gt; runMaybeEff @ &quot;maybe&quot; rep
+  modifyEff #stateRepl $ \x -&gt; x { replLogs = emptyDebugLog }
+  when loopIsRequired repl
+
+-- |
+-- Do 'Read', 'Eval', and 'Print' of 'REPL'.
+-- Return False if Ctrl+d is input.
+-- Return True otherwise.
+--
+-- If @rep@ throws a () of the error, it means what the loop of REP exiting is required.
+rep :: Eff '[ &quot;maybe&quot; &gt;: MaybeEff
+            , &quot;stateRepl&quot; &gt;: State ReplState
+            , IOEff
+            ] ()
+rep = do
+  input      &lt;- castEff readPhase
+  evalResult &lt;- castEff $ evalPhase input
+  printPhase evalResult
+
+
+-- |
+-- Read line from stdin.
+-- If stdin gives to interrupt, return Nothing.
+-- If it's not, return it and it is added to history file
+readPhase :: Eff '[&quot;maybe&quot; &gt;: MaybeEff, IOEff] Text
+readPhase = do
+  maybeInput &lt;- liftIOEff $ R.readline &quot;zuramaru&gt; &quot;
+  liftIOEff $ mapM R.addHistory maybeInput
+  T.pack &lt;$&gt; liftMaybe maybeInput
+
+-- | Lift up `Nothing` to the failure of the whole
+liftMaybe :: Associate &quot;maybe&quot; MaybeEff xs =&gt; Maybe a -&gt; Eff xs a
+liftMaybe Nothing  = throwEff #maybe ()
+liftMaybe (Just x) = return x
+
+
+-- |
+-- Do parse and evaluate a Text to a SExpr.
+-- Return @SExpr@ (maru's AST) if both parse and evaluation is succeed.
+-- Otherwise, return a error result.
+--
+-- Execute the evaluation.
+-- A state of @DebugLogs@ is updated by got logs which can be gotten in the evaluation.
+-- A state of @MaruEnv@ is updated by new environment of the result.
+evalPhase :: Text -&gt; Eff '[&quot;stateRepl&quot; &gt;: State ReplState, IOEff] EvalPhaseResult
+evalPhase code = do
+  evalIsNeeded &lt;- gets $ doEval . replOpts
+  -- Get a real evaluator or an empty evaluator.
+  -- The empty evaluator doesn't touch any arguments.
+  let eval' = if evalIsNeeded then E.eval
+                              else fakeEval
+  case Parser.debugParse code of
+    (Left parseErrorResult, _) -&gt; return $ ParseError parseErrorResult
+    (Right sexpr, logs) -&gt; do
+      let logs'  = map unParseLog logs
+          newLog = &quot;parse result: &quot; &lt;&gt; showt sexpr
+      replLogsA . evalLogsA %= (++ newLog : logs')
+      env        &lt;- gets replEnv
+      evalResult &lt;- liftIOEff $ eval' env sexpr
+      case evalResult of
+        Left evalErrorResult -&gt; return $ EvalError evalErrorResult
+        Right (result, newEnv, steps) -&gt; do
+          replEnvA .= newEnv
+          replLogsA . evalLogsA %= (++ reportSteps steps)
+          return $ RightResult result
+  where
+    -- Do nothing
+    fakeEval :: Evaluator
+    fakeEval = (return .) . (Right .) . flip (,,[])
+
+
+-- | Do 'Print' for a result of 'Read' and 'Eval'
+printPhase :: ( Associate &quot;stateRepl&quot; (State ReplState) xs
+              , IOEffAssociation xs
+              ) =&gt; EvalPhaseResult -&gt; Eff xs ()
+printPhase result = do
+  DebugLogs readLogs' evalLogs' &lt;- gets replLogs
+  debugMode'                    &lt;- gets $ debugMode . replOpts
+  liftIOEff $ case result of
+    ParseError e      -&gt; TIO.putStrLn . T.pack . forgetMatrixAnnotation $ Parser.parseErrorPretty e
+    EvalError  e      -&gt; TIO.putStrLn . T.pack $ show e
+    RightResult sexpr -&gt; TIO.putStrLn $ MT.readable sexpr
+  liftIOEff . when debugMode' $ do
+    forM_ readLogs' $ TIO.putStrLn . (&quot;&lt;debug&gt;(readPhase): &quot; &lt;&gt;)
+    forM_ evalLogs' $ TIO.putStrLn . (&quot;&lt;debug&gt;(evalPhase): &quot; &lt;&gt;)
+  where
+    --NOTE: A result of Megaparse's `parseErrorPretty` may have about column and row of an error
+    forgetMatrixAnnotation :: String -&gt; String
+    forgetMatrixAnnotation parseErrorInfo =
+      case tailMay $ lines parseErrorInfo of
+        Nothing -&gt; &quot;&quot;
+        Just xs  -&gt; unlines xs
+
+
+-- |
+-- An isomorphism of between `Maybe ()` and `Bool`.
+-- `Just ()` is mapped to `True`
+_iso :: Iso' (Maybe ()) Bool
+_iso = iso to from
+  where
+    to :: Maybe () -&gt; Bool
+    to (Just ()) = True
+    to Nothing   = False
+    from :: Bool -&gt; Maybe ()
+    from True  = Just ()
+    from False = Nothing
+</span></pre></body></html>

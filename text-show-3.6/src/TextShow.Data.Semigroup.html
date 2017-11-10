@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Semigroup
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for data types in the &quot;Data.Semigroup&quot; module.
+
+/Since: 3/
+-}</span><span>
+</span><a name="line-16"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Min</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Max</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">First</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Last</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">WrappedMonoid</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Option</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Arg</span><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Maybe.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow2"><span class="hs-identifier hs-var">deriveTextShow2</span></a><span class="hs-special">)</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-comment">-- | /Since: 3/</span><span>
+</span><a name="line-24"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span>  </span><span class="hs-char">''Min)
+-- | /Since: 3/
+$(deriveTextShow1 ''Min)
+
+-- | /Since: 3/
+$(deriveTextShow  ''Max)
+-- | /Since: 3/
+$(deriveTextShow1 ''Max)
+
+-- | /Since: 3/
+$(deriveTextShow  ''First)
+-- | /Since: 3/
+$(deriveTextShow1 ''First)
+
+-- | /Since: 3/
+$(deriveTextShow  ''Last)
+-- | /Since: 3/
+$(deriveTextShow1 ''Last)
+
+-- | /Since: 3/
+$(deriveTextShow  ''WrappedMonoid)
+-- | /Since: 3/
+$(deriveTextShow1 ''WrappedMonoid)
+
+-- | /Since: 3/
+$(deriveTextShow  ''Option)
+-- | /Since: 3/
+$(deriveTextShow1 ''Option)
+
+-- | /Since: 3/
+$(deriveTextShow  ''Arg)
+-- | /Since: 3/
+$(deriveTextShow1 ''Arg)
+-- | /Since: 3/
+$(deriveTextShow2 ''Arg)
+</span></pre></body></html>

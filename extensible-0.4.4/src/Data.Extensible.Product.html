@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE Trustworthy #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses, UndecidableInstances #-}</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Module      :  Data.Extensible.Product</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-12"></a><span class="hs-comment">--</span><span>
+</span><a name="line-13"></a><span class="hs-comment">------------------------------------------------------------------------</span><span>
+</span><a name="line-14"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Product</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-comment">-- * Basic operations</span><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">(</span><a href="Data.Extensible.Struct.html#%3A%2A"><span class="hs-operator hs-type">:*</span></a><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#nil"><span class="hs-identifier hs-var">nil</span></a><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Product.html#%3C%3A"><span class="hs-operator hs-var">&lt;:</span></a><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Product.html#%3C%21"><span class="hs-operator hs-var">&lt;!</span></a><span class="hs-special">)</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Struct.html#hlength"><span class="hs-identifier hs-var">hlength</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hmap"><span class="hs-identifier hs-var">hmap</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hmapWithIndex"><span class="hs-identifier hs-var">hmapWithIndex</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hzipWith"><span class="hs-identifier hs-var">hzipWith</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hzipWith3"><span class="hs-identifier hs-var">hzipWith3</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hfoldMap"><span class="hs-identifier hs-var">hfoldMap</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hfoldMapWithIndex"><span class="hs-identifier hs-var">hfoldMapWithIndex</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Struct.html#hfoldrWithIndex"><span class="hs-identifier hs-var">hfoldrWithIndex</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#htraverse"><span class="hs-identifier hs-var">htraverse</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#htraverseWithIndex"><span class="hs-identifier hs-var">htraverseWithIndex</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hsequence"><span class="hs-identifier hs-var">hsequence</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-comment">-- * Constrained fold</span><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hfoldMapFor"><span class="hs-identifier hs-var">hfoldMapFor</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hfoldMapWithIndexFor"><span class="hs-identifier hs-var">hfoldMapWithIndexFor</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hfoldrWithIndexFor"><span class="hs-identifier hs-var">hfoldrWithIndexFor</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-comment">-- * Evaluating</span><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hforce"><span class="hs-identifier hs-var">hforce</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-comment">-- * Update</span><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#haccumMap"><span class="hs-identifier hs-var">haccumMap</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#haccum"><span class="hs-identifier hs-var">haccum</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hpartition"><span class="hs-identifier hs-var">hpartition</span></a><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-comment">-- * Lookup</span><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Struct.html#hlookup"><span class="hs-identifier hs-var">hlookup</span></a><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hindex"><span class="hs-identifier hs-var">hindex</span></a><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-comment">-- * Generation</span><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Generate"><span class="hs-identifier hs-type">Generate</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hgenerate"><span class="hs-identifier hs-var">hgenerate</span></a><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#htabulate"><span class="hs-identifier hs-var">htabulate</span></a><span>
+</span><a name="line-48"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hrepeat"><span class="hs-identifier hs-var">hrepeat</span></a><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hcollect"><span class="hs-identifier hs-var">hcollect</span></a><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hdistribute"><span class="hs-identifier hs-var">hdistribute</span></a><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#fromHList"><span class="hs-identifier hs-var">fromHList</span></a><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Struct.html#toHList"><span class="hs-identifier hs-var">toHList</span></a><span>
+</span><a name="line-53"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Class.html#Forall"><span class="hs-identifier hs-type">Forall</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-54"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hgenerateFor"><span class="hs-identifier hs-var">hgenerateFor</span></a><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#htabulateFor"><span class="hs-identifier hs-var">htabulateFor</span></a><span>
+</span><a name="line-56"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Product.html#hrepeatFor"><span class="hs-identifier hs-var">hrepeatFor</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-57"></a><span>
+</span><a name="line-58"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-59"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Struct.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Struct</span></a><span>
+</span><a name="line-60"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Sum.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Sum</span></a><span>
+</span><a name="line-61"></a><span class="hs-cpp">#if !MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-62"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Applicative</span><span>
+</span><a name="line-63"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Class.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span></a><span>
+</span><a name="line-65"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><a href="Data.Extensible.HList.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">HList</span></a><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">HList</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Wrapper.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Wrapper</span></a><span>
+</span><a name="line-67"></a><span>
+</span><a name="line-68"></a><span class="hs-comment">-- | O(n) Prepend an element onto a product.</span><span>
+</span><a name="line-69"></a><span class="hs-comment">-- Expressions like @a &lt;: b &lt;: c &lt;: nil@ are transformed to a single 'fromHList'.</span><span>
+</span><a name="line-70"></a><span class="hs-special">(</span><span class="hs-operator">&lt;:</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679146447"><span class="hs-identifier hs-type">h</span></a><span> </span><a href="#local-6989586621679146448"><span class="hs-identifier hs-type">x</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679146447"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-operator">:*</span><span> </span><a href="#local-6989586621679146449"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679146447"><span class="hs-identifier hs-type">h</span></a><span> </span><span class="hs-operator">:*</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679146448"><span class="hs-identifier hs-type">x</span></a><span> </span><span class="hs-char">': xs)
+(&lt;:) x = fromHList . HList.HCons x . toHList
+{-# INLINE (&lt;:) #-}
+infixr 0 &lt;:
+
+-- | Strict version of ('&lt;:').
+(&lt;!) :: h x -&gt; h :* xs -&gt; h :* (x ': xs)
+(&lt;!) x = fromHList . (HList.HCons $! x) . toHList
+{-# INLINE (&lt;!) #-}
+infixr 0 &lt;!
+
+-- | An empty product.
+nil :: h :* '[]
+nil = hfrozen $ new $ error &quot;Impossible&quot;
+{-# NOINLINE nil #-}
+{-# RULES &quot;toHList/nil&quot; toHList nil = HList.HNil #-}
+
+-- | Convert 'L.HList' into a product.
+fromHList :: HList.HList h xs -&gt; h :* xs
+fromHList xs = hfrozen (newFromHList xs)
+{-# INLINE fromHList #-}
+
+-- | Flipped 'hlookup'
+hindex :: h :* xs -&gt; Membership xs x -&gt;  h x
+hindex = flip hlookup
+{-# INLINE hindex #-}
+
+-- | Map a function to every element of a product.
+hmapWithIndex :: (forall x. Membership xs x -&gt; g x -&gt; h x) -&gt; g :* xs -&gt; h :* xs
+hmapWithIndex t p = hfrozen (newFrom p t)
+{-# INLINE hmapWithIndex #-}
+
+-- | Transform every element in a product, preserving the order.
+--
+-- @
+-- 'hmap' 'id' &#8801; 'id'
+-- 'hmap' (f . g) &#8801; 'hmap' f . 'hmap' g
+-- @
+hmap :: (forall x. g x -&gt; h x) -&gt; g :* xs -&gt; h :* xs
+hmap f = hmapWithIndex (const f)
+{-# INLINE hmap #-}
+
+-- | 'zipWith' for heterogeneous product
+hzipWith :: (forall x. f x -&gt; g x -&gt; h x) -&gt; f :* xs -&gt; g :* xs -&gt; h :* xs
+hzipWith t xs = hmapWithIndex (\i -&gt; t (hlookup i xs))
+{-# INLINE hzipWith #-}
+
+-- | 'zipWith3' for heterogeneous product
+hzipWith3 :: (forall x. f x -&gt; g x -&gt; h x -&gt; i x) -&gt; f :* xs -&gt; g :* xs -&gt; h :* xs -&gt; i :* xs
+hzipWith3 t xs ys = hmapWithIndex (\i -&gt; t (hlookup i xs) (hlookup i ys))
+{-# INLINE hzipWith3 #-}
+
+-- | Map elements to a monoid and combine the results.
+--
+-- @'hfoldMap' f . 'hmap' g &#8801; 'hfoldMap' (f . g)@
+hfoldMap :: Monoid a =&gt; (forall x. h x -&gt; a) -&gt; h :* xs -&gt; a
+hfoldMap f = hfoldMapWithIndex (const f)
+{-# INLINE hfoldMap #-}
+
+-- | 'hfoldMap' with the membership of elements.
+hfoldMapWithIndex :: Monoid a
+  =&gt; (forall x. Membership xs x -&gt; g x -&gt; a) -&gt; g :* xs -&gt; a
+hfoldMapWithIndex f = hfoldrWithIndex (\i -&gt; mappend . f i) mempty
+{-# INLINE hfoldMapWithIndex #-}
+
+-- | 'hfoldrWithIndex' with a constraint for each element.
+hfoldrWithIndexFor :: (Forall c xs) =&gt; proxy c
+  -&gt; (forall x. c x =&gt; Membership xs x -&gt; h x -&gt; r -&gt; r) -&gt; r -&gt; h :* xs -&gt; r
+hfoldrWithIndexFor p f r xs = henumerateFor p xs (\i -&gt; f i (hlookup i xs)) r
+{-# INLINE hfoldrWithIndexFor #-}
+
+-- | 'hfoldMapWithIndex' with a constraint for each element.
+hfoldMapWithIndexFor :: (Forall c xs, Monoid a) =&gt; proxy c
+  -&gt; (forall x. c x =&gt; Membership xs x -&gt; h x -&gt; a) -&gt; h :* xs -&gt; a
+hfoldMapWithIndexFor p f = hfoldrWithIndexFor p (\i -&gt; mappend . f i) mempty
+{-# INLINE hfoldMapWithIndexFor #-}
+
+hfoldMapFor :: (Forall c xs, Monoid a) =&gt; proxy c
+  -&gt; (forall x. c x =&gt; h x -&gt; a) -&gt; h :* xs -&gt; a
+hfoldMapFor p f = hfoldMapWithIndexFor p (const f)
+{-# INLINE hfoldMapFor #-}
+
+-- | Traverse all elements and combine the result sequentially.
+-- @
+-- htraverse (fmap f . g) &#8801; fmap (hmap f) . htraverse g
+-- htraverse pure &#8801; pure
+-- htraverse (Comp . fmap g . f) &#8801; Comp . fmap (htraverse g) . htraverse f
+-- @
+htraverse :: Applicative f =&gt; (forall x. g x -&gt; f (h x)) -&gt; g :* xs -&gt; f (h :* xs)
+htraverse f = fmap fromHList . HList.htraverse f . toHList
+{-# INLINE htraverse #-}
+
+-- | 'sequence' analog for extensible products
+hsequence :: Applicative f =&gt; Comp f h :* xs -&gt; f (h :* xs)
+hsequence = htraverse getComp
+{-# INLINE hsequence #-}
+
+-- | The dual of 'htraverse'
+hcollect :: (Functor f, Generate xs) =&gt; (a -&gt; h :* xs) -&gt; f a -&gt; Comp f h :* xs
+hcollect f m = htabulate $ \i -&gt; Comp $ fmap (hlookup i . f) m
+{-# INLINABLE hcollect #-}
+
+-- | The dual of 'hsequence'
+hdistribute :: (Functor f, Generate xs) =&gt; f (h :* xs) -&gt; Comp f h :* xs
+hdistribute = hcollect id
+{-# INLINE hdistribute #-}
+
+-- | 'htraverse' with 'Membership's.
+htraverseWithIndex :: Applicative f
+  =&gt; (forall x. Membership xs x -&gt; g x -&gt; f (h x)) -&gt; g :* xs -&gt; f (h :* xs)
+htraverseWithIndex f = fmap fromHList . HList.htraverseWithIndex f . toHList
+{-# INLINE htraverseWithIndex #-}
+
+-- | A product filled with the specified value.
+hrepeat :: Generate xs =&gt; (forall x. h x) -&gt; h :* xs
+hrepeat x = hfrozen $ newRepeat x
+{-# INLINE hrepeat #-}
+
+-- | Construct a product using a function which takes a 'Membership'.
+--
+-- @
+-- 'hmap' f ('htabulate' g) &#8801; 'htabulate' (f . g)
+-- 'htabulate' ('hindex' m) &#8801; m
+-- 'hindex' ('htabulate' k) &#8801; k
+-- @
+htabulate :: Generate xs =&gt; (forall x. Membership xs x -&gt; h x) -&gt; h :* xs
+htabulate f = hfrozen $ new f
+{-# INLINE htabulate #-}
+
+-- | 'Applicative' version of 'htabulate'.
+hgenerate :: (Generate xs, Applicative f)
+  =&gt; (forall x. Membership xs x -&gt; f (h x)) -&gt; f (h :* xs)
+hgenerate f = fmap fromHList $ hgenerateList f
+{-# INLINE hgenerate #-}
+
+-- | Pure version of 'hgenerateFor'.
+htabulateFor :: Forall c xs =&gt; proxy c -&gt; (forall x. c x =&gt; Membership xs x -&gt; h x) -&gt; h :* xs
+htabulateFor p f = hfrozen $ newFor p f
+{-# INLINE htabulateFor #-}
+
+-- | A product filled with the specified value.
+hrepeatFor :: Forall c xs =&gt; proxy c -&gt; (forall x. c x =&gt; h x) -&gt; h :* xs
+hrepeatFor p f = htabulateFor p (const f)
+{-# INLINE hrepeatFor #-}
+
+-- | 'Applicative' version of 'htabulateFor'.
+hgenerateFor :: (Forall c xs, Applicative f)
+  =&gt; proxy c -&gt; (forall x. c x =&gt; Membership xs x -&gt; f (h x)) -&gt; f (h :* xs)
+hgenerateFor p f = fmap fromHList $ hgenerateListFor p f
+{-# INLINE hgenerateFor #-}
+
+-- | Accumulate sums on a product.
+haccumMap :: Foldable f
+  =&gt; (a -&gt; g :| xs)
+  -&gt; (forall x. Membership xs x -&gt; g x -&gt; h x -&gt; h x)
+  -&gt; h :* xs -&gt; f a -&gt; h :* xs
+haccumMap f g p0 xs = hmodify
+  (\s -&gt; mapM_ (\x -&gt; case f x of EmbedAt i v -&gt; get s i &gt;&gt;= set s i . g i v) xs)
+  p0
+{-# INLINE haccumMap #-}
+
+-- | @haccum = 'haccumMap' 'id'@
+haccum :: Foldable f
+  =&gt; (forall x. Membership xs x -&gt; g x -&gt; h x -&gt; h x)
+  -&gt; h :* xs -&gt; f (g :| xs) -&gt; h :* xs
+haccum = haccumMap id
+{-# INLINE haccum #-}
+
+-- | Group sums by type.
+hpartition :: (Foldable f, Generate xs) =&gt; (a -&gt; h :| xs) -&gt; f a -&gt; Comp [] h :* xs
+hpartition f = haccumMap f (\_ x (Comp xs) -&gt; Comp (x:xs)) $ hrepeat $ Comp []
+{-# INLINE hpartition #-}
+
+-- | Evaluate every element in a product.
+hforce :: h :* xs -&gt; h :* xs
+hforce p = hfoldrWithIndex (const seq) p p
+{-# INLINE hforce #-}
+</span></pre></body></html>

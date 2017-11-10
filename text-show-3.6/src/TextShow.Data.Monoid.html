@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP              #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell  #-}</span><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-5"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-7"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Monoid
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for 'Monoid'-related newtypes.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-19"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-20"></a><span>
+</span><a name="line-21"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">All</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Any</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Dual</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">First</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Last</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Product</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Sum</span><span class="hs-special">)</span><span>
+</span><a name="line-22"></a><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Bool.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Bool</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Maybe.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Maybe</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>
+</span><a name="line-27"></a><span class="hs-cpp">#if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Alt</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-32"></a><span>
+</span><a name="line-33"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-34"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span>  </span><span class="hs-char">''All)
+-- | /Since: 2/
+$(deriveTextShow  ''Any)
+-- | /Since: 2/
+$(deriveTextShow  ''Dual)
+-- | /Since: 2/
+$(deriveTextShow1 ''Dual)
+-- | /Since: 2/
+$(deriveTextShow  ''First)
+-- | /Since: 2/
+$(deriveTextShow1 ''First)
+-- | /Since: 2/
+$(deriveTextShow  ''Last)
+-- | /Since: 2/
+$(deriveTextShow1 ''Last)
+-- | /Since: 2/
+$(deriveTextShow  ''Product)
+-- | /Since: 2/
+$(deriveTextShow1 ''Product)
+-- | /Since: 2/
+$(deriveTextShow  ''Sum)
+-- | /Since: 2/
+$(deriveTextShow1 ''Sum)
+
+#if MIN_VERSION_base(4,8,0)
+-- | Only available with @base-4.8.0.0@ or later.
+--
+-- /Since: 2/
+instance TextShow (f a) =&gt; TextShow (Alt f a) where
+    showbPrec = $(makeShowbPrec ''Alt)
+
+-- | Only available with @base-4.8.0.0@ or later.
+--
+-- /Since: 2/
+$(deriveTextShow1 ''Alt)
+#endif
+</span></pre></body></html>

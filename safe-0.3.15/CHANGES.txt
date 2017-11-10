@@ -1,0 +1,42 @@
+Changelog for Safe
+
+0.3.15
+    Support QuickCheck 2.10
+0.3.14
+    #20, fix for GHC 7.10.1
+0.3.13
+    #20, require GHC 7.4 or above
+0.3.12
+    #19, add Safe.Partial exposing a Partial typeclass
+    #19, add support for GHC call stacks
+0.3.11
+    #16, add Safe succ and pred
+    #16, add readEitherSafe for better errors than readEither
+    #14, add Safe zip3Exact
+0.3.10
+    #15, add Safe cycle
+0.3.9
+    #9, add Safe toEnum
+0.3.8
+    #8, remove unnecessary Ord constraints from Foldable functions
+0.3.7
+    Add Def variants of the Exact functions
+0.3.6
+    #6, remove unnecessary Ord constraints from maximumBy/minimumBy
+0.3.5
+    Add Safe elemIndexJust/findIndexJust functions
+    Add Safe scan functions
+    Add Safe minimumBy/maximumBy functions
+    Add a module of Exact functions
+    Add Foldable minimum functions
+    Clean up the Foldable module, deprecate the Safe variants
+0.3.4
+    #1, improve the string clipping in readNote
+0.3.3
+    #494, add foldl1' wrappings
+0.3.2
+    Add a Safe.Foldable module
+0.3.1
+    Add findJust, safe wrapping of fromJust/find
+0.3
+    Start of changelog

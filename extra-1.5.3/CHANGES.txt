@@ -1,0 +1,109 @@
+Changelog for Extra
+
+1.5.3
+    Add readMaybe, readEither
+1.5.2
+    Add errorWithoutStackTrace to Control.Exception.Extra
+1.5.1
+    #25, add zipFrom and zipWithFrom
+    #24, add eitherToMaybe and maybeToEither
+    Add fromLeft' and fromRight'
+1.5
+    Change fromLeft/fromRight signatures to follow the base libraries
+1.4.12
+    Add writeVar
+1.4.11
+    Require QuickCheck 2.9
+    #23, deprecate offsetTimeIncrease and subtract
+    #22, improve offsetTime to give reliable measurements
+    Depend on the clock library
+1.4.10
+    Add Data.Typeable.Extra containing typeRep, Proxy, (:~:)
+1.4.9
+    Add line1
+1.4.8
+    Add displayException
+1.4.7
+    #21, add concatForM
+1.4.6
+    #11, add maybeM and eitherM
+1.4.5
+    #17, change fileEq on files that do not exist to be an error
+1.4.4
+    #14, add mconcatMap and mconcatMapM
+    #16, add fileEq
+    #15, add isMac
+1.4.3
+    Add Data.Version.Extra
+1.4.2
+    Make concatMapM/mapMaybeM faster
+1.4.1
+    Make temp file functions workaround GHC bug #10731
+    Add retryBool
+1.4
+    Add stripInfix and stripInfixEnd
+1.3.1
+    #9, support directory-1.2.3
+1.3
+    Add whenJustM
+    Add errorIO
+1.2
+    Add onceFork
+    Make once async exception safe
+    Fix a deadlock in once when two people request in parallel
+    Fix a missing hClose in captureOutput
+1.1
+    #7, add nubOrd, nubOrdOn, nubOrdBy
+    #6, add groupSortOn and groupSortBy
+    #5, add splitAtEnd
+1.0.1
+    Make listFilesAvoid drop trailing path separators before testing
+    #3, add a constraint base >= 4.4
+1.0
+    No changes
+0.8
+    Fix a bug in writeFileEncoding/writeFileUTF8
+0.7
+    Fix for missing case in withNumCapabilities
+0.6
+    Ensure barrier is thread-safe
+    Make subsequent signalBarrier calls throw an exception
+    Add timeout function
+    Make sure sleep never wraps round an Int
+0.5.1
+    Use uncons from GHC 7.9 and above
+0.5
+    Use the sortOn from GHC 7.9 and above
+    Remove getProcessorCount
+    Remove getDirectoryContentsRecursive in favour of listFilesRecursive
+    Change the signature for newTempFile/newTempDir
+    Add a once function
+0.4
+    Remove all but the extractors on triples
+    Remove groupSortOn
+    Remove dropAround
+0.3.2
+    Remove use of ===, allows older QuickCheck versions
+0.3.1
+    Fix a bug in breakEnd/spanEnd
+0.3
+    Rename showTime to showDuration
+    Add stringException
+    Eliminate rep/reps, use replace instead
+    Switch distinct for allSame/anySame
+    Optimise the numeric conversions
+    Rename chop to repeatedly
+    Add whenM/unlessM
+    Redo the Tuple module, additions and deletions
+    Add newTempFile, newTempDir
+    Add createDirectoryPrivate
+    Rename strip* to trim*
+    Generalise showException
+0.2
+    Redo the cons/uncons functions
+    Add withTempDir
+    Rename withTemporaryFile to withTempFile
+    Change trim to strip (follow text naming convention)
+    Ensure operators get exported
+0.1
+    Initial version, still unstable

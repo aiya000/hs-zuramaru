@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP               #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-3"></a><span class="hs-cpp">#if MIN_VERSION_text(0,9,0)</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell   #-}</span><span>
+</span><a name="line-5"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-deprecations #-}</span><span> </span><span class="hs-comment">-- TODO: Remove this later</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-8"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Text
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for 'Text' types.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span class="hs-operator">.</span><span class="hs-identifier">Error</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">UnicodeException</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Foreign</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">I16</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">fromString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">toLazyText</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.Char.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Data.Char.html#showbString"><span class="hs-identifier hs-var">showbString</span></a><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Data.Integral.html#showbHex"><span class="hs-identifier hs-var">showbHex</span></a><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">)</span><span>
+</span><a name="line-33"></a><span>
+</span><a name="line-34"></a><span class="hs-cpp">#if MIN_VERSION_text(1,0,0)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Encoding</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Decoding</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Show</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">appPrec</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#showbParen"><span class="hs-identifier hs-var">showbParen</span></a><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.ByteString.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">ByteString</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-cpp">#if MIN_VERSION_text(1,1,0)</span><span>
+</span><a name="line-43"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Fusion</span><span class="hs-operator">.</span><span class="hs-identifier">Size</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Size</span><span class="hs-special">)</span><span>
+</span><a name="line-44"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-45"></a><span>
+</span><a name="line-46"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-47"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">TS</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-48"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Char.html#showbString"><span class="hs-identifier hs-var">showbString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TS</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-50"></a><span>
+</span><a name="line-51"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-52"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">TL</span><span class="hs-operator hs-type">.</span><span class="hs-identifier hs-type">Text</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-53"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Char.html#showbString"><span class="hs-identifier hs-var">showbString</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">TL</span><span class="hs-operator hs-var">.</span><span class="hs-identifier hs-var">unpack</span><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-55"></a><span>
+</span><a name="line-56"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-57"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">Builder</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-58"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#showb"><span class="hs-identifier hs-var">showb</span></a><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">toLazyText</span><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-60"></a><span>
+</span><a name="line-61"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-62"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#showbPrecConst"><span class="hs-identifier hs-var">deriveTextShow</span></a><span> </span><span class="hs-char">''I16)
+
+-- | /Since: 2/
+instance TextShow UnicodeException where
+    showb (DecodeError desc (Just w))
+        = &quot;Cannot decode byte '\\x&quot; &lt;&gt; showbHex w &lt;&gt; &quot;': &quot; &lt;&gt; fromString desc
+    showb (DecodeError desc Nothing)
+        = &quot;Cannot decode input: &quot; &lt;&gt; fromString desc
+    showb (EncodeError desc (Just c))
+        = &quot;Cannot encode character '\\x&quot; &lt;&gt; showbHex (fromEnum c) &lt;&gt; &quot;': &quot; &lt;&gt; fromString desc
+    showb (EncodeError desc Nothing)
+        = &quot;Cannot encode input: &quot; &lt;&gt; fromString desc
+
+#if MIN_VERSION_text(1,0,0)
+-- | Only available with @text-1.0.0.0@ or later.
+--
+-- /Since: 2/
+instance TextShow Decoding where
+    showbPrec p (Some t bs _) = showbParen (p &gt; appPrec) $
+        &quot;Some &quot; &lt;&gt; showb t &lt;&gt;
+        singleton ' ' &lt;&gt; showb bs &lt;&gt;
+        &quot; _&quot;
+    {-# INLINE showbPrec #-}
+#endif
+
+#if MIN_VERSION_text(1,1,0)
+-- | Only available with @text-1.1.0.0@ or later.
+--
+-- /Since: 2/
+$(deriveTextShow ''Size)
+#endif
+</span></pre></body></html>

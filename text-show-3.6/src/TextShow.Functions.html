@@ -1,0 +1,33 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-3"></a><span class="hs-comment">{-|
+Module:      TextShow.Functions
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Optional orphan 'TextShow', 'TextShow1', and 'TextShow2' instances for functions.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-15"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Functions</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-16"></a><span>
+</span><a name="line-17"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow2"><span class="hs-identifier hs-type">TextShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-20"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679445846"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679445847"><span class="hs-identifier hs-type">b</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-21"></a><span>    </span><a name="local-8214565720323866142"><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier">showbPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#liftShowbPrec"><span class="hs-identifier hs-var">liftShowbPrec</span></a><span> </span><span class="hs-identifier hs-var">undefined</span><span> </span><span class="hs-identifier hs-var">undefined</span><span>
+</span><a name="line-22"></a><span>    </span><span class="hs-pragma">{-# INLINE showbPrec #-}</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-25"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-glyph">-&gt;</span><span class="hs-special">)</span><span> </span><a href="#local-6989586621679445845"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-26"></a><span>    </span><a name="local-8214565720323866139"><a href="TextShow.Classes.html#liftShowbPrec"><span class="hs-identifier">liftShowbPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#liftShowbPrec2"><span class="hs-identifier hs-var">liftShowbPrec2</span></a><span> </span><span class="hs-identifier hs-var">undefined</span><span> </span><span class="hs-identifier hs-var">undefined</span><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-pragma">{-# INLINE liftShowbPrec #-}</span><span>
+</span><a name="line-28"></a><span>
+</span><a name="line-29"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow2"><span class="hs-identifier hs-type">TextShow2</span></a><span> </span><span class="hs-special">(</span><span class="hs-glyph">-&gt;</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-31"></a><span>    </span><a name="local-8214565720323866136"><a href="TextShow.Classes.html#liftShowbPrec2"><span class="hs-identifier">liftShowbPrec2</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;&lt;function&gt;&quot;</span><span>
+</span><a name="line-32"></a><span>    </span><span class="hs-pragma">{-# INLINE liftShowbPrec2 #-}</span><span>
+</span><a name="line-33"></a></pre></body></html>

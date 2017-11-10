@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{-|
+Module:      TextShow
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+Efficiently convert from values to 'Text' via 'Builder's.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-13"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-14"></a><span>      </span><span class="hs-comment">-- * The @TextShow@ classes</span><span>
+</span><a name="line-15"></a><span>      </span><span class="hs-comment">-- ** 'TextShow'</span><span>
+</span><a name="line-16"></a><span>      </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbParen"><span class="hs-identifier hs-var">showbParen</span></a><span>
+</span><a name="line-18"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtParen"><span class="hs-identifier hs-var">showtParen</span></a><span>
+</span><a name="line-19"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlParen"><span class="hs-identifier hs-var">showtlParen</span></a><span>
+</span><a name="line-20"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbCommaSpace"><span class="hs-identifier hs-var">showbCommaSpace</span></a><span>
+</span><a name="line-21"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtCommaSpace"><span class="hs-identifier hs-var">showtCommaSpace</span></a><span>
+</span><a name="line-22"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlCommaSpace"><span class="hs-identifier hs-var">showtlCommaSpace</span></a><span>
+</span><a name="line-23"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbSpace"><span class="hs-identifier hs-var">showbSpace</span></a><span>
+</span><a name="line-24"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtSpace"><span class="hs-identifier hs-var">showtSpace</span></a><span>
+</span><a name="line-25"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlSpace"><span class="hs-identifier hs-var">showtlSpace</span></a><span>
+</span><a name="line-26"></a><span>      </span><span class="hs-comment">-- ** 'TextShow1'</span><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbPrec1"><span class="hs-identifier hs-var">showbPrec1</span></a><span>
+</span><a name="line-29"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbUnaryWith"><span class="hs-identifier hs-var">showbUnaryWith</span></a><span>
+</span><a name="line-30"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#liftShowtPrec"><span class="hs-identifier hs-var">liftShowtPrec</span></a><span>
+</span><a name="line-31"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#liftShowtlPrec"><span class="hs-identifier hs-var">liftShowtlPrec</span></a><span>
+</span><a name="line-32"></a><span>      </span><span class="hs-comment">-- ** 'TextShow2'</span><span>
+</span><a name="line-33"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow2"><span class="hs-identifier hs-type">TextShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbPrec2"><span class="hs-identifier hs-var">showbPrec2</span></a><span>
+</span><a name="line-35"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbBinaryWith"><span class="hs-identifier hs-var">showbBinaryWith</span></a><span>
+</span><a name="line-36"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#liftShowtPrec2"><span class="hs-identifier hs-var">liftShowtPrec2</span></a><span>
+</span><a name="line-37"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#liftShowtlPrec2"><span class="hs-identifier hs-var">liftShowtlPrec2</span></a><span>
+</span><a name="line-38"></a><span>      </span><span class="hs-comment">-- * 'Builder's</span><span>
+</span><a name="line-39"></a><span>      </span><span class="hs-comment">-- ** The 'Builder' type</span><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Builder</span><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#toText"><span class="hs-identifier hs-var">toText</span></a><span>
+</span><a name="line-42"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">toLazyText</span><span>
+</span><a name="line-43"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">toLazyTextWith</span><span>
+</span><a name="line-44"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#toString"><span class="hs-identifier hs-var">toString</span></a><span>
+</span><a name="line-45"></a><span>      </span><span class="hs-comment">-- ** Constructing 'Builder's</span><span>
+</span><a name="line-46"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">fromText</span><span>
+</span><a name="line-48"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">fromLazyText</span><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">fromString</span><span>
+</span><a name="line-50"></a><span>      </span><span class="hs-comment">-- ** Flushing the buffer state</span><span>
+</span><a name="line-51"></a><span>    </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">flush</span><span>
+</span><a name="line-52"></a><span>      </span><span class="hs-comment">-- ** 'Builder' utility functions</span><span>
+</span><a name="line-53"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#lengthB"><span class="hs-identifier hs-var">lengthB</span></a><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#unlinesB"><span class="hs-identifier hs-var">unlinesB</span></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#unwordsB"><span class="hs-identifier hs-var">unwordsB</span></a><span>
+</span><a name="line-56"></a><span>      </span><span class="hs-comment">-- * Printing values</span><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#printT"><span class="hs-identifier hs-var">printT</span></a><span>
+</span><a name="line-58"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#printTL"><span class="hs-identifier hs-var">printTL</span></a><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#hPrintT"><span class="hs-identifier hs-var">hPrintT</span></a><span>
+</span><a name="line-60"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#hPrintTL"><span class="hs-identifier hs-var">hPrintTL</span></a><span>
+</span><a name="line-61"></a><span>      </span><span class="hs-comment">-- * Conversions</span><span>
+</span><a name="line-62"></a><span>      </span><span class="hs-comment">-- ** Conversion between 'TextShow' and string 'Show'</span><span>
+</span><a name="line-63"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromStringShow"><span class="hs-identifier hs-type">FromStringShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-64"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromTextShow"><span class="hs-identifier hs-type">FromTextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromStringShow1"><span class="hs-identifier hs-type">FromStringShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-66"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromTextShow1"><span class="hs-identifier hs-type">FromTextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-67"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromStringShow2"><span class="hs-identifier hs-type">FromStringShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-68"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.FromStringTextShow.html#FromTextShow2"><span class="hs-identifier hs-type">FromTextShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-69"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showsPrecToShowbPrec"><span class="hs-identifier hs-var">showsPrecToShowbPrec</span></a><span>
+</span><a name="line-70"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showsToShowb"><span class="hs-identifier hs-var">showsToShowb</span></a><span>
+</span><a name="line-71"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbPrecToShowsPrec"><span class="hs-identifier hs-var">showbPrecToShowsPrec</span></a><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbToShows"><span class="hs-identifier hs-var">showbToShows</span></a><span>
+</span><a name="line-73"></a><span>      </span><span class="hs-comment">-- ** Conversions between 'Builder', strict 'TS.Text', and lazy 'TL.Text'</span><span>
+</span><a name="line-74"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtPrecToShowbPrec"><span class="hs-identifier hs-var">showtPrecToShowbPrec</span></a><span>
+</span><a name="line-75"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlPrecToShowbPrec"><span class="hs-identifier hs-var">showtlPrecToShowbPrec</span></a><span>
+</span><a name="line-76"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtToShowb"><span class="hs-identifier hs-var">showtToShowb</span></a><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showtlToShowb"><span class="hs-identifier hs-var">showtlToShowb</span></a><span>
+</span><a name="line-78"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbPrecToShowtPrec"><span class="hs-identifier hs-var">showbPrecToShowtPrec</span></a><span>
+</span><a name="line-79"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbPrecToShowtlPrec"><span class="hs-identifier hs-var">showbPrecToShowtlPrec</span></a><span>
+</span><a name="line-80"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbToShowt"><span class="hs-identifier hs-var">showbToShowt</span></a><span>
+</span><a name="line-81"></a><span>    </span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbToShowtl"><span class="hs-identifier hs-var">showbToShowtl</span></a><span>
+</span><a name="line-82"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-83"></a><span>
+</span><a name="line-84"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TS</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-85"></a><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">TL</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-86"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span>
+</span><a name="line-87"></a><span>
+</span><a name="line-88"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-89"></a><span>
+</span><a name="line-90"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span>
+</span><a name="line-91"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.FromStringTextShow.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">FromStringTextShow</span></a><span>
+</span><a name="line-92"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Instances.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Instances</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-93"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Utils.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Utils.html#toString"><span class="hs-identifier hs-var">toString</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#toText"><span class="hs-identifier hs-var">toText</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#lengthB"><span class="hs-identifier hs-var">lengthB</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#unlinesB"><span class="hs-identifier hs-var">unlinesB</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Utils.html#unwordsB"><span class="hs-identifier hs-var">unwordsB</span></a><span class="hs-special">)</span><span>
+</span><a name="line-94"></a></pre></body></html>

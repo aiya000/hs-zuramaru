@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span><span>
+</span><a name="line-3"></a><span>
+</span><a name="line-4"></a><span class="hs-comment">-- | This module provides &quot;Text.Read&quot; with functions added in later versions.</span><span>
+</span><a name="line-5"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Read</span><span class="hs-operator">.</span><span class="hs-identifier">Extra</span><span class="hs-special">(</span><span>
+</span><a name="line-6"></a><span>    </span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Read</span><span class="hs-special">,</span><span>
+</span><a name="line-7"></a><span>    </span><span class="hs-identifier hs-var">readEither</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">readMaybe</span><span>
+</span><a name="line-8"></a><span>    </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-9"></a><span>
+</span><a name="line-10"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Read</span><span>
+</span><a name="line-11"></a><span>
+</span><a name="line-12"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &lt; 706</span><span>
+</span><a name="line-13"></a><span>
+</span><a name="line-14"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">ParserCombinators</span><span class="hs-operator">.</span><span class="hs-identifier">ReadP</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="hs-identifier">P</span><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-comment">-- | Parse a string using the 'Read' instance.</span><span>
+</span><a name="line-17"></a><span class="hs-comment">-- Succeeds if there is exactly one valid result.</span><span>
+</span><a name="line-18"></a><span class="hs-comment">-- A 'Left' value indicates a parse error.</span><span>
+</span><a name="line-19"></a><span class="hs-identifier">readEither</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Read</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Either</span><span> </span><span class="hs-identifier">String</span><span> </span><span class="hs-identifier">a</span><span>
+</span><a name="line-20"></a><span class="hs-identifier">readEither</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">[</span><span> </span><span class="hs-identifier">x</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">x</span><span class="hs-special">,</span><span class="hs-string">&quot;&quot;</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-identifier">readPrec_to_S</span><span> </span><span class="hs-identifier">read'</span><span> </span><span class="hs-identifier">minPrec</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-special">]</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-22"></a><span>    </span><span class="hs-special">[</span><span class="hs-identifier">x</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Right</span><span> </span><span class="hs-identifier">x</span><span>
+</span><a name="line-23"></a><span>    </span><span class="hs-special">[</span><span class="hs-special">]</span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Left</span><span> </span><span class="hs-string">&quot;Prelude.read: no parse&quot;</span><span>
+</span><a name="line-24"></a><span>    </span><span class="hs-identifier">_</span><span>   </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Left</span><span> </span><span class="hs-string">&quot;Prelude.read: ambiguous parse&quot;</span><span>
+</span><a name="line-25"></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-identifier">read'</span><span> </span><span class="hs-glyph">=</span><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-keyword">do</span><span> </span><span class="hs-identifier">x</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-identifier">readPrec</span><span>
+</span><a name="line-28"></a><span>       </span><span class="hs-identifier">lift</span><span> </span><span class="hs-identifier">P</span><span class="hs-operator">.</span><span class="hs-identifier">skipSpaces</span><span>
+</span><a name="line-29"></a><span>       </span><span class="hs-identifier">return</span><span> </span><span class="hs-identifier">x</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span class="hs-comment">-- | Parse a string using the 'Read' instance.</span><span>
+</span><a name="line-32"></a><span class="hs-comment">-- Succeeds if there is exactly one valid result.</span><span>
+</span><a name="line-33"></a><span class="hs-identifier">readMaybe</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier">Read</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier">String</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Maybe</span><span> </span><span class="hs-identifier">a</span><span>
+</span><a name="line-34"></a><span class="hs-identifier">readMaybe</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-identifier">readEither</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a name="line-35"></a><span>                </span><span class="hs-identifier">Left</span><span> </span><span class="hs-identifier">_</span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Nothing</span><span>
+</span><a name="line-36"></a><span>                </span><span class="hs-identifier">Right</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">Just</span><span> </span><span class="hs-identifier">a</span><span>
+</span><a name="line-37"></a><span>
+</span><a name="line-38"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-39"></a></pre></body></html>

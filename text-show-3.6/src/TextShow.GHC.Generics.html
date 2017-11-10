@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP                  #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts     #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleInstances    #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE KindSignatures       #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE MagicHash            #-}</span><span>
+</span><a name="line-6"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings    #-}</span><span>
+</span><a name="line-7"></a><span class="hs-pragma">{-# LANGUAGE TemplateHaskell      #-}</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE TypeOperators        #-}</span><span>
+</span><a name="line-9"></a><span class="hs-pragma">{-# LANGUAGE TypeSynonymInstances #-}</span><span>
+</span><a name="line-10"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-11"></a><span>
+</span><a name="line-12"></a><span class="hs-comment">{-|
+Module:      TextShow.GHC.Generics
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for generics-related data types.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-24"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Generics</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-25"></a><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Generics</span><span class="hs-operator">.</span><span class="hs-identifier">Deriving</span><span class="hs-operator">.</span><span class="hs-identifier">Base</span><span>
+</span><a name="line-27"></a><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow1"><span class="hs-identifier hs-type">TextShow1</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#TextShow2"><span class="hs-identifier hs-type">TextShow2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Char.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Char</span></a><span>     </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Floating.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Floating</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-31"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Integral.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Integral</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-32"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.TH.Internal.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">TH</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#deriveTextShow"><span class="hs-identifier hs-var">deriveTextShow</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#deriveTextShow1"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeShowbPrec"><span class="hs-identifier hs-var">makeShowbPrec</span></a><span class="hs-special">,</span><span>
+</span><a name="line-33"></a><span>                             </span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec"><span class="hs-identifier hs-var">makeLiftShowbPrec</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.TH.Internal.html#makeLiftShowbPrec2"><span class="hs-identifier hs-var">makeLiftShowbPrec2</span></a><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span>
+</span><a name="line-35"></a><span class="hs-cpp">#if !(MIN_VERSION_template_haskell(2,7,0))</span><span>
+</span><a name="line-36"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-37"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-38"></a><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Char</span><span class="hs-special">(</span><span class="hs-identifier">C</span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">Double</span><span class="hs-special">(</span><span class="hs-identifier">D</span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">Float</span><span class="hs-special">(</span><span class="hs-identifier">F</span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">Int</span><span class="hs-special">(</span><span class="hs-identifier">I</span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">Word</span><span class="hs-special">(</span><span class="hs-identifier">W</span><span class="hs-operator">#</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Show</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">appPrec</span><span class="hs-special">)</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showbParen</span><span class="hs-special">)</span><span>
+</span><a name="line-43"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-46"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">U1</span><span> </span><a href="#local-6989586621680754490"><span class="hs-identifier hs-type">p</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-47"></a><span>    </span><a name="local-8214565720323866142"><a href="TextShow.Classes.html#showbPrec"><span class="hs-identifier">showbPrec</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Classes.html#liftShowbPrec"><span class="hs-identifier hs-var">liftShowbPrec</span></a><span> </span><span class="hs-identifier hs-var">undefined</span><span> </span><span class="hs-identifier hs-var">undefined</span><span>
+</span><a name="line-48"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-49"></a><span class="hs-operator">$</span><span class="hs-special">(</span><a href="TextShow.TH.Internal.html#liftShowbPrecConst"><span class="hs-identifier hs-var">deriveTextShow1</span></a><span> </span><span class="hs-char">''U1)
+
+-- | /Since: 2/
+$(deriveTextShow  ''Par1)
+-- | /Since: 2/
+$(deriveTextShow1 ''Par1)
+
+-- | /Since: 2/
+instance TextShow (f p) =&gt; TextShow (Rec1 f p) where
+    showbPrec = $(makeShowbPrec ''Rec1)
+-- | /Since: 2/
+$(deriveTextShow1 ''Rec1)
+
+-- | /Since: 2/
+instance TextShow c =&gt; TextShow (K1 i c p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2/
+instance TextShow c =&gt; TextShow1 (K1 i c) where
+    liftShowbPrec = liftShowbPrec2 showbPrec showbList
+-- | /Since: 2/
+instance TextShow2 (K1 i) where
+    liftShowbPrec2 = $(makeLiftShowbPrec2 ''K1)
+
+-- | /Since: 2/
+instance TextShow (f p) =&gt; TextShow (M1 i c f p) where
+    showbPrec = $(makeShowbPrec ''M1)
+-- | /Since: 2/
+instance TextShow1 f =&gt; TextShow1 (M1 i c f) where
+    liftShowbPrec = $(makeLiftShowbPrec ''M1)
+
+-- | /Since: 2/
+instance (TextShow (f p), TextShow (g p)) =&gt; TextShow ((f :+: g) p) where
+    showbPrec = $(makeShowbPrec ''(:+:))
+-- | /Since: 2/
+$(deriveTextShow1 ''(:+:))
+
+-- | /Since: 2/
+instance (TextShow (f p), TextShow (g p)) =&gt; TextShow ((f :*: g) p) where
+    showbPrec = $(makeShowbPrec ''(:*:))
+-- | /Since: 2/
+$(deriveTextShow1 ''(:*:))
+
+-- | /Since: 2/
+instance TextShow (f (g p)) =&gt; TextShow ((f :.: g) p) where
+    showbPrec = $(makeShowbPrec ''(:.:))
+-- | /Since: 2/
+$(deriveTextShow1 ''(:.:))
+
+#if MIN_VERSION_template_haskell(2,7,0)
+-- | /Since: 2.1.2/
+instance TextShow (UChar p) where
+    showbPrec = $(makeShowbPrec 'UChar)
+-- | /Since: 2.1.2/
+$(deriveTextShow1 'UChar)
+
+-- | /Since: 2.1.2/
+instance TextShow (UDouble p) where
+    showbPrec = $(makeShowbPrec 'UDouble)
+-- | /Since: 2.1.2/
+$(deriveTextShow1 'UDouble)
+
+-- | /Since: 2.1.2/
+instance TextShow (UFloat p) where
+    showbPrec = $(makeShowbPrec 'UFloat)
+-- | /Since: 2.1.2/
+$(deriveTextShow1 'UFloat)
+
+-- | /Since: 2.1.2/
+instance TextShow (UInt p) where
+    showbPrec = $(makeShowbPrec 'UInt)
+-- | /Since: 2.1.2/
+$(deriveTextShow1 'UInt)
+
+-- | /Since: 2.1.2/
+instance TextShow (UWord p) where
+    showbPrec = $(makeShowbPrec 'UWord)
+-- | /Since: 2.1.2/
+$(deriveTextShow1 'UWord)
+#else
+-- | /Since: 2.1.2/
+instance TextShow (UChar p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2.1.2/
+instance TextShow1 UChar where
+    liftShowbPrec _ _ p (UChar c) = showbParen (p &gt; appPrec) $
+           &quot;UChar &quot;    &lt;&gt; singleton '{'
+        &lt;&gt; &quot;uChar# = &quot; &lt;&gt; showb (C# c)
+        &lt;&gt; singleton '}'
+
+-- | /Since: 2.1.2/
+instance TextShow (UDouble p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2.1.2/
+instance TextShow1 UDouble where
+    liftShowbPrec _ _ p (UDouble d) = showbParen (p &gt; appPrec) $
+           &quot;UDouble &quot;    &lt;&gt; singleton '{'
+        &lt;&gt; &quot;uDouble# = &quot; &lt;&gt; showb (D# d)
+        &lt;&gt; singleton '}'
+
+-- | /Since: 2.1.2/
+instance TextShow (UFloat p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2.1.2/
+instance TextShow1 UFloat where
+    liftShowbPrec _ _ p (UFloat f) = showbParen (p &gt; appPrec) $
+           &quot;UFloat &quot;    &lt;&gt; singleton '{'
+        &lt;&gt; &quot;uFloat# = &quot; &lt;&gt; showb (F# f)
+        &lt;&gt; singleton '}'
+
+-- | /Since: 2.1.2/
+instance TextShow (UInt p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2.1.2/
+instance TextShow1 UInt where
+    liftShowbPrec _ _ p (UInt i) = showbParen (p &gt; appPrec) $
+           &quot;UInt &quot;    &lt;&gt; singleton '{'
+        &lt;&gt; &quot;uInt# = &quot; &lt;&gt; showb (I# i)
+        &lt;&gt; singleton '}'
+
+-- | /Since: 2.1.2/
+instance TextShow (UWord p) where
+    showbPrec = liftShowbPrec undefined undefined
+-- | /Since: 2.1.2/
+instance TextShow1 UWord where
+    liftShowbPrec _ _ p (UWord w) = showbParen (p &gt; appPrec) $
+           &quot;UWord &quot;    &lt;&gt; singleton '{'
+        &lt;&gt; &quot;uWord# = &quot; &lt;&gt; showb (W# w)
+        &lt;&gt; singleton '}'
+#endif
+
+-- | /Since: 2/
+$(deriveTextShow ''Fixity)
+-- | /Since: 2/
+$(deriveTextShow ''Associativity)
+#if MIN_VERSION_base(4,9,0)
+-- | Only available with @base-4.9.0.0@ or later.
+--
+-- /Since: 3/
+$(deriveTextShow ''SourceUnpackedness)
+-- | Only available with @base-4.9.0.0@ or later.
+--
+-- /Since: 3/
+$(deriveTextShow ''SourceStrictness)
+-- | Only available with @base-4.9.0.0@ or later.
+--
+-- /Since: 3/
+$(deriveTextShow ''DecidedStrictness)
+#else
+-- | Only available with @base-4.8@ or earlier.
+--
+-- /Since: 2/
+$(deriveTextShow ''Arity)
+#endif
+</span></pre></body></html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-3"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Dynamic
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instance for 'Dynamic'.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-15"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Dynamic</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-16"></a><span>
+</span><a name="line-17"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Dynamic</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Dynamic</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">dynTypeRep</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>
+</span><a name="line-20"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Prelude</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span>
+</span><a name="line-22"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-23"></a><span class="hs-keyword">import</span><span> </span><a href="TextShow.Data.Typeable.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-comment">-- | /Since: 2/</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">instance</span><span> </span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span> </span><span class="hs-identifier hs-type">Dynamic</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-27"></a><span>    </span><a name="local-8214565720323866143"><a href="TextShow.Classes.html#showb"><span class="hs-identifier">showb</span></a></a><span> </span><a name="local-6989586621679887833"><a href="#local-6989586621679887833"><span class="hs-identifier">dyn</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-string">&quot;&lt;&lt;&quot;</span><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><a href="TextShow.Classes.html#showb"><span class="hs-identifier hs-var">showb</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">dynTypeRep</span><span> </span><a href="#local-6989586621679887833"><span class="hs-identifier hs-var">dyn</span></a><span class="hs-special">)</span><span> </span><span class="hs-operator hs-var">&lt;&gt;</span><span> </span><span class="hs-string">&quot;&gt;&gt;&quot;</span><span>
+</span><a name="line-28"></a><span>    </span><span class="hs-pragma">{-# INLINE showb #-}</span><span>
+</span><a name="line-29"></a></pre></body></html>

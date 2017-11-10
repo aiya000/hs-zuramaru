@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns      #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE CPP               #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE GADTs             #-}</span><span>
+</span><a name="line-4"></a><span class="hs-pragma">{-# LANGUAGE MagicHash         #-}</span><span>
+</span><a name="line-5"></a><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><a name="line-6"></a><span>
+</span><a name="line-7"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 706</span><span>
+</span><a name="line-8"></a><span class="hs-pragma">{-# LANGUAGE PolyKinds         #-}</span><span>
+</span><a name="line-9"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-10"></a><span>
+</span><a name="line-11"></a><span class="hs-cpp">#if __GLASGOW_HASKELL__ &gt;= 801</span><span>
+</span><a name="line-12"></a><span class="hs-pragma">{-# LANGUAGE PatternSynonyms   #-}</span><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE TypeApplications  #-}</span><span>
+</span><a name="line-14"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# OPTIONS_GHC -fno-warn-orphans #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-comment">{-|
+Module:      TextShow.Data.Typeable
+Copyright:   (C) 2014-2017 Ryan Scott
+License:     BSD-style (see the file LICENSE)
+Maintainer:  Ryan Scott
+Stability:   Provisional
+Portability: GHC
+
+'TextShow' instances for data types in the @Typeable@ module.
+
+/Since: 2/
+-}</span><span>
+</span><a name="line-30"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-cpp">#if MIN_VERSION_base(4,10,0)</span><span>
+</span><a name="line-33"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Kind</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Type</span><span class="hs-special">)</span><span>
+</span><a name="line-35"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Builder</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">fromString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">Equality</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator">:~~:</span><span class="hs-special">)</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-37"></a><span>
+</span><a name="line-38"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Char</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-39"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Addr</span><span class="hs-operator">#</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator">+#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">eqChar</span><span class="hs-operator">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">indexCharOffAddr</span><span class="hs-operator">#</span><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Module</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">TrName</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">TyCon</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">isTrue</span><span class="hs-operator">#</span><span class="hs-special">)</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">TextShow</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">TextShow1</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">showbParen</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">showbSpace</span><span class="hs-special">)</span><span>
+</span><a name="line-43"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">showbArgs</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">showbTuple</span><span class="hs-special">)</span><span>
+</span><a name="line-44"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">isTupleString</span><span class="hs-special">)</span><span>
+</span><a name="line-45"></a><span>
+</span><a name="line-46"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Type</span><span class="hs-operator">.</span><span class="hs-identifier">Reflection</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">pattern</span><span> </span><span class="hs-identifier">App</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">pattern</span><span> </span><span class="hs-identifier">Con</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">pattern</span><span> </span><span class="hs-identifier">Con'</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">pattern</span><span> </span><span class="hs-identifier">Fun</span><span class="hs-special">,</span><span>
+</span><a name="line-47"></a><span>                                  </span><span class="hs-identifier">SomeTypeRep</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">TypeRep</span><span class="hs-special">,</span><span>
+</span><a name="line-48"></a><span>                                  </span><span class="hs-identifier">eqTypeRep</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">tyConName</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">typeRep</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">typeRepTyCon</span><span class="hs-special">)</span><span>
+</span><a name="line-49"></a><span class="hs-cpp">#else /* !(MIN_VERSION_base(4,10,0) */</span><span>
+</span><a name="line-50"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Monoid</span><span class="hs-operator">.</span><span class="hs-identifier">Compat</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-operator hs-var">&lt;&gt;</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-51"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">fromString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">singleton</span><span class="hs-special">)</span><span>
+</span><a name="line-52"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">TypeRep</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">typeRepArgs</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">typeRepTyCon</span><span class="hs-special">)</span><span>
+</span><a name="line-53"></a><span class="hs-cpp"># if MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-54"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">tyConName</span><span class="hs-special">)</span><span>
+</span><a name="line-55"></a><span class="hs-cpp">#  if MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-56"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">typeRepKinds</span><span class="hs-special">)</span><span>
+</span><a name="line-57"></a><span class="hs-cpp">#  endif</span><span>
+</span><a name="line-58"></a><span class="hs-cpp">#  if MIN_VERSION_base(4,9,0)</span><span>
+</span><a name="line-59"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Lazy</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Builder</span><span class="hs-special">)</span><span>
+</span><a name="line-60"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Proxy</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">,</span><span>
+</span><a name="line-61"></a><span>                                         </span><span class="hs-identifier hs-type">TypeRep</span><span class="hs-special">(</span><span class="hs-identifier hs-var">TypeRep</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">typeRep</span><span class="hs-special">)</span><span>
+</span><a name="line-62"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">RuntimeRep</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">TYPE</span><span class="hs-special">)</span><span>
+</span><a name="line-63"></a><span class="hs-cpp">#  elif MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">funTc</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">listTc</span><span class="hs-special">)</span><span>
+</span><a name="line-65"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-66"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-67"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">mkTyCon</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">tyConString</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">typeOf</span><span class="hs-special">)</span><span>
+</span><a name="line-68"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-69"></a><span>
+</span><a name="line-70"></a><span class="hs-cpp"># if MIN_VERSION_base(4,9,0)</span><span>
+</span><a name="line-71"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Exts</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Char</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-72"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Prim</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Addr</span><span class="hs-operator hs-type">#</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">+#</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">eqChar</span><span class="hs-operator hs-var">#</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">indexCharOffAddr</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span>
+</span><a name="line-73"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">GHC</span><span class="hs-operator">.</span><span class="hs-identifier">Types</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">TyCon</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">TrName</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Module</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-var">isTrue</span><span class="hs-operator hs-var">#</span><span class="hs-special">)</span><span>
+</span><a name="line-74"></a><span class="hs-cpp"># elif MIN_VERSION_base(4,4,0)</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">TyCon</span><span class="hs-special">)</span><span>
+</span><a name="line-76"></a><span class="hs-cpp"># else</span><span>
+</span><a name="line-77"></a><span class="hs-keyword">import</span><span>           </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">TyCon</span><span class="hs-special">)</span><span>
+</span><a name="line-78"></a><span class="hs-cpp"># endif</span><span>
+</span><a name="line-79"></a><span>
+</span><a name="line-80"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Classes.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Classes</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Classes.html#TextShow"><span class="hs-identifier hs-type">TextShow</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbParen"><span class="hs-identifier hs-var">showbParen</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Classes.html#showbSpace"><span class="hs-identifier hs-var">showbSpace</span></a><span class="hs-special">)</span><span>
+</span><a name="line-81"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.List.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-82"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Data.Typeable.Utils.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Data.Typeable.Utils.html#showbArgs"><span class="hs-identifier hs-var">showbArgs</span></a><span class="hs-special">,</span><span> </span><a href="TextShow.Data.Typeable.Utils.html#showbTuple"><span class="hs-identifier hs-var">showbTuple</span></a><span class="hs-special">)</span><span>
+</span><a name="line-83"></a><span class="hs-keyword">import</span><span>           </span><a href="TextShow.Utils.html"><span class="hs-identifier">TextShow</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span></a><span> </span><span class="hs-special">(</span><a href="TextShow.Utils.html#isTupleString"><span class="hs-identifier hs-var">isTupleString</span></a><span class="hs-special">)</span><span>
+</span><a name="line-84"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-85"></a><span>
+</span><a name="line-86"></a><span class="hs-cpp">#if !(MIN_VERSION_base(4,10,0))</span><span>
+</span><a name="line-87"></a><span class="hs-cpp"># if MIN_VERSION_base(4,9,0)</span><span>
+</span><a name="line-88"></a><span class="hs-identifier">tyConOf</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span> </span><a href="#local-6989586621679850606"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679850606"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">TyCon</span><span>
+</span><a name="line-89"></a><a name="tyConOf"><a href="TextShow.Data.Typeable.html#tyConOf"><span class="hs-identifier">tyConOf</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">typeRepTyCon</span><span> </span><span class="hs-operator hs-var">.</span><span> </span><span class="hs-identifier hs-var">typeRep</span><span>
+</span><a name="line-90"></a><span>
+</span><a name="line-91"></a><span class="hs-identifier">tcFun</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TyCon</span><span>
+</span><a name="line-92"></a><a name="tcFun"><a href="TextShow.Data.Typeable.html#tcFun"><span class="hs-identifier">tcFun</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Typeable.html#tyConOf"><span class="hs-identifier hs-var">tyConOf</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Proxy</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Int</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-93"></a><span>
+</span><a name="line-94"></a><span class="hs-identifier">tcList</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TyCon</span><span>
+</span><a name="line-95"></a><a name="tcList"><a href="TextShow.Data.Typeable.html#tcList"><span class="hs-identifier">tcList</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Typeable.html#tyConOf"><span class="hs-identifier hs-var">tyConOf</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Proxy</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><a name="line-96"></a><span>
+</span><a name="line-97"></a><span class="hs-identifier">tcTYPE</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TyCon</span><span>
+</span><a name="line-98"></a><a name="tcTYPE"><a href="TextShow.Data.Typeable.html#tcTYPE"><span class="hs-identifier">tcTYPE</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Typeable.html#tyConOf"><span class="hs-identifier hs-var">tyConOf</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Proxy</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><span class="hs-identifier hs-type">TYPE</span><span class="hs-special">)</span><span>
+</span><a name="line-99"></a><span>
+</span><a name="line-100"></a><span class="hs-identifier">tc'Lifted</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">TyCon</span><span>
+</span><a name="line-101"></a><a name="tc%27Lifted"><a href="TextShow.Data.Typeable.html#tc%27Lifted"><span class="hs-identifier">tc'Lifted</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="TextShow.Data.Typeable.html#tyConOf"><span class="hs-identifier hs-var">tyConOf</span></a><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">Proxy</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><span class="hs-char">'PtrRepLifted)
+
+tc'Unlifted :: TyCon
+tc'Unlifted = tyConOf (Proxy :: Proxy 'PtrRepUnlifted)
+# elif MIN_VERSION_base(4,4,0)
+-- | The list 'TyCon'.
+tcList :: TyCon
+tcList = listTc
+
+-- | The function (@-&gt;@) 'TyCon'.
+tcFun :: TyCon
+tcFun = funTc
+# else
+-- | The list 'TyCon'.
+tcList :: TyCon
+tcList = typeRepTyCon $ typeOf [()]
+
+-- | The function (@-&gt;@) 'TyCon'.
+tcFun :: TyCon
+tcFun = mkTyCon &quot;-&gt;&quot;
+# endif
+#endif
+
+-- | Does the 'TyCon' represent a tuple type constructor?
+isTupleTyCon :: TyCon -&gt; Bool
+isTupleTyCon = isTupleString . tyConString
+{-# INLINE isTupleTyCon #-}
+
+#if MIN_VERSION_base(4,4,0)
+-- | Identical to 'tyConName'. Defined to avoid using excessive amounts of pragmas
+-- with base-4.3 and earlier, which use 'tyConString'.
+tyConString :: TyCon -&gt; String
+tyConString = tyConName
+{-# INLINE tyConString #-}
+#endif
+
+#if MIN_VERSION_base(4,10,0)
+-- | Only available with @base-4.10.0.0@ or later.
+--
+-- /Since: 3.6/
+instance TextShow SomeTypeRep where
+    showbPrec p (SomeTypeRep ty) = showbPrec p ty
+
+-- | Only available with @base-4.10.0.0@ or later.
+--
+-- /Since: 3.6/
+instance TextShow (TypeRep (a :: k)) where
+    showbPrec = showbTypeable
+
+-- | Only available with @base-4.10.0.0@ or later.
+--
+-- /Since: 3.6/
+instance TextShow1 TypeRep where
+    liftShowbPrec _ _ = showbTypeable
+
+showbTypeable :: Int -&gt; TypeRep (a :: k) -&gt; Builder
+showbTypeable _ rep
+  | Just HRefl &lt;- rep `eqTypeRep` (typeRep :: TypeRep Type) =
+    singleton '*'
+  | isListTyCon tc, [ty] &lt;- tys =
+    singleton '[' &lt;&gt; showb ty &lt;&gt; singleton ']'
+  | isTupleTyCon tc =
+    showbTuple tys
+  where (tc, tys) = splitApps rep
+showbTypeable p (Con' tycon [])
+  = showbPrec p tycon
+showbTypeable p (Con' tycon args)
+  = showbParen (p &gt; 9) $
+    showbPrec p tycon &lt;&gt;
+    showbSpace &lt;&gt;
+    showbArgs showbSpace args
+showbTypeable p (Fun x r)
+  = showbParen (p &gt; 8) $
+    showbPrec 9 x &lt;&gt; &quot; -&gt; &quot; &lt;&gt; showbPrec 8 r
+showbTypeable p (App f x)
+  = showbParen (p &gt; 9) $
+    showbPrec 8 f &lt;&gt;
+    showbSpace &lt;&gt;
+    showbPrec 10 x
+
+splitApps :: TypeRep a -&gt; (TyCon, [SomeTypeRep])
+splitApps = go []
+  where
+    go :: [SomeTypeRep] -&gt; TypeRep a -&gt; (TyCon, [SomeTypeRep])
+    go xs (Con tc)  = (tc, xs)
+    go xs (App f x) = go (SomeTypeRep x : xs) f
+    go [] (Fun a b) = (funTyCon, [SomeTypeRep a, SomeTypeRep b])
+    go _  (Fun _ _) =
+        errorWithoutStackTrace &quot;Data.Typeable.Internal.splitApps: Impossible&quot;
+
+funTyCon :: TyCon
+funTyCon = typeRepTyCon (typeRep @(-&gt;))
+
+isListTyCon :: TyCon -&gt; Bool
+isListTyCon tc = tc == typeRepTyCon (typeRep :: TypeRep [Int])
+#else
+-- | Only available with @base-4.9@ or earlier.
+--
+-- /Since: 2/
+instance TextShow TypeRep where
+    showbPrec p tyrep =
+        case tys of
+          [] -&gt; showb tycon
+# if MIN_VERSION_base(4,9,0)
+          [x@(TypeRep _ argCon _ _)]
+# else
+          [x]
+# endif
+            | tycon == tcList -&gt; singleton '[' &lt;&gt; showb x &lt;&gt; singleton ']'
+# if MIN_VERSION_base(4,9,0)
+            | tycon == tcTYPE &amp;&amp; argCon == tc'Lifted   -&gt; singleton '*'
+            | tycon == tcTYPE &amp;&amp; argCon == tc'Unlifted -&gt; singleton '#'
+# endif
+          [a,r] | tycon == tcFun  -&gt; showbParen (p &gt; 8) $
+                                        showbPrec 9 a
+                                     &lt;&gt; &quot; -&gt; &quot;
+                                     &lt;&gt; showbPrec 8 r
+          xs | isTupleTyCon tycon -&gt; showbTuple xs
+             | otherwise          -&gt; showbParen (p &gt; 9) $
+                                        showbPrec p tycon
+                                     &lt;&gt; showbSpace
+                                     &lt;&gt; showbArgs showbSpace
+# if MIN_VERSION_base(4,8,0)
+                                                             (kinds ++ tys)
+# else
+                                                             tys
+# endif
+      where
+        tycon = typeRepTyCon tyrep
+        tys   = typeRepArgs tyrep
+# if MIN_VERSION_base(4,8,0)
+        kinds = typeRepKinds tyrep
+# endif
+#endif
+
+-- | /Since: 2/
+instance TextShow TyCon where
+#if MIN_VERSION_base(4,10,0)
+    showbPrec p (TyCon _ _ _ tc_name _ _) = showbPrec p tc_name
+#elif MIN_VERSION_base(4,9,0)
+    showb (TyCon _ _ _ tc_name) = showb tc_name
+#else
+    showb = fromString . tyConString
+#endif
+
+#if MIN_VERSION_base(4,9,0)
+-- | Only available with @base-4.9.0.0@ or later.
+--
+-- /Since: 3/
+instance TextShow TrName where
+    showb (TrNameS s) = unpackCStringToBuilder# s
+    showb (TrNameD s) = fromString s
+    {-# INLINE showb #-}
+
+unpackCStringToBuilder# :: Addr# -&gt; Builder
+    -- There's really no point in inlining this, ever, as the loop doesn't
+    -- specialise in an interesting But it's pretty small, so there's a danger
+    -- that it'll be inlined at every literal, which is a waste
+unpackCStringToBuilder# addr
+  = unpack 0#
+  where
+    unpack nh
+      | isTrue# (ch `eqChar#` '\0'#) = mempty
+      | True                         = singleton (C# ch) &lt;&gt; unpack (nh +# 1#)
+      where
+        !ch = indexCharOffAddr# addr nh
+{-# NOINLINE unpackCStringToBuilder# #-}
+
+-- | Only available with @base-4.9.0.0@ or later.
+--
+-- /Since: 3/
+instance TextShow Module where
+    showb (Module p m) = showb p &lt;&gt; singleton ':' &lt;&gt; showb m
+    {-# INLINE showb #-}
+#endif
+</span></pre></body></html>

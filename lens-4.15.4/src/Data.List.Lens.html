@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE CPP #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE Rank2Types #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-4"></a><span>
+</span><a name="line-5"></a><span class="hs-cpp">#ifndef MIN_VERSION_base</span><span>
+</span><a name="line-6"></a><span class="hs-cpp">#define MIN_VERSION_base(x,y,z) 1</span><span>
+</span><a name="line-7"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-8"></a><span>
+</span><a name="line-9"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Module      :  Data.List.Lens</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Copyright   :  (C) 2012-16 Edward Kmett</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- License     :  BSD-style (see the file LICENSE)</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- Maintainer  :  Edward Kmett &lt;ekmett@gmail.com&gt;</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-17"></a><span class="hs-comment">--</span><span>
+</span><a name="line-18"></a><span class="hs-comment">-- Traversals for manipulating parts of a list.</span><span>
+</span><a name="line-19"></a><span class="hs-comment">--</span><span>
+</span><a name="line-20"></a><span class="hs-comment">-- Additional optics for manipulating lists are present more</span><span>
+</span><a name="line-21"></a><span class="hs-comment">-- generically in this package.</span><span>
+</span><a name="line-22"></a><span class="hs-comment">--</span><span>
+</span><a name="line-23"></a><span class="hs-comment">-- The 'Control.Lens.At.Ixed' class allows traversing the element at a</span><span>
+</span><a name="line-24"></a><span class="hs-comment">-- specific list index.</span><span>
+</span><a name="line-25"></a><span class="hs-comment">--</span><span>
+</span><a name="line-26"></a><span class="hs-comment">-- &gt;&gt;&gt; [0..10] ^? ix 4</span><span>
+</span><a name="line-27"></a><span class="hs-comment">-- Just 4</span><span>
+</span><a name="line-28"></a><span class="hs-comment">--</span><span>
+</span><a name="line-29"></a><span class="hs-comment">-- &gt;&gt;&gt; [0..5] &amp; ix 4 .~ 2</span><span>
+</span><a name="line-30"></a><span class="hs-comment">-- [0,1,2,3,2,5]</span><span>
+</span><a name="line-31"></a><span class="hs-comment">--</span><span>
+</span><a name="line-32"></a><span class="hs-comment">-- &gt;&gt;&gt; [0..10] ^? ix 14</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-34"></a><span class="hs-comment">--</span><span>
+</span><a name="line-35"></a><span class="hs-comment">-- &gt;&gt;&gt; [0..5] &amp; ix 14 .~ 2</span><span>
+</span><a name="line-36"></a><span class="hs-comment">-- [0,1,2,3,4,5]</span><span>
+</span><a name="line-37"></a><span class="hs-comment">--</span><span>
+</span><a name="line-38"></a><span class="hs-comment">-- The 'Control.Lens.Cons.Cons' and 'Control.Lens.Empty.AsEmpty'</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- classes provide 'Control.Lens.Prism.Prism's for list constructors.</span><span>
+</span><a name="line-40"></a><span class="hs-comment">--</span><span>
+</span><a name="line-41"></a><span class="hs-comment">-- &gt;&gt;&gt; [1..10] ^? _Cons</span><span>
+</span><a name="line-42"></a><span class="hs-comment">-- Just (1,[2,3,4,5,6,7,8,9,10])</span><span>
+</span><a name="line-43"></a><span class="hs-comment">--</span><span>
+</span><a name="line-44"></a><span class="hs-comment">-- &gt;&gt;&gt; [] ^? _Cons</span><span>
+</span><a name="line-45"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-46"></a><span class="hs-comment">--</span><span>
+</span><a name="line-47"></a><span class="hs-comment">-- &gt;&gt;&gt; [] ^? _Empty</span><span>
+</span><a name="line-48"></a><span class="hs-comment">-- Just ()</span><span>
+</span><a name="line-49"></a><span class="hs-comment">--</span><span>
+</span><a name="line-50"></a><span class="hs-comment">-- &gt;&gt;&gt; _Cons # (1, _Empty # ()) :: [Int]</span><span>
+</span><a name="line-51"></a><span class="hs-comment">-- [1]</span><span>
+</span><a name="line-52"></a><span class="hs-comment">--</span><span>
+</span><a name="line-53"></a><span class="hs-comment">-- Additionally, 'Control.Lens.Cons.Snoc' provides a</span><span>
+</span><a name="line-54"></a><span class="hs-comment">-- 'Control.Lens.Prism.Prism' for accessing the end of a list. Note</span><span>
+</span><a name="line-55"></a><span class="hs-comment">-- that this 'Control.Lens.Prism.Prism' always will need to traverse</span><span>
+</span><a name="line-56"></a><span class="hs-comment">-- the whole list.</span><span>
+</span><a name="line-57"></a><span class="hs-comment">--</span><span>
+</span><a name="line-58"></a><span class="hs-comment">-- &gt;&gt;&gt; [1..5] ^? _Snoc</span><span>
+</span><a name="line-59"></a><span class="hs-comment">-- Just ([1,2,3,4],5)</span><span>
+</span><a name="line-60"></a><span class="hs-comment">--</span><span>
+</span><a name="line-61"></a><span class="hs-comment">-- &gt;&gt;&gt; _Snoc # ([1,2],5)</span><span>
+</span><a name="line-62"></a><span class="hs-comment">-- [1,2,5]</span><span>
+</span><a name="line-63"></a><span class="hs-comment">--</span><span>
+</span><a name="line-64"></a><span class="hs-comment">-- An instance of 'Control.Lens.Plated.Plated' allows for finding</span><span>
+</span><a name="line-65"></a><span class="hs-comment">-- locations in the list where a traversal matches.</span><span>
+</span><a name="line-66"></a><span class="hs-comment">--</span><span>
+</span><a name="line-67"></a><span class="hs-comment">-- &gt;&gt;&gt; [Nothing, Just 7, Just 3, Nothing] &amp; deep (ix 0 . _Just) +~ 10</span><span>
+</span><a name="line-68"></a><span class="hs-comment">-- [Nothing,Just 17,Just 3,Nothing]</span><span>
+</span><a name="line-69"></a><span class="hs-comment">--</span><span>
+</span><a name="line-70"></a><span class="hs-comment">-- An instance of 'Control.Lens.Iso.Reversing' provides an</span><span>
+</span><a name="line-71"></a><span class="hs-comment">-- 'Control.Lens.Iso.Iso' between a list and its reverse.</span><span>
+</span><a name="line-72"></a><span class="hs-comment">--</span><span>
+</span><a name="line-73"></a><span class="hs-comment">-- &gt;&gt;&gt; &quot;live&quot; &amp; reversed %~ ('d':)</span><span>
+</span><a name="line-74"></a><span class="hs-comment">-- &quot;lived&quot;</span><span>
+</span><a name="line-75"></a><span class="hs-comment">--</span><span>
+</span><a name="line-76"></a><span class="hs-comment">-- Finally, it's possible to traverse, fold over, and map over</span><span>
+</span><a name="line-77"></a><span class="hs-comment">-- index-value pairs thanks to instances of</span><span>
+</span><a name="line-78"></a><span class="hs-comment">-- 'Control.Lens.Indexed.TraversableWithIndex',</span><span>
+</span><a name="line-79"></a><span class="hs-comment">-- 'Control.Lens.Indexed.FoldableWithIndex', and</span><span>
+</span><a name="line-80"></a><span class="hs-comment">-- 'Control.Lens.Indexed.FunctorWithIndex'.</span><span>
+</span><a name="line-81"></a><span class="hs-comment">--</span><span>
+</span><a name="line-82"></a><span class="hs-comment">-- &gt;&gt;&gt; imap (,) &quot;Hello&quot;</span><span>
+</span><a name="line-83"></a><span class="hs-comment">-- [(0,'H'),(1,'e'),(2,'l'),(3,'l'),(4,'o')]</span><span>
+</span><a name="line-84"></a><span class="hs-comment">--</span><span>
+</span><a name="line-85"></a><span class="hs-comment">-- &gt;&gt;&gt; ifoldMap replicate &quot;Hello&quot;</span><span>
+</span><a name="line-86"></a><span class="hs-comment">-- &quot;ellllloooo&quot;</span><span>
+</span><a name="line-87"></a><span class="hs-comment">--</span><span>
+</span><a name="line-88"></a><span class="hs-comment">-- &gt;&gt;&gt; itraverse_ (curry print) &quot;Hello&quot;</span><span>
+</span><a name="line-89"></a><span class="hs-comment">-- (0,'H')</span><span>
+</span><a name="line-90"></a><span class="hs-comment">-- (1,'e')</span><span>
+</span><a name="line-91"></a><span class="hs-comment">-- (2,'l')</span><span>
+</span><a name="line-92"></a><span class="hs-comment">-- (3,'l')</span><span>
+</span><a name="line-93"></a><span class="hs-comment">-- (4,'o')</span><span>
+</span><a name="line-94"></a><span class="hs-comment">--</span><span>
+</span><a name="line-95"></a><span class="hs-comment">----------------------------------------------------------------------------</span><span>
+</span><a name="line-96"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span>
+</span><a name="line-97"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.List.Lens.html#prefixed"><span class="hs-identifier hs-var">prefixed</span></a><span>
+</span><a name="line-98"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.List.Lens.html#suffixed"><span class="hs-identifier hs-var">suffixed</span></a><span>
+</span><a name="line-99"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.List.Lens.html#stripSuffix"><span class="hs-identifier hs-var">stripSuffix</span></a><span>
+</span><a name="line-100"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-101"></a><span>
+</span><a name="line-102"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">guard</span><span class="hs-special">)</span><span>
+</span><a name="line-103"></a><span class="hs-keyword">import</span><span> </span><a href="Control.Lens.html"><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span></a><span>
+</span><a name="line-104"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span>
+</span><a name="line-105"></a><span>
+</span><a name="line-106"></a><span class="hs-cpp">#if !MIN_VERSION_base(4,8,0)</span><span>
+</span><a name="line-107"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Functor</span><span>
+</span><a name="line-108"></a><span class="hs-cpp">#endif</span><span>
+</span><a name="line-109"></a><span>
+</span><a name="line-110"></a><span class="hs-comment">-- $setup</span><span>
+</span><a name="line-111"></a><span class="hs-comment">-- &gt;&gt;&gt; :set -XNoOverloadedStrings</span><span>
+</span><a name="line-112"></a><span class="hs-comment">-- &gt;&gt;&gt; import Debug.SimpleReflect.Expr</span><span>
+</span><a name="line-113"></a><span class="hs-comment">-- &gt;&gt;&gt; import Debug.SimpleReflect.Vars as Vars hiding (f,g)</span><span>
+</span><a name="line-114"></a><span class="hs-comment">-- &gt;&gt;&gt; let f :: Expr -&gt; Expr; f = Debug.SimpleReflect.Vars.f</span><span>
+</span><a name="line-115"></a><span class="hs-comment">-- &gt;&gt;&gt; let g :: Expr -&gt; Expr; g = Debug.SimpleReflect.Vars.g</span><span>
+</span><a name="line-116"></a><span>
+</span><a name="line-117"></a><span class="hs-comment">-- | A 'Prism' stripping a prefix from a list when used as a 'Traversal', or</span><span>
+</span><a name="line-118"></a><span class="hs-comment">-- prepending that prefix when run backwards:</span><span>
+</span><a name="line-119"></a><span class="hs-comment">--</span><span>
+</span><a name="line-120"></a><span class="hs-comment">-- &gt;&gt;&gt; &quot;preview&quot; ^? prefixed &quot;pre&quot;</span><span>
+</span><a name="line-121"></a><span class="hs-comment">-- Just &quot;view&quot;</span><span>
+</span><a name="line-122"></a><span class="hs-comment">--</span><span>
+</span><a name="line-123"></a><span class="hs-comment">-- &gt;&gt;&gt; &quot;review&quot; ^? prefixed &quot;pre&quot;</span><span>
+</span><a name="line-124"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-125"></a><span class="hs-comment">--</span><span>
+</span><a name="line-126"></a><span class="hs-comment">-- &gt;&gt;&gt; prefixed &quot;pre&quot; # &quot;amble&quot;</span><span>
+</span><a name="line-127"></a><span class="hs-comment">-- &quot;preamble&quot;</span><span>
+</span><a name="line-128"></a><span class="hs-identifier">prefixed</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Eq</span><span> </span><a href="#local-6989586621679334373"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334373"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Control.Lens.Type.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334373"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334373"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span>
+</span><a name="line-129"></a><a name="prefixed"><a href="Data.List.Lens.html#prefixed"><span class="hs-identifier">prefixed</span></a></a><span> </span><a name="local-6989586621679334374"><a href="#local-6989586621679334374"><span class="hs-identifier">ps</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Prism.html#prism%27"><span class="hs-identifier hs-var">prism'</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679334374"><span class="hs-identifier hs-var">ps</span></a><span> </span><span class="hs-operator hs-var">++</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-var">stripPrefix</span><span> </span><a href="#local-6989586621679334374"><span class="hs-identifier hs-var">ps</span></a><span class="hs-special">)</span><span>
+</span><a name="line-130"></a><span class="hs-pragma">{-# INLINE prefixed #-}</span><span>
+</span><a name="line-131"></a><span>
+</span><a name="line-132"></a><span class="hs-comment">-- | A 'Prism' stripping a suffix from a list when used as a 'Traversal', or</span><span>
+</span><a name="line-133"></a><span class="hs-comment">-- appending that suffix when run backwards:</span><span>
+</span><a name="line-134"></a><span class="hs-comment">--</span><span>
+</span><a name="line-135"></a><span class="hs-comment">-- &gt;&gt;&gt; &quot;review&quot; ^? suffixed &quot;view&quot;</span><span>
+</span><a name="line-136"></a><span class="hs-comment">-- Just &quot;re&quot;</span><span>
+</span><a name="line-137"></a><span class="hs-comment">--</span><span>
+</span><a name="line-138"></a><span class="hs-comment">-- &gt;&gt;&gt; &quot;review&quot; ^? suffixed &quot;tire&quot;</span><span>
+</span><a name="line-139"></a><span class="hs-comment">-- Nothing</span><span>
+</span><a name="line-140"></a><span class="hs-comment">--</span><span>
+</span><a name="line-141"></a><span class="hs-comment">-- &gt;&gt;&gt; suffixed &quot;.o&quot; # &quot;hello&quot;</span><span>
+</span><a name="line-142"></a><span class="hs-comment">-- &quot;hello.o&quot;</span><span>
+</span><a name="line-143"></a><span class="hs-identifier">suffixed</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Eq</span><span> </span><a href="#local-6989586621679334372"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334372"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Control.Lens.Type.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334372"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334372"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span>
+</span><a name="line-144"></a><a name="suffixed"><a href="Data.List.Lens.html#suffixed"><span class="hs-identifier">suffixed</span></a></a><span> </span><a name="local-6989586621679334375"><a href="#local-6989586621679334375"><span class="hs-identifier">qs</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Control.Lens.Prism.html#prism%27"><span class="hs-identifier hs-var">prism'</span></a><span> </span><span class="hs-special">(</span><span class="hs-operator hs-var">++</span><span> </span><a href="#local-6989586621679334375"><span class="hs-identifier hs-var">qs</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="Data.List.Lens.html#stripSuffix"><span class="hs-identifier hs-var">stripSuffix</span></a><span> </span><a href="#local-6989586621679334375"><span class="hs-identifier hs-var">qs</span></a><span class="hs-special">)</span><span>
+</span><a name="line-145"></a><span class="hs-pragma">{-# INLINE suffixed #-}</span><span>
+</span><a name="line-146"></a><span>
+</span><a name="line-147"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-148"></a><span class="hs-comment">-- Util</span><span>
+</span><a name="line-149"></a><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-150"></a><span>
+</span><a name="line-151"></a><span class="hs-identifier">stripSuffix</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Eq</span><span> </span><a href="#local-6989586621679334371"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334371"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334371"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679334371"><span class="hs-identifier hs-type">a</span></a><span class="hs-special">]</span><span>
+</span><a name="line-152"></a><a name="stripSuffix"><a href="Data.List.Lens.html#stripSuffix"><span class="hs-identifier">stripSuffix</span></a></a><span> </span><a name="local-6989586621679334376"><a href="#local-6989586621679334376"><span class="hs-identifier">qs</span></a></a><span> </span><a name="local-6989586621679334377"><a href="#local-6989586621679334377"><span class="hs-identifier">xs0</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679334380"><span class="hs-identifier hs-var">go</span></a><span> </span><a href="#local-6989586621679334377"><span class="hs-identifier hs-var">xs0</span></a><span> </span><a href="#local-6989586621679334378"><span class="hs-identifier hs-var">zs</span></a><span>
+</span><a name="line-153"></a><span>  </span><span class="hs-keyword">where</span><span>
+</span><a name="line-154"></a><span>    </span><a name="local-6989586621679334378"><a href="#local-6989586621679334378"><span class="hs-identifier">zs</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679334379"><span class="hs-identifier hs-var">drp</span></a><span> </span><a href="#local-6989586621679334376"><span class="hs-identifier hs-var">qs</span></a><span> </span><a href="#local-6989586621679334377"><span class="hs-identifier hs-var">xs0</span></a><span>
+</span><a name="line-155"></a><span>    </span><a name="local-6989586621679334379"><a href="#local-6989586621679334379"><span class="hs-identifier">drp</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-glyph">:</span><a name="local-6989586621679334381"><a href="#local-6989586621679334381"><span class="hs-identifier">ps</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-glyph">:</span><a name="local-6989586621679334382"><a href="#local-6989586621679334382"><span class="hs-identifier">xs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679334379"><span class="hs-identifier hs-var">drp</span></a><span> </span><a href="#local-6989586621679334381"><span class="hs-identifier hs-var">ps</span></a><span> </span><a href="#local-6989586621679334382"><span class="hs-identifier hs-var">xs</span></a><span>
+</span><a name="line-156"></a><span>    </span><span class="hs-identifier">drp</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><a name="local-6989586621679334383"><a href="#local-6989586621679334383"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679334383"><span class="hs-identifier hs-var">xs</span></a><span>
+</span><a name="line-157"></a><span>    </span><span class="hs-identifier">drp</span><span> </span><span class="hs-identifier">_</span><span>  </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a name="line-158"></a><span>    </span><a name="local-6989586621679334380"><a href="#local-6989586621679334380"><span class="hs-identifier">go</span></a></a><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-glyph">:</span><a name="local-6989586621679334384"><a href="#local-6989586621679334384"><span class="hs-identifier">xs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-glyph">:</span><a name="local-6989586621679334385"><a href="#local-6989586621679334385"><span class="hs-identifier">ys</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="#local-6989586621679334380"><span class="hs-identifier hs-var">go</span></a><span> </span><a href="#local-6989586621679334384"><span class="hs-identifier hs-var">xs</span></a><span> </span><a href="#local-6989586621679334385"><span class="hs-identifier hs-var">ys</span></a><span>
+</span><a name="line-159"></a><span>    </span><span class="hs-identifier">go</span><span> </span><a name="local-6989586621679334386"><a href="#local-6989586621679334386"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">zipWith</span><span> </span><span class="hs-identifier hs-var">const</span><span> </span><a href="#local-6989586621679334377"><span class="hs-identifier hs-var">xs0</span></a><span> </span><a href="#local-6989586621679334378"><span class="hs-identifier hs-var">zs</span></a><span> </span><span class="hs-operator hs-var">&lt;$</span><span> </span><span class="hs-identifier hs-var">guard</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679334386"><span class="hs-identifier hs-var">xs</span></a><span> </span><span class="hs-operator hs-var">==</span><span> </span><a href="#local-6989586621679334376"><span class="hs-identifier hs-var">qs</span></a><span class="hs-special">)</span><span>
+</span><a name="line-160"></a><span>    </span><span class="hs-identifier">go</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-identifier">_</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">Nothing</span><span> </span><span class="hs-comment">-- impossible</span><span>
+</span><a name="line-161"></a><span class="hs-pragma">{-# INLINE stripSuffix #-}</span><span>
+</span><a name="line-162"></a></pre></body></html>

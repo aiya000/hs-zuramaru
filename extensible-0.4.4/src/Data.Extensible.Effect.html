@@ -1,0 +1,459 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE BangPatterns #-}</span><span>
+</span><a name="line-2"></a><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><a name="line-3"></a><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-6"></a><span class="hs-comment">-- Module      :  Data.Extensible.Effect</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Copyright   :  (c) Fumiaki Kinoshita 2017</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- License     :  BSD3</span><span>
+</span><a name="line-9"></a><span class="hs-comment">--</span><span>
+</span><a name="line-10"></a><span class="hs-comment">-- Maintainer  :  Fumiaki Kinoshita &lt;fumiexcel@gmail.com&gt;</span><span>
+</span><a name="line-11"></a><span class="hs-comment">--</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Name-based extensible effects</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-14"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Effect</span><span> </span><span class="hs-special">(</span><span>
+</span><a name="line-15"></a><span>  </span><span class="hs-comment">-- * Base</span><span>
+</span><a name="line-16"></a><span>  </span><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier hs-type">Instruction</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#Eff"><span class="hs-identifier hs-type">Eff</span></a><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#liftEff"><span class="hs-identifier hs-var">liftEff</span></a><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#liftsEff"><span class="hs-identifier hs-var">liftsEff</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#hoistEff"><span class="hs-identifier hs-var">hoistEff</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#castEff"><span class="hs-identifier hs-var">castEff</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-comment">-- * Step-wise handling</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#Interpreter"><span class="hs-identifier hs-type">Interpreter</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#handleEff"><span class="hs-identifier hs-var">handleEff</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-comment">-- * Peeling</span><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#peelEff"><span class="hs-identifier hs-var">peelEff</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#Rebinder"><span class="hs-identifier hs-type">Rebinder</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#rebindEff0"><span class="hs-identifier hs-var">rebindEff0</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#peelEff0"><span class="hs-identifier hs-var">peelEff0</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#rebindEff1"><span class="hs-identifier hs-var">rebindEff1</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#peelEff1"><span class="hs-identifier hs-var">peelEff1</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#rebindEff2"><span class="hs-identifier hs-var">rebindEff2</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#leaveEff"><span class="hs-identifier hs-var">leaveEff</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#retractEff"><span class="hs-identifier hs-var">retractEff</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-comment">-- * Anonymous actions</span><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#Action"><span class="hs-identifier hs-type">Action</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#Function"><span class="hs-identifier hs-type">Function</span></a><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runAction"><span class="hs-identifier hs-var">runAction</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Effect.html#%40%21%3F"><span class="hs-operator hs-var">@!?</span></a><span class="hs-special">)</span><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#peelAction"><span class="hs-identifier hs-var">peelAction</span></a><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#peelAction0"><span class="hs-identifier hs-var">peelAction0</span></a><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-comment">-- * transformers-compatible actions and handlers</span><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-comment">-- ** Reader</span><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#ReaderEff"><span class="hs-identifier hs-type">ReaderEff</span></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#askEff"><span class="hs-identifier hs-var">askEff</span></a><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#asksEff"><span class="hs-identifier hs-var">asksEff</span></a><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#localEff"><span class="hs-identifier hs-var">localEff</span></a><span>
+</span><a name="line-48"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runReaderEff"><span class="hs-identifier hs-var">runReaderEff</span></a><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-comment">-- ** State</span><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">State</span><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#getEff"><span class="hs-identifier hs-var">getEff</span></a><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#getsEff"><span class="hs-identifier hs-var">getsEff</span></a><span>
+</span><a name="line-53"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#putEff"><span class="hs-identifier hs-var">putEff</span></a><span>
+</span><a name="line-54"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#modifyEff"><span class="hs-identifier hs-var">modifyEff</span></a><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#stateEff"><span class="hs-identifier hs-var">stateEff</span></a><span>
+</span><a name="line-56"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runStateEff"><span class="hs-identifier hs-var">runStateEff</span></a><span>
+</span><a name="line-57"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#execStateEff"><span class="hs-identifier hs-var">execStateEff</span></a><span>
+</span><a name="line-58"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#evalStateEff"><span class="hs-identifier hs-var">evalStateEff</span></a><span>
+</span><a name="line-59"></a><span>  </span><span class="hs-comment">-- ** Writer</span><span>
+</span><a name="line-60"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#WriterEff"><span class="hs-identifier hs-type">WriterEff</span></a><span>
+</span><a name="line-61"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#writerEff"><span class="hs-identifier hs-var">writerEff</span></a><span>
+</span><a name="line-62"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#tellEff"><span class="hs-identifier hs-var">tellEff</span></a><span>
+</span><a name="line-63"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#listenEff"><span class="hs-identifier hs-var">listenEff</span></a><span>
+</span><a name="line-64"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#passEff"><span class="hs-identifier hs-var">passEff</span></a><span>
+</span><a name="line-65"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runWriterEff"><span class="hs-identifier hs-var">runWriterEff</span></a><span>
+</span><a name="line-66"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#execWriterEff"><span class="hs-identifier hs-var">execWriterEff</span></a><span>
+</span><a name="line-67"></a><span>  </span><span class="hs-comment">-- ** Maybe</span><span>
+</span><a name="line-68"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#MaybeEff"><span class="hs-identifier hs-type">MaybeEff</span></a><span>
+</span><a name="line-69"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runMaybeEff"><span class="hs-identifier hs-var">runMaybeEff</span></a><span>
+</span><a name="line-70"></a><span>  </span><span class="hs-comment">-- ** Either</span><span>
+</span><a name="line-71"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#EitherEff"><span class="hs-identifier hs-type">EitherEff</span></a><span>
+</span><a name="line-72"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#throwEff"><span class="hs-identifier hs-var">throwEff</span></a><span>
+</span><a name="line-73"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#catchEff"><span class="hs-identifier hs-var">catchEff</span></a><span>
+</span><a name="line-74"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runEitherEff"><span class="hs-identifier hs-var">runEitherEff</span></a><span>
+</span><a name="line-75"></a><span>  </span><span class="hs-comment">-- ** Iter</span><span>
+</span><a name="line-76"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Identity</span><span>
+</span><a name="line-77"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#tickEff"><span class="hs-identifier hs-var">tickEff</span></a><span>
+</span><a name="line-78"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runIterEff"><span class="hs-identifier hs-var">runIterEff</span></a><span>
+</span><a name="line-79"></a><span>  </span><span class="hs-comment">-- ** Cont</span><span>
+</span><a name="line-80"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">ContT</span><span>
+</span><a name="line-81"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#contEff"><span class="hs-identifier hs-var">contEff</span></a><span>
+</span><a name="line-82"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.Extensible.Effect.html#runContEff"><span class="hs-identifier hs-var">runContEff</span></a><span>
+</span><a name="line-83"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-84"></a><span>
+</span><a name="line-85"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Applicative</span><span>
+</span><a name="line-86"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Skeleton</span><span>
+</span><a name="line-87"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Trans</span><span class="hs-operator">.</span><span class="hs-identifier">State</span><span class="hs-operator">.</span><span class="hs-identifier">Strict</span><span>
+</span><a name="line-88"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Monad</span><span class="hs-operator">.</span><span class="hs-identifier">Trans</span><span class="hs-operator">.</span><span class="hs-identifier">Cont</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">ContT</span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a name="line-89"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Field.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Field</span></a><span>
+</span><a name="line-90"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Inclusion.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Inclusion</span></a><span>
+</span><a name="line-91"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-92"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Internal.Rig.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span><span class="hs-operator">.</span><span class="hs-identifier">Rig</span></a><span>
+</span><a name="line-93"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Product.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Product</span></a><span>
+</span><a name="line-94"></a><span class="hs-keyword">import</span><span> </span><a href="Data.Extensible.Class.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Extensible</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span></a><span>
+</span><a name="line-95"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Functor</span><span class="hs-operator">.</span><span class="hs-identifier">Identity</span><span>
+</span><a name="line-96"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Profunctor</span><span class="hs-operator">.</span><span class="hs-identifier">Unsafe</span><span> </span><span class="hs-comment">-- Trustworthy since 7.8</span><span>
+</span><a name="line-97"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Typeable</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Typeable</span><span class="hs-special">)</span><span>
+</span><a name="line-98"></a><span>
+</span><a name="line-99"></a><span class="hs-comment">-- | A unit of named effects. This is a variant of @(':|')@ specialised for</span><span>
+</span><a name="line-100"></a><span class="hs-comment">-- 'Type -&gt; Type'.</span><span>
+</span><a name="line-101"></a><span class="hs-keyword">data</span><span> </span><a name="Instruction"><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier">Instruction</span></a></a><span> </span><span class="hs-special">(</span><a name="local-6989586621679198600"><a href="#local-6989586621679198600"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><a href="Data.Extensible.Internal.html#Assoc"><span class="hs-identifier hs-type">Assoc</span></a><span> </span><a href="#local-6989586621679198599"><span class="hs-identifier hs-type">k</span></a><span> </span><span class="hs-special">(</span><span class="hs-operator hs-type">*</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-operator hs-type">*</span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><a name="local-6989586621679198601"><a href="#local-6989586621679198601"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-102"></a><span>  </span><a name="Instruction"><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier">Instruction</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><a href="Data.Extensible.Internal.html#Membership"><span class="hs-identifier hs-type">Membership</span></a><span> </span><a href="#local-6989586621679198602"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679198603"><span class="hs-identifier hs-type">kv</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.Field.html#AssocValue"><span class="hs-identifier hs-type">AssocValue</span></a><span> </span><a href="#local-6989586621679198603"><span class="hs-identifier hs-type">kv</span></a><span> </span><a href="#local-6989586621679198604"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier hs-type">Instruction</span></a><span> </span><a href="#local-6989586621679198602"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679198604"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-103"></a><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-identifier hs-type">Typeable</span><span>
+</span><a name="line-104"></a><span>
+</span><a name="line-105"></a><span class="hs-comment">-- | The extensible operational monad</span><span>
+</span><a name="line-106"></a><span class="hs-keyword">type</span><span> </span><a name="Eff"><a href="Data.Extensible.Effect.html#Eff"><span class="hs-identifier">Eff</span></a></a><span> </span><a name="local-6989586621679198598"><a href="#local-6989586621679198598"><span class="hs-identifier">xs</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-type">Skeleton</span><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier hs-type">Instruction</span></a><span> </span><a href="#local-6989586621679198598"><span class="hs-identifier hs-type">xs</span></a><span class="hs-special">)</span><span>
+</span><a name="line-107"></a><span>
+</span><a name="line-108"></a><span class="hs-comment">-- | Lift an instruction onto an 'Eff' action.</span><span>
+</span><a name="line-109"></a><span class="hs-identifier">liftEff</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679198775"><a href="#local-6989586621679198775"><span class="hs-identifier">s</span></a></a><span> </span><a name="local-6989586621679198776"><a href="#local-6989586621679198776"><span class="hs-identifier">t</span></a></a><span> </span><a name="local-6989586621679198777"><a href="#local-6989586621679198777"><span class="hs-identifier">xs</span></a></a><span> </span><a name="local-6989586621679198778"><a href="#local-6989586621679198778"><span class="hs-identifier">a</span></a></a><span class="hs-operator">.</span><span> </span><a href="Data.Extensible.Internal.html#Associate"><span class="hs-identifier hs-type">Associate</span></a><span> </span><a href="#local-6989586621679198775"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679198776"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679198777"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679198775"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679198776"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679198778"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.Effect.html#Eff"><span class="hs-identifier hs-type">Eff</span></a><span> </span><a href="#local-6989586621679198777"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679198778"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-110"></a><a name="liftEff"><a href="Data.Extensible.Effect.html#liftEff"><span class="hs-identifier">liftEff</span></a></a><span> </span><a name="local-6989586621679198779"><a href="#local-6989586621679198779"><span class="hs-identifier">p</span></a></a><span> </span><a name="local-6989586621679198780"><a href="#local-6989586621679198780"><span class="hs-identifier">x</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a href="Data.Extensible.Effect.html#liftsEff"><span class="hs-identifier hs-var">liftsEff</span></a><span> </span><a href="#local-6989586621679198779"><span class="hs-identifier hs-var">p</span></a><span> </span><a href="#local-6989586621679198780"><span class="hs-identifier hs-var">x</span></a><span> </span><span class="hs-identifier hs-var">id</span><span>
+</span><a name="line-111"></a><span class="hs-pragma">{-# INLINE liftEff #-}</span><span>
+</span><a name="line-112"></a><span>
+</span><a name="line-113"></a><span class="hs-comment">-- | Lift an instruction onto an 'Eff' action and apply a function to the result.</span><span>
+</span><a name="line-114"></a><span class="hs-identifier">liftsEff</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><a name="local-6989586621679198770"><a href="#local-6989586621679198770"><span class="hs-identifier">s</span></a></a><span> </span><a name="local-6989586621679198771"><a href="#local-6989586621679198771"><span class="hs-identifier">t</span></a></a><span> </span><a name="local-6989586621679198772"><a href="#local-6989586621679198772"><span class="hs-identifier">xs</span></a></a><span> </span><a name="local-6989586621679198773"><a href="#local-6989586621679198773"><span class="hs-identifier">a</span></a></a><span> </span><a name="local-6989586621679198774"><a href="#local-6989586621679198774"><span class="hs-identifier">r</span></a></a><span class="hs-operator">.</span><span> </span><a href="Data.Extensible.Internal.html#Associate"><span class="hs-identifier hs-type">Associate</span></a><span> </span><a href="#local-6989586621679198770"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679198771"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679198772"><span class="hs-identifier hs-type">xs</span></a><span>
+</span><a name="line-115"></a><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Proxy</span><span> </span><a href="#local-6989586621679198770"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679198771"><span class="hs-identifier hs-type">t</span></a><span> </span><a href="#local-6989586621679198773"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679198773"><span class="hs-identifier hs-type">a</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679198774"><span class="hs-identifier hs-type">r</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="Data.Extensible.Effect.html#Eff"><span class="hs-identifier hs-type">Eff</span></a><span> </span><a href="#local-6989586621679198772"><span class="hs-identifier hs-type">xs</span></a><span> </span><a href="#local-6989586621679198774"><span class="hs-identifier hs-type">r</span></a><span>
+</span><a name="line-116"></a><a name="liftsEff"><a href="Data.Extensible.Effect.html#liftsEff"><span class="hs-identifier">liftsEff</span></a></a><span> </span><span class="hs-identifier">_</span><span> </span><a name="local-6989586621679198781"><a href="#local-6989586621679198781"><span class="hs-identifier">x</span></a></a><span> </span><a name="local-6989586621679198782"><a href="#local-6989586621679198782"><span class="hs-identifier">k</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-identifier hs-var">boned</span><span>
+</span><a name="line-117"></a><span>  </span><span class="hs-operator hs-var">$</span><span> </span><a href="Data.Extensible.Effect.html#Instruction"><span class="hs-identifier hs-var">Instruction</span></a><span> </span><span class="hs-special">(</span><a href="Data.Extensible.Internal.html#association"><span class="hs-identifier hs-var">association</span></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Data.Extensible.Internal.html#Membership"><span class="hs-identifier hs-type">Membership</span></a><span> </span><a href="#local-6989586621679198772"><span class="hs-identifier hs-type">xs</span></a><span> </span><span class="hs-special">(</span><a href="#local-6989586621679198770"><span class="hs-identifier hs-type">s</span></a><span> </span><span class="hs-char">':&gt; t)) x :&gt;&gt;= return . k
+{-# INLINE liftsEff #-}
+
+-- | Censor a specific type of effects in an action.
+hoistEff :: forall s t xs a. Associate s t xs =&gt; Proxy s -&gt; (forall x. t x -&gt; t x) -&gt; Eff xs a -&gt; Eff xs a
+hoistEff _ f = hoistSkeleton $ \(Instruction i t) -&gt; case compareMembership (association :: Membership xs (s ':&gt; t)) i of
+  Right Refl -&gt; Instruction i (f t)
+  _ -&gt; Instruction i t
+{-# INLINABLE hoistEff #-}
+
+-- | Upcast an action.
+castEff :: IncludeAssoc ys xs =&gt; Eff xs a -&gt; Eff ys a
+castEff = hoistSkeleton
+  $ \(Instruction i t) -&gt; Instruction (hlookup i inclusionAssoc) t
+
+-- | Build a relay-style handler from a triple of functions.
+--
+-- @
+-- runStateEff = peelEff1 (\a s -&gt; return (a, s))
+--   (\m k s -&gt; let (a, s') = runState m s in k a s')
+-- @
+--
+peelEff :: forall k t xs a r
+  . Rebinder xs r -- ^ Re-bind an unrelated action
+  -&gt; (a -&gt; r) -- ^ return the result
+  -&gt; (forall x. t x -&gt; (x -&gt; r) -&gt; r) -- ^ Handle the foremost type of an action
+  -&gt; Eff (k &gt;: t ': xs) a -&gt; r
+peelEff pass ret wrap = go where
+  go m = case debone m of
+    Return a -&gt; ret a
+    Instruction i t :&gt;&gt;= k -&gt; leadership i
+      (\Refl -&gt; wrap t (go . k))
+      (\j -&gt; pass (Instruction j t) (go . k))
+{-# INLINE peelEff #-}
+
+-- | 'peelEff' specialised for continuations with no argument
+peelEff0 :: forall k t xs a r. (a -&gt; Eff xs r) -- ^ return the result
+  -&gt; (forall x. t x -&gt; (x -&gt; Eff xs r) -&gt; Eff xs r) -- ^ Handle the foremost type of an action
+  -&gt; Eff (k &gt;: t ': xs) a -&gt; Eff xs r
+peelEff0 = peelEff rebindEff0
+{-# INLINE peelEff0 #-}
+
+-- | 'peelEff' specialised for 1-argument continuation
+peelEff1 :: forall k t xs a b r. (a -&gt; b -&gt; Eff xs r) -- ^ return the result
+  -&gt; (forall x. t x -&gt; (x -&gt; b -&gt; Eff xs r) -&gt; b -&gt; Eff xs r) -- ^ Handle the foremost type of an action
+  -&gt; Eff (k &gt;: t ': xs) a -&gt; b -&gt; Eff xs r
+peelEff1 = peelEff rebindEff1
+{-# INLINE peelEff1 #-}
+
+-- | A function to bind an 'Instruction' in 'peelEff'.
+type Rebinder xs r = forall x. Instruction xs x -&gt; (x -&gt; r) -&gt; r
+
+-- | A common value for the second argument of 'peelEff'. Binds an instruction
+-- directly.
+rebindEff0 :: Rebinder xs (Eff xs r)
+rebindEff0 i k = boned $ i :&gt;&gt;= k
+
+-- | A pre-defined value for the second argument of 'peelEff'.
+-- Preserves the argument of the continuation.
+rebindEff1 :: Rebinder xs (a -&gt; Eff xs r)
+rebindEff1 i k a = boned $ i :&gt;&gt;= flip k a
+
+-- | A pre-defined value for the second argument of 'peelEff'.
+-- Preserves two arguments of the continuation.
+rebindEff2 :: Rebinder xs (a -&gt; b -&gt; Eff xs r)
+rebindEff2 i k a b = boned $ i :&gt;&gt;= \x -&gt; k x a b
+
+-- | Reveal the final result of 'Eff'.
+leaveEff :: Eff '[] a -&gt; a
+leaveEff m = case debone m of
+  Return a -&gt; a
+  _ -&gt; error &quot;Impossible&quot;
+
+-- | Tear down an action using the 'Monad' instance of the instruction.
+retractEff :: forall k m a. Monad m =&gt; Eff '[k &gt;: m] a -&gt; m a
+retractEff m = case debone m of
+  Return a -&gt; return a
+  Instruction i t :&gt;&gt;= k -&gt; leadership i
+    (\Refl -&gt; t &gt;&gt;= retractEff . k)
+    $ error &quot;Impossible&quot;
+
+-- | Transformation between effects
+newtype Interpreter f g = Interpreter { runInterpreter :: forall a. g a -&gt; f a }
+  deriving Typeable
+
+-- | Process an 'Eff' action using a record of 'Interpreter's.
+handleEff :: RecordOf (Interpreter m) xs -&gt; Eff xs a -&gt; MonadView m (Eff xs) a
+handleEff hs m = case debone m of
+  Instruction i t :&gt;&gt;= k -&gt; views (pieceAt i) (runInterpreter .# getField) hs t :&gt;&gt;= k
+  Return a -&gt; Return a
+
+-- | Anonymous representation of instructions.
+data Action (args :: [*]) a r where
+  AResult :: Action '[] a a
+  AArgument :: x -&gt; Action xs a r -&gt; Action (x ': xs) a r
+
+-- | @'Function' [a, b, c] r@ is @a -&gt; b -&gt; c -&gt; r@
+type family Function args r :: * where
+  Function '[] r = r
+  Function (x ': xs) r = x -&gt; Function xs r
+
+-- | Pass the arguments of 'Action' to the supplied function.
+runAction :: Function xs (f a) -&gt; Action xs a r -&gt; f r
+runAction r AResult = r
+runAction f (AArgument x a) = runAction (f x) a
+
+-- | Create a 'Field' of a 'Interpreter' for an 'Action'.
+(@!?) :: FieldName k -&gt; Function xs (f a) -&gt; Field (Interpreter f) (k ':&gt; Action xs a)
+_ @!? f = Field $ Interpreter $ runAction f
+infix 1 @!?
+
+-- | Specialised version of 'peelEff' for 'Action's.
+-- You can pass a function @a -&gt; b -&gt; ... -&gt; (q -&gt; r) -&gt; r@ as a handler for
+-- @'Action' '[a, b, ...] q@.
+peelAction :: forall k ps q xs a r
+  . (forall x. Instruction xs x -&gt; (x -&gt; r) -&gt; r) -- ^ Re-bind an unrelated action
+  -&gt; (a -&gt; r) -- ^ return the result
+  -&gt; Function ps ((q -&gt; r) -&gt; r) -- ^ Handle the foremost action
+  -&gt; Eff (k &gt;: Action ps q ': xs) a -&gt; r
+peelAction pass ret wrap = go where
+  go m = case debone m of
+    Return a -&gt; ret a
+    Instruction i t :&gt;&gt;= k -&gt; leadership i
+      (\Refl -&gt; case t of
+        (_ :: Action ps q x) -&gt;
+          let run :: forall t. Function t ((q -&gt; r) -&gt; r) -&gt; Action t q x -&gt; r
+              run f AResult = f (go . k)
+              run f (AArgument x a) = run (f x) a
+          in run wrap t)
+      $ \j -&gt; pass (Instruction j t) (go . k)
+{-# INLINE peelAction #-}
+
+-- | Non continuation-passing variant of 'peelAction'.
+peelAction0 :: forall k ps q xs a. Function ps (Eff xs q) -- ^ Handle the foremost action
+  -&gt; Eff (k &gt;: Action ps q ': xs) a -&gt; Eff xs a
+peelAction0 wrap = go where
+  go m = case debone m of
+    Return a -&gt; return a
+    Instruction i t :&gt;&gt;= k -&gt; leadership i
+      (\Refl -&gt; case t of
+        (_ :: Action ps q x) -&gt;
+          let run :: forall t. Function t (Eff xs q) -&gt; Action t q x -&gt; Eff xs a
+              run f AResult = f &gt;&gt;= go . k
+              run f (AArgument x a) = run (f x) a
+          in run wrap t)
+      $ \j -&gt; rebindEff0 (Instruction j t) (go . k)
+{-# INLINE peelAction0 #-}
+
+-- | The reader monad is characterised by a type equality between the result
+-- type and the enviroment type.
+type ReaderEff = (:~:)
+
+-- | Fetch the environment.
+askEff :: forall k r xs. Associate k (ReaderEff r) xs
+  =&gt; Proxy k -&gt; Eff xs r
+askEff p = liftEff p Refl
+{-# INLINE askEff #-}
+
+-- | Pass the environment to a function.
+asksEff :: forall k r xs a. Associate k (ReaderEff r) xs
+  =&gt; Proxy k -&gt; (r -&gt; a) -&gt; Eff xs a
+asksEff p = liftsEff p Refl
+{-# INLINE asksEff #-}
+
+-- | Modify the enviroment locally.
+localEff :: forall k r xs a. Associate k (ReaderEff r) xs
+  =&gt; Proxy k -&gt; (r -&gt; r) -&gt; Eff xs a -&gt; Eff xs a
+localEff _ f = go where
+  go m = case debone m of
+    Return a -&gt; return a
+    Instruction i t :&gt;&gt;= k -&gt; case compareMembership
+      (association :: Membership xs (k &gt;: ReaderEff r)) i of
+        Left _ -&gt; boned $ Instruction i t :&gt;&gt;= go . k
+        Right Refl -&gt; case t of
+          Refl -&gt; boned $ Instruction i t :&gt;&gt;= go . k . f
+{-# INLINE localEff #-}
+
+-- | Run the frontal reader effect.
+runReaderEff :: forall k r xs a. Eff (k &gt;: ReaderEff r ': xs) a -&gt; r -&gt; Eff xs a
+runReaderEff m r = peelEff0 return (\Refl k -&gt; k r) m
+{-# INLINE runReaderEff #-}
+
+-- | Get the current state.
+getEff :: forall k s xs. Associate k (State s) xs
+  =&gt; Proxy k -&gt; Eff xs s
+getEff k = liftEff k get
+{-# INLINE getEff #-}
+
+-- | Pass the current state to a function.
+getsEff :: forall k s a xs. Associate k (State s) xs
+  =&gt; Proxy k -&gt; (s -&gt; a) -&gt; Eff xs a
+getsEff k = liftsEff k get
+{-# INLINE getsEff #-}
+
+-- | Replace the state with a new value.
+putEff :: forall k s xs. Associate k (State s) xs
+  =&gt; Proxy k -&gt; s -&gt; Eff xs ()
+putEff k = liftEff k . put
+{-# INLINE putEff #-}
+
+-- | Modify the state.
+modifyEff :: forall k s xs. Associate k (State s) xs
+  =&gt; Proxy k -&gt; (s -&gt; s) -&gt; Eff xs ()
+modifyEff k f = liftEff k $ state $ \s -&gt; ((), f s)
+{-# INLINE modifyEff #-}
+
+-- | Lift a state modification function.
+stateEff :: forall k s xs a. Associate k (State s) xs
+  =&gt; Proxy k -&gt; (s -&gt; (a, s)) -&gt; Eff xs a
+stateEff k = liftEff k . state
+{-# INLINE stateEff #-}
+
+contState :: State s a -&gt; (a -&gt; s -&gt; r) -&gt; s -&gt; r
+contState m k s = let (a, s') = runState m s in k a $! s'
+
+-- | Run the frontal state effect.
+runStateEff :: forall k s xs a. Eff (k &gt;: State s ': xs) a -&gt; s -&gt; Eff xs (a, s)
+runStateEff = peelEff1 (\a s -&gt; return (a, s)) contState
+{-# INLINE runStateEff #-}
+
+-- | Run the frontal state effect and return the final state.
+execStateEff :: forall k s xs a. Eff (k &gt;: State s ': xs) a -&gt; s -&gt; Eff xs s
+execStateEff = peelEff1 (const return) contState
+{-# INLINE execStateEff #-}
+
+-- | Run the frontal state effect and return the final result.
+evalStateEff :: forall k s xs a. Eff (k &gt;: State s ': xs) a -&gt; s -&gt; Eff xs a
+evalStateEff = peelEff1 (const . return) contState
+{-# INLINE evalStateEff #-}
+
+-- | @(,)@ already is a writer monad.
+type WriterEff w = (,) w
+
+-- | Write the second element and return the first element.
+writerEff :: forall k w xs a. (Associate k (WriterEff w) xs)
+  =&gt; Proxy k -&gt; (a, w) -&gt; Eff xs a
+writerEff k (a, w) = liftEff k (w, a)
+{-# INLINE writerEff #-}
+
+-- | Write a value.
+tellEff :: forall k w xs. (Associate k (WriterEff w) xs)
+  =&gt; Proxy k -&gt; w -&gt; Eff xs ()
+tellEff k w = liftEff k (w, ())
+{-# INLINE tellEff #-}
+
+-- | Squash the outputs into one step and return it.
+listenEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+  =&gt; Proxy k -&gt; Eff xs a -&gt; Eff xs (a, w)
+listenEff p = go mempty where
+  go w m = case debone m of
+    Return a -&gt; writerEff p ((a, w), w)
+    Instruction i t :&gt;&gt;= k -&gt; case compareMembership (association :: Membership xs (k ':&gt; (,) w)) i of
+      Left _ -&gt; boned $ Instruction i t :&gt;&gt;= go w . k
+      Right Refl -&gt; let (w', a) = t
+                        !w'' = mappend w w' in go w'' (k a)
+{-# INLINE listenEff #-}
+
+-- | Modify the output using the function in the result.
+passEff :: forall k w xs a. (Associate k (WriterEff w) xs, Monoid w)
+  =&gt; Proxy k -&gt; Eff xs (a, w -&gt; w) -&gt; Eff xs a
+passEff p = go mempty where
+  go w m = case debone m of
+    Return (a, f) -&gt; writerEff p (a, f w)
+    Instruction i t :&gt;&gt;= k -&gt; case compareMembership (association :: Membership xs (k ':&gt; (,) w)) i of
+      Left _ -&gt; boned $ Instruction i t :&gt;&gt;= go w . k
+      Right Refl -&gt; let (w', a) = t
+                        !w'' = mappend w w' in go w'' (k a)
+{-# INLINE passEff #-}
+
+contWriter :: Monoid w =&gt; (w, a) -&gt; (a -&gt; w -&gt; r) -&gt; w -&gt; r
+contWriter (w', a) k w = k a $! mappend w w'
+
+-- | Run the frontal writer effect.
+runWriterEff :: forall k w xs a. Monoid w =&gt; Eff (k &gt;: WriterEff w ': xs) a -&gt; Eff xs (a, w)
+runWriterEff = peelEff1 (\a w -&gt; return (a, w)) contWriter `flip` mempty
+{-# INLINE runWriterEff #-}
+
+-- | Run the frontal state effect.
+execWriterEff :: forall k w xs a. Monoid w =&gt; Eff (k &gt;: WriterEff w ': xs) a -&gt; Eff xs w
+execWriterEff = peelEff1 (const return) contWriter `flip` mempty
+{-# INLINE execWriterEff #-}
+
+-- | An effect with no result
+type MaybeEff = Const ()
+
+-- | Run an effect which may fail in the name of @k@.
+runMaybeEff :: forall k xs a. Eff (k &gt;: MaybeEff ': xs) a -&gt; Eff xs (Maybe a)
+runMaybeEff = peelEff0 (return . Just) $ \_ _ -&gt; return Nothing
+{-# INLINE runMaybeEff #-}
+
+-- | Throwing an exception
+type EitherEff = Const
+
+-- | Throw an exception @e@, throwing the rest of the computation away.
+throwEff :: Associate k (EitherEff e) xs =&gt; Proxy k -&gt; e -&gt; Eff xs a
+throwEff k = liftEff k . Const
+{-# INLINE throwEff #-}
+
+-- | Attach a handler for an exception.
+catchEff :: forall k e xs a. (Associate k (EitherEff e) xs)
+  =&gt; Proxy k -&gt; Eff xs a -&gt; (e -&gt; Eff xs a) -&gt; Eff xs a
+catchEff _ m0 handler = go m0 where
+  go m = case debone m of
+    Return a -&gt; return a
+    Instruction i t :&gt;&gt;= k -&gt; case compareMembership (association :: Membership xs (k ':&gt; Const e)) i of
+      Left _ -&gt; boned $ Instruction i t :&gt;&gt;= go . k
+      Right Refl -&gt; handler (getConst t)
+{-# INLINE catchEff #-}
+
+-- | Run an action and abort on 'throwEff'.
+runEitherEff :: forall k e xs a. Eff (k &gt;: EitherEff e ': xs) a -&gt; Eff xs (Either e a)
+runEitherEff = peelEff0 (return . Right) $ \(Const e) _ -&gt; return $ Left e
+{-# INLINE runEitherEff #-}
+
+-- | Put a milestone on a computation.
+tickEff :: Associate k Identity xs =&gt; Proxy k -&gt; Eff xs ()
+tickEff k = liftEff k $ Identity ()
+{-# INLINE tickEff #-}
+
+-- | Run a computation until the first call of 'tickEff'.
+runIterEff :: Eff (k &gt;: Identity ': xs) a
+  -&gt; Eff xs (Either a (Eff (k &gt;: Identity ': xs) a))
+runIterEff m = case debone m of
+  Return a -&gt; return (Left a)
+  Instruction i t :&gt;&gt;= k -&gt; leadership i
+    (\Refl -&gt; return $ Right $ k $ runIdentity t)
+    $ \j -&gt; boned $ Instruction j t :&gt;&gt;= runIterEff . k
+
+-- | Place a continuation-passing action.
+contEff :: Associate k (ContT r m) xs =&gt; Proxy k
+  -&gt; ((a -&gt; m r) -&gt; m r) -&gt; Eff xs a
+contEff k = liftEff k . ContT
+
+-- | Unwrap a continuation.
+runContEff :: forall k r xs a. Eff (k &gt;: ContT r (Eff xs) ': xs) a
+  -&gt; (a -&gt; Eff xs r)
+  -&gt; Eff xs r
+runContEff m cont = case debone m of
+  Return a -&gt; cont a
+  Instruction i t :&gt;&gt;= k -&gt; leadership i
+    (\Refl -&gt; runContT t (flip runContEff cont . k))
+    $ \j -&gt; boned $ Instruction j t :&gt;&gt;= flip runContEff cont . k
+</span></pre></body></html>
