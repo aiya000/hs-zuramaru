@@ -5,7 +5,7 @@ author: aiya000
 maintainer: aiya000 <aiya000.develop@gmail.com>
 copyright: aiya000
 license: MIT
-homepage: https://github.com/aiya000/eliningen
+homepage: https://github.com/aiya000/hs-zuramaru
 
 ghc-options:
     - -Wall
