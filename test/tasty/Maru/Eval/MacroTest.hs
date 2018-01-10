@@ -60,19 +60,3 @@ test_lexical_scope =
       -- "x" cannot be gotten in the outer scope
       "x" `isNotExistedIn` env
   ]
-
-
-test_four_arith_operations :: [TestTree]
-test_four_arith_operations =
-  [ testCase "`+` adds the tail numeric elements to the head numeric element" $ do
-      "(+ 1 2 3)" `shouldBeEvaluatedTo` "6"
-      "(+ 1)" `shouldBeEvaluatedTo` "1"
-  , testCase "`-` substracts the tail numeric elements from the head numeric element" $ do
-      "(- 10 2 3)" `shouldBeEvaluatedTo` "5"
-      "(- 0 2 3)" `shouldBeEvaluatedTo` "-5"
-      "(- 10)" `shouldBeEvaluatedTo` "-10"
-  , testCase "`*` adds the numeric element to itself the {element} times foldly" $
-      "(* 2 3 4)" `shouldBeEvaluatedTo` "24"
-  , testCase "`/` gets the inverse value of the integral element foldly" $ do
-      "(/ 4 2 2)" `shouldBeEvaluatedTo` "1"
-  ]
