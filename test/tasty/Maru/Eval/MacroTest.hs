@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Steps.Step3Test where
+module Maru.Eval.MacroTest where
 
 import Data.Semigroup ((<>))
 import Maru.Type (SExpr(..), MaruEnv, readable)
