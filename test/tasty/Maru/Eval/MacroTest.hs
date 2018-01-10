@@ -40,15 +40,15 @@ test_letStar_macro =
 -- |
 -- e.g. (+ 1 2), *y* to be called by `call`
 -- (regard that *y* is set)
-test_call :: [TestTree]
-test_call =
+test_call_macro :: [TestTree]
+test_call_macro =
   [ testCase "calls a first element of the list as a function/macro with tail elements implicitly" $ do
       "(+ 1 2)" `shouldBeEvaluatedTo` "3"
       (x, _, _) <- runCode modifiedEnv "*x*"
       readable x @?= "10"
       (y, _, _) <- runCode modifiedEnv "*y*"
       readable y @?= "10"
-  , testCase "(x) occures an exception if x is neither a function nor a macro" $ do
+  , testCase "occurs an exception on (x) if x is neither a function nor a macro" $ do
       point <- runCodeWithSteps E.initialEnv "(10)"
       case point of
         EvalError _ -> return ()
@@ -155,4 +155,17 @@ test_list_macro =
       "(list 1 2 3)" `shouldBeEvaluatedTo` "(1 2 3)"
   , testCase "evaluates each arguments" $
       "(list (+ 1 2) (+ 3 4))" `shouldBeEvaluatedTo` "(3 7)"
+  ]
+
+
+test_quote_macro :: [TestTree]
+test_quote_macro =
+  [ testCase "delays the evaluation" $ do
+      "(quote (1 2 3))" `shouldBeEvaluatedTo` "(1 2 3)"
+      "(quote (quote 2))" `shouldBeEvaluatedTo` "(quote 2)"
+      "(quote (10 (quote 20)))" `shouldBeEvaluatedTo` "(10 (quote 20))"
+  , testCase "can be meant by `'` prefix" $ do
+      "'(1 2 3)" `shouldBeEvaluatedTo` "(1 2 3)"
+      "''2" `shouldBeEvaluatedTo` "(quote 2)"
+      "'(10 '20)" `shouldBeEvaluatedTo` "(10 (quote 20))"
   ]
