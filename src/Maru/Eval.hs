@@ -40,13 +40,13 @@ import qualified Data.Text.IO as T
 import qualified Maru.Eval.RuntimeOperation as OP
 import qualified Maru.Type.SExpr as MSym (pack)
 
---TODO: Define an alias for `flip runMaruEvaluator initialEnv` to here, and use it in each doctest
 -- $setup
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XOverloadedLists
 -- >>> import Control.Lens (_Just)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
 -- >>> import qualified Maru.Type.Eval as TE
+-- >>> let runMaruEvaluatorDefault = flip runMaruEvaluator initialEnv
 -- >>> :{
 -- >>> let modifiedEnv = initialEnv <>
 --                         [[ ("*x*", AtomInt 10)
@@ -144,7 +144,7 @@ execute sexpr = execMacro call sexpr
 --
 -- (let* (x 10) x)
 --
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
+-- >>> (result, env, _) <- runMaruEvaluatorDefault $ execMacro letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
 -- >>> result
 -- Right (AtomInt 10)
 -- >>> TE.lookup "x" env
@@ -170,7 +170,7 @@ letStar = MaruMacro $ \case
 --
 -- (+ 1 2)
 --
--- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
+-- >>> (result, _, _) <- runMaruEvaluatorDefault $ execMacro call (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil)))
 -- >>> let expected = runMaruCalculator $ execFunc OP.add [AtomInt 1, AtomInt 2]
 -- >>> result == expected
 -- True
@@ -233,7 +233,7 @@ call = MaruMacro call'
 --
 -- (def! *x* 10)
 --
--- >>> (result, envWithX, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
+-- >>> (result, envWithX, _) <- runMaruEvaluatorDefault $ execMacro defBang (Cons (AtomSymbol "*x*") (Cons (AtomInt 10) Nil))
 -- >>> result
 -- Right (AtomInt 10)
 -- >>> TE.lookup "*x*" envWithX ^? _Just 
@@ -250,7 +250,7 @@ call = MaruMacro call'
 --
 -- Define "*z*" over a calculation (+ 1 2)
 --
--- >>> (result, env, _) <- flip runMaruEvaluator initialEnv $ execMacro defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
+-- >>> (result, env, _) <- runMaruEvaluatorDefault $ execMacro defBang (Cons (AtomSymbol "*z*") (Cons (Cons (AtomSymbol "+") (Cons (AtomInt 1) (Cons (AtomInt 2) Nil))) Nil))
 -- >>> result
 -- Right (AtomInt 3)
 -- >>> TE.lookup "*z*" env ^? _Just
@@ -276,7 +276,7 @@ defBang = MaruMacro $ \case
 -- returns 12.
 --
 -- >>> let sexpr = Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "y") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomInt 1) Nil))) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "z") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomInt 1) Nil))) Nil))) Nil))
--- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro do_ sexpr
+-- >>> (result, _, _) <- runMaruEvaluatorDefault $ execMacro do_ sexpr
 -- >>> result
 -- Right (AtomInt 12)
 do_ :: MaruMacro
@@ -394,7 +394,7 @@ binding = MaruMacro $ \case
 -- >>> let args = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
 -- >>> let params = Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil)
 -- >>> let body = Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
--- >>> (result, _, _) <- flip runMaruEvaluator initialEnv $ execMacro funcall (Cons params (Cons body (Cons args Nil)))
+-- >>> (result, _, _) <- runMaruEvaluatorDefault $ execMacro funcall (Cons params (Cons body (Cons args Nil)))
 -- >>> result
 -- Right (AtomInt 3)
 funcall :: MaruMacro
