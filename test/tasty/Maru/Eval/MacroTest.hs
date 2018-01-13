@@ -1,9 +1,11 @@
- LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Maru.Eval.MacroTest where
 
 import Data.Semigroup ((<>))
+import Data.String.QQ (s)
 import Maru.Type (SExpr(..), MaruEnv, readable)
 import MaruTest
 import System.IO.Silently (capture_)
@@ -174,7 +176,21 @@ test_quote_macro =
 test_this_macro :: [TestTree]
 test_this_macro =
   [ testCase "cab be called as a current function recursively" $
-      "((fn (x) (if (<= 0 x) 0 (+ x (this (- x 1))))) 5)" `shouldBeEvaluatedTo` "15"
+      [s|
+        ((fn (x)
+            (if (<= 0 x)
+                0
+                (+ x (this (- x 1)))
+            )) 5)
+      |] `shouldBeEvaluatedTo` "15"
   , testCase "means a mostly inner if it nests" $
-      "((fn (a) ((fn (x) (if (<= 0 x) 0 (this (- x 1)))) (- a 1))) 5)" `shouldBeEvaluatedTo` "10"
+      [s|
+        ((fn (a)
+            ((fn (x)
+                (if (<= 0 x)
+                    0
+                    (this (- x 1))))
+              (- a 1)))
+          5)
+      |] `shouldBeEvaluatedTo` "10"
   ]
