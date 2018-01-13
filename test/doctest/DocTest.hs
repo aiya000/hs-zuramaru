@@ -10,6 +10,7 @@ main = do
     , "src/Maru/Eval.hs"
     , "src/Maru/Type/Eval.hs"
     , "src/Maru/Eval/RuntimeOperation.hs"
+    , "src/Maru/QQ.hs"
     ]
 
 doctestIt :: FilePath -> FilePath -> [FilePath] -> IO ()

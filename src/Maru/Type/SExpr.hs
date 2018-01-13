@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -40,6 +41,7 @@ module Maru.Type.SExpr
   ) where
 
 import Control.Lens hiding (_Cons)
+import Data.Data (Data)
 import Data.List (foldl')
 import Data.MonoTraversable (MonoFunctor(..), Element)
 import Data.Monoid ((<>))
@@ -47,6 +49,7 @@ import Data.Profunctor (dimap)
 import Data.Semigroup (Semigroup)
 import Data.String (IsString)
 import Data.Text (Text)
+import Data.Typeable (Typeable)
 import TextShow (TextShow, showb, showt)
 import qualified Data.Text as T
 import qualified Text.Megaparsec as P
@@ -58,6 +61,7 @@ import qualified TextShow as TS
 -- >>> import Maru.Parser (parse)
 -- >>> import Maru.Preprocessor (preprocess)
 
+--TODO: Declare as newtype of Text
 -- |
 -- The format for the code of maru.
 -- (This doesn't mean a file path of the code.)
@@ -76,7 +80,7 @@ type MaruToken = P.Token Text
 --
 -- This is simply isomorphic with 'SExpr', please see 'SExpr' the about of this.
 data CallowSExpr = CallowSExpr { growUp :: SExpr }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data, Typeable)
 
 pattern Cons' :: CallowSExpr -> CallowSExpr -> CallowSExpr
 pattern Cons' x y <- CallowSExpr (Cons (CallowSExpr -> x) (CallowSExpr -> y))
@@ -111,7 +115,7 @@ data SExpr = Cons SExpr SExpr -- ^ Appending list and list
            | AtomBool Bool    -- ^ A pattern of the atom for `Bool`
            | AtomSymbol MaruSymbol -- ^ A pattern of the atom for `MaruSymbol`
            | Quote SExpr -- ^ Delays the evaluation of a 'SExpr'
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data, Typeable)
 
 -- |
 -- >>> isAtomInt $ AtomInt 10
@@ -175,7 +179,7 @@ intBullet f xs = dimap SExprIntBullet unSExprIntBullet (omap f) xs
 
 -- | A symbol of `MaruEnv`, but this is not meaning a symbol of maru side
 newtype MaruSymbol = MaruSymbol { unMaruSymbol :: Text }
-  deriving (IsString, Semigroup, Monoid, Eq, Ord)
+  deriving (IsString, Semigroup, Monoid, Eq, Ord, Data, Typeable)
 
 --TODO: `show x` should be `"MaruSymbol " ++ show (unpack x)`
 instance Show MaruSymbol where
