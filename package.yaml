@@ -31,6 +31,7 @@ dependencies:
     - readline
     - safe
     - safe-exceptions
+    - singletons
     - string-qq
     - template-haskell
     - text
