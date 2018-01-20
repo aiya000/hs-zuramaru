@@ -86,6 +86,36 @@ textSym :: Text -> Type
 textSym = LitT . StrTyLit . T.unpack
 
 
+toExp :: SExpr -> Exp
+toExp (Cons x y)   = ConE (mkName "Cons") `AppE` ParensE (toExp x) `AppE` ParensE (toExp y)
+toExp (Quote x)    = ConE (mkName "Quote") `AppE` ParensE (toExp x)
+toExp Nil          = ConE (mkName "Nil")
+toExp (AtomInt x)  = ConE (mkName "AtomInt") `AppE` LitE (intL x)
+toExp (AtomBool x) = ConE (mkName "AtomBool") `AppE` ConE (mkName $ show x)
+toExp (AtomSymbol (MaruSymbol x)) = ConE (mkName "AtomSymbol") `AppE`
+                                      ParensE (ConE (mkName "MaruSymbol") `AppE` textE x)
+
+
+toPat :: SExpr -> Pat
+toPat (Cons x y)   = ConP (mkName "Cons") [toPat x, toPat y]
+toPat (Quote x)    = ConP (mkName "Quote") [toPat x]
+toPat Nil          = ConP (mkName "Nil") []
+toPat (AtomInt x)  = ConP (mkName "AtomInt") [LitP $ intL x]
+toPat (AtomBool x) = ConP (mkName "AtomBool") [boolP x]
+-- This requires OverloadedStrings
+toPat (AtomSymbol (MaruSymbol x)) = ConP (mkName "AtomSymbol") [ConP (mkName "MaruSymbol") [LitP . StringL $ T.unpack x]]
+
+
+toType :: SExpr -> Type
+toType (Cons x y)   = PromotedT (mkName "HCons") `AppT` ParensT (toType x) `AppT` ParensT (toType y)
+toType (Quote x)    = PromotedT (mkName "HQuote") `AppT` ParensT (toType x)
+toType Nil          = PromotedT (mkName "HNil")
+--NOTE: Should specify a branch when `x < 0` ? or NumTyLit satisfies ?
+toType (AtomInt x)  = PromotedT (mkName "HAtomInt") `AppT` intT x
+toType (AtomBool x) = PromotedT (mkName "HAtomBool") `AppT` boolT x
+toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` textSym x
+
+
 -- |
 -- Expand a code to 'SExpr'
 -- if it can be parsed by 'Maru.Parser.parse'
@@ -131,52 +161,16 @@ textSym = LitT . StrTyLit . T.unpack
 -- Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
 parse :: QuasiQuoter
 parse = QuasiQuoter
-  { quoteExp = parseToExp
-  , quotePat = parseToPat
-  , quoteType = parseToType
-  , quoteDec = error "Maru.QQ.parse: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
+  { quoteExp  = power toExp
+  , quotePat  = power toPat
+  , quoteType = power toType
+  , quoteDec  = error "Maru.QQ.parse: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
   }
   where
-    force :: (SExpr -> a) -> String -> Q a
-    force f = T.pack >>> Maru.parse >>> \case
+    power :: (SExpr -> a) -> String -> Q a
+    power f = T.pack >>> Maru.parse >>> \case
       Left  e -> fail $ Maru.parseErrorPretty e
       Right a -> return . f $ growUp a
-
-    parseToExp :: String -> Q Exp
-    parseToExp = force toExp
-
-    toExp :: SExpr -> Exp
-    toExp (Cons x y)   = ConE (mkName "Cons") `AppE` ParensE (toExp x) `AppE` ParensE (toExp y)
-    toExp (Quote x)    = ConE (mkName "Quote") `AppE` ParensE (toExp x)
-    toExp Nil          = ConE (mkName "Nil")
-    toExp (AtomInt x)  = ConE (mkName "AtomInt") `AppE` LitE (intL x)
-    toExp (AtomBool x) = ConE (mkName "AtomBool") `AppE` ConE (mkName $ show x)
-    toExp (AtomSymbol (MaruSymbol x)) = ConE (mkName "AtomSymbol") `AppE`
-                                          ParensE (ConE (mkName "MaruSymbol") `AppE` textE x)
-
-    parseToPat :: String -> Q Pat
-    parseToPat = force toPat
-
-    toPat :: SExpr -> Pat
-    toPat (Cons x y)   = ConP (mkName "Cons") [toPat x, toPat y]
-    toPat (Quote x)    = ConP (mkName "Quote") [toPat x]
-    toPat Nil          = ConP (mkName "Nil") []
-    toPat (AtomInt x)  = ConP (mkName "AtomInt") [LitP $ intL x]
-    toPat (AtomBool x) = ConP (mkName "AtomBool") [boolP x]
-    -- This requires OverloadedStrings
-    toPat (AtomSymbol (MaruSymbol x)) = ConP (mkName "AtomSymbol") [ConP (mkName "MaruSymbol") [LitP . StringL $ T.unpack x]]
-
-    parseToType :: String -> Q Type
-    parseToType = force toType
-
-    toType :: SExpr -> Type
-    toType (Cons x y)   = PromotedT (mkName "HCons") `AppT` ParensT (toType x) `AppT` ParensT (toType y)
-    toType (Quote x)    = PromotedT (mkName "HQuote") `AppT` ParensT (toType x)
-    toType Nil          = PromotedT (mkName "HNil")
-    --NOTE: Should specify a branch when `x < 0` ? or NumTyLit satisfies ?
-    toType (AtomInt x)  = PromotedT (mkName "HAtomInt") `AppT` intT x
-    toType (AtomBool x) = PromotedT (mkName "HAtomBool") `AppT` boolT x
-    toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` textSym x
 
 
 -- |
@@ -187,9 +181,26 @@ parse = QuasiQuoter
 -- >>>     pp code = Maru.preprocess <$> Maru.parse code
 -- >>> :}
 --
--- >>> [parsePreprocess|sugar|] == Maru.parse "sugar"
+-- >>> Right [parsePreprocess|sugar|] == pp "sugar"
+-- True
+-- >>> Right [parsePreprocess|10|] == pp "10"
+-- True
+-- >>> Right [parsePreprocess|(1 2 3)|] == pp "(1 2 3)"
+-- True
+-- >>> Right [parsePreprocess|'10|] == pp "'10"
+-- True
 parsePreprocess :: QuasiQuoter
-parsePreprocess = undefined
+parsePreprocess = QuasiQuoter
+  { quoteExp  = power toExp
+  , quotePat  = power toPat
+  , quoteType = power toType
+  , quoteDec  = error "Maru.QQ.parsePreprocess: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
+  }
+  where
+    power :: (SExpr -> a) -> String -> Q a
+    power f = T.pack >>> Maru.parse >>> \case
+      Left  e -> fail $ Maru.parseErrorPretty e
+      Right a -> return . f $ Maru.preprocess a
 
 
 -- |
@@ -202,12 +213,40 @@ parsePreprocess = undefined
 -- この関数名zuraeの発音はずら〜（ずらあ）です。
 -- (the e suffix means an 'e'valuation)
 --
--- >>> [zurae|(print 10)|]
--- 10
--- Nil
--- >>> [zurae|10|]
--- AtomInt 10
--- >>> [zurae|'(1 2 3)|]
--- Cons (Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil)))
+-- NOTICE:
+-- Please be careful to the halting problem.
+-- The halting safety is abandon
+-- because this ('Maru.Eval.eval') is turing-complete in the compile time :D
+--
+-- >>> :{
+-- >>> let force :: SourceCode -> IO SExpr
+-- >>>     force code = do
+-- >>>        let (Right sexpr) = Maru.preprocess <$> Maru.parse code
+-- >>>        Right (result, _, _) <- silence $ Maru.eval Maru.initialEnv sexpr
+-- >>>        return result
+-- >>> :}
+--
+-- >>> (==) <$> return [zurae|10|] <*> force "10"
+-- True
+-- >>> (==) <$> return [zurae|'sugar|] <*> force "'sugar"
+-- True
+-- >>> (==) <$> return [zurae|'(1 2 3)|] <*> force "'(1 2 3)"
+-- True
+-- >>> (==) <$> return [zurae|(print 10)|] <*> force "(print 10)"
+-- 10True
 zurae :: QuasiQuoter
-zurae = undefined
+zurae = QuasiQuoter
+  { quoteExp  = power toExp
+  , quotePat  = power toPat
+  , quoteType = power toType
+  , quoteDec  = error "Maru.QQ.zurae: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
+  }
+  where
+    power :: (SExpr -> a) -> String -> Q a
+    power f = T.pack >>> Maru.parse >>> fmap Maru.preprocess >>> \case
+      Left e -> fail $ Maru.parseErrorPretty e
+      Right sexpr -> do
+        result <- runIO $ Maru.eval Maru.initialEnv sexpr
+        case result of
+          Left  e -> fail $ "Maru.QQ.zurae: an error is occured in the compile time: " ++ show e
+          Right (sexpr, _, _) -> return $ f sexpr
