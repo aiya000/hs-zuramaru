@@ -215,7 +215,6 @@ textSym = LitT . StrTyLit . T.unpack
 -- AtomSymbol "konoko"
 -- >>> fromSing (sing :: Sing [parse|(1 2 3)|])
 -- Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
->>>>>>> d17c276... Implement `parse` quasi-quote
 parse :: QuasiQuoter
 parse = QuasiQuoter
   { quoteExp = parseToExp
