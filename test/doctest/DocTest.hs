@@ -9,6 +9,7 @@ main = do
     , "src/Maru/Preprocessor.hs"
     , "src/Maru/Eval.hs"
     , "src/Maru/Type/Eval.hs"
+    , "src/Maru/Type/TypeLevel.hs"
     , "src/Maru/Eval/RuntimeOperation.hs"
     , "src/Maru/QQ.hs"
     ]
