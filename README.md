@@ -1,5 +1,9 @@
-# ((((zuramaru)))) [![Build Status](https://travis-ci.org/aiya000/hs-zuramaru.svg?branch=master)](https://travis-ci.org/aiya000/hs-zuramaru)
-'おらは 国木田花丸 ずら〜'
+# ((((zuramaru)))) [![Build Status](https://travis-ci.org/aiya000/hs-zuramaru.svg?branch=master)](https://travis-ci.org/aiya000/hs-zuramaru) [![Hackage](https://img.shields.io/badge/Hackage-available-blue.svg)](https://hackage.haskell.org/package/zuramaru)
+おらは 国木田花丸 ずら〜
+
+A lisp dialect, an inline-lisp library
+
+- [Hackage - A lisp processor, An inline-lisp, in Haskell](https://hackage.haskell.org/package/zuramaru)
 
 
 # :exclamation: :question: As an inline-lisp in Haskell :question: :exclamation:
