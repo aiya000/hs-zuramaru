@@ -6,6 +6,8 @@ maintainer: aiya000 <aiya000.develop@gmail.com>
 copyright: aiya000
 license: MIT
 homepage: https://github.com/aiya000/hs-zuramaru
+description: A lisp dialect
+synopsis: A lisp processor, An inline-lisp, in Haskell
 
 ghc-options:
     - -Wall
