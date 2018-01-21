@@ -143,7 +143,6 @@ toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` tex
 -- "good"
 -- >>> case AtomInt 000 of; [parse|123|] -> "bad"; AtomInt _ -> "good"
 -- "good"
--- >>> :set -XOverloadedStrings
 -- >>> case AtomSymbol "x" of; [parse|x|] -> "good"
 -- "good"
 -- >>> case Quote (AtomInt 10) of; [parse|'10|] -> "good"
