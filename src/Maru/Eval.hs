@@ -43,7 +43,9 @@ import qualified Maru.Type.SExpr as MSym (pack)
 -- $setup
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XOverloadedLists
+-- >>> :set -XQuasiQuotes
 -- >>> import Control.Lens (_Just)
+-- >>> import Maru.QQ.ShortName (z, p)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
 -- >>> import qualified Maru.Type.Eval as TE
 -- >>> let runMaruEvaluatorDefault = flip runMaruEvaluator initialEnv
@@ -437,6 +439,17 @@ print_ = MaruMacro $ nilOf . \case
     x <<>> y = x <> "\n" <> y
 
 
--- | Make a list with arguments
+-- |
+-- Make a list with arguments
+--
+-- >>> [z|(list)|] == [p|()|]
+-- True
+-- >>> [z|(list 1 2 3)|] == [p|(1 2 3)|]
+-- True
+--
+-- each arguments are evaluated
+--
+-- >>> [z|(list (+ 1 2) (+ 3 4))|] == [p|(3 7)|]
+-- True
 list :: MaruMacro
 list = MaruMacro $ fmap scottEncode . mapM execute . flatten
