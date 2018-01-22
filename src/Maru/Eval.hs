@@ -453,3 +453,35 @@ print_ = MaruMacro $ nilOf . \case
 -- True
 list :: MaruMacro
 list = MaruMacro $ fmap scottEncode . mapM execute . flatten
+
+
+-- |
+-- Be called recursively in a recursive temporary function
+--
+-- >>> :{
+-- >>> [z|
+-- >>>  ((fn* (x)
+-- >>>    (if (<= 0 x)
+-- >>>        0
+-- >>>        (+ x (this (- x 1)))))
+-- >>>    5)
+-- >>> |] == [p|15|]
+-- >>> :}
+-- True
+--
+-- Always it means a mostly inner temporary function
+--
+-- >>> :{
+-- >>> [z|
+-- >>>  ((fn* (a)
+-- >>>      ((fn (x)
+-- >>>          (if (<= 0 x)
+-- >>>              0
+-- >>>              (this (- x 1))))
+-- >>>        (- a 1)))
+-- >>>    5)
+-- >>> |] == [p|10|]
+-- >>> :}
+-- True
+this :: MaruMacro
+this = undefined
