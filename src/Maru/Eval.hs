@@ -14,7 +14,12 @@
 
 --TODO: Organize document comments
 
--- | @MaruEvaluator@ evaluates @SEexpr@.
+-- |
+-- @MaruEvaluator@ evaluates @SEexpr@.
+--
+-- NOTE:
+-- Please see 'Maru.QQ.ShortName' and 'Maru.QQ'
+-- for each quasi-quote in the doctest
 module Maru.Eval
   ( initialEnv
   , eval
