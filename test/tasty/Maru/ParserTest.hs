@@ -34,3 +34,12 @@ test_parser_parses_quote_symbols =
       parse "'a" @?= Right (Quote' (AtomSymbol' "a"))
       parse "'(1 2)" @?= Right (Quote' (Cons' (AtomInt' 1) (Cons' (AtomInt' 2) Nil')))
   ]
+
+
+test_parser_ignores_a_line_break_after_a_symbol :: [TestTree]
+test_parser_ignores_a_line_break_after_a_symbol =
+  [ testCase "(do\\nnil) is same as (do nil)" $
+      parse "(do\nnil)" @?= parse "(do nil)"
+  , testCase "(do\\n(+ 1)) is same as (do (+ 1))" $
+      parse "(do\n(+ 1))" @?= parse "(do (+ 1))"
+  ]
