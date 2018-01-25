@@ -69,7 +69,7 @@ declareException "EvalException" ["EvalException"]
 -- An initial value of the runtime.
 -- This is the empty.
 initialEnv :: MaruEnv
-initialEnv = [[ ("nil", Nil)
+initialEnv = [[ ("nil", Nil) --TODO: Should this mapping is resolved in the parser or the preprocessor ?
               , ("def!", AtomSymbol "#core-macro")
               , ("let*", AtomSymbol "#core-macro")
               , ("do", AtomSymbol "#core-macro")
