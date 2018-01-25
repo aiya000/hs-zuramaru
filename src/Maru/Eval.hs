@@ -64,7 +64,17 @@ import qualified Maru.Type.SExpr as MSym (pack)
 declareException "EvalException" ["EvalException"]
 
 
---TODO: AtomSymbol is not the string literal !
+--TODO: AtomSymbol is not the string literal ! Avoid this v
+--      zuramaru> do
+--      EvalException: "A symbol '#core-macro' is not found"
+--      zuramaru> def!
+--      EvalException: "A symbol '#core-macro' is not found"
+--      zuramaru> let*
+--      EvalException: "A symbol '#core-macro' is not found"
+--      these should be v
+--      zuramaru> do
+--      #core-macro
+
 -- |
 -- An initial value of the runtime.
 -- This is the empty.
