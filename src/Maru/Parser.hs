@@ -48,10 +48,18 @@ debugParse = runMaruParser sexprParser
 parseErrorPretty :: ParseErrorResult -> String
 parseErrorPretty = P.parseErrorPretty
 
+-- | Abandon a character as a kind of blank
+blank :: MaruParser ()
+blank = P.skipSome (P.char ' ') <|> P.skipSome P.eol <|> P.skipSome P.tab
+
+-- | Similar to 'blank', abandon characters
+blanks :: MaruParser ()
+blanks = P.skipMany blank
+
 
 sexprParser :: MaruParser CallowSExpr
 sexprParser = do
-  P.space
+  blanks
   quoteParser <<> atomParser <<> listParser
   where
     -- but "(quote x)" is not parsed to `Quote (AtomSymbol "x")` in here,
@@ -63,26 +71,26 @@ sexprParser = do
       Quote' <$> sexprParser
 
     atomParser :: MaruParser CallowSExpr
-    atomParser = (numberParser <<> boolParser <<> symbolParser) <* P.space
+    atomParser = (numberParser <<> boolParser <<> symbolParser) <* blanks
 
     listParser :: MaruParser CallowSExpr
     listParser = do
       P.char '('
-      P.space
+      blanks
       xs <- P.many sexprParser
-      P.space
+      blanks
       P.char ')'
-      P.space
+      blanks
       return $ scottEncode' xs
 
     numberParser :: MaruParser CallowSExpr
-    numberParser = naturalNumberParser <<> positiveNumberParser <<> negativeNumberParser
+    numberParser = (naturalNumberParser <<> positiveNumberParser <<> negativeNumberParser)
 
     boolParser :: MaruParser CallowSExpr
     boolParser = return . AtomBool' =<< judgeBool =<< P.string "true" <|> P.string "false"
 
     symbolParser :: MaruParser CallowSExpr
-    symbolParser = return . AtomSymbol' . MTS.pack =<< P.some (P.noneOf ['\'', '(', ')', ' '])
+    symbolParser = return . AtomSymbol' . MTS.pack =<< P.some (P.noneOf ['\'', '(', ')', ' ', '\r', '\n', '\t'])
 
     naturalNumberParser :: MaruParser CallowSExpr
     naturalNumberParser = return . AtomInt' =<< read' =<< P.some P.digitChar
