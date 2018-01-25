@@ -137,6 +137,25 @@ toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` tex
 -- >>> Right [parse|(123 456)|] == p "(123 456)"
 -- True
 --
+-- (multi line)
+--
+-- >>> :{
+-- >>> Right [parse|
+-- >>>   (do
+-- >>>     (def! x 10)
+-- >>>     nil)
+-- >>> |] == p "(do (def! x 10) nil)"
+-- >>> :}
+-- True
+--
+-- >>> :{
+-- >>> Right [parse|
+-- >>>   (let* (x 10)
+-- >>>   (let* (y 20) nil))
+-- >>> |] == p "(let* (x 10) (let* (y 20) nil))"
+-- >>> :}
+-- True
+--
 -- As patterns
 --
 -- >>> case AtomInt 123 of; [parse|123|] -> "good"
