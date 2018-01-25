@@ -298,15 +298,14 @@ defBang = MaruMacro $ \case
 -- True
 do_ :: MaruMacro
 do_ = MaruMacro $ \case
-  -- The calculation for `()` is not needed
-  Cons Nil Nil -> return Nil
+  Nil -> return Nil
   -- Don't evaluate `(x)` to `x`
   s@(Cons _ Nil) -> returnInvalid "do" s
   sexpr -> do
     let evaluatees = flatten sexpr
     xs <- mapM execute evaluatees
     if null xs
-      then throwFail "do: fatal error !!" -- This case is already avoided by the above `Cons Nil Nil` pattern
+      then throwFail "do: fatal error !!" -- This case is already avoided by the above `Nil` pattern
       else return $ last xs
 
 
