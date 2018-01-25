@@ -282,20 +282,20 @@ defBang = MaruMacro $ \case
 
 
 -- |
--- 'do' macro evaluates all the taken arguments sequentially.
+-- 'do' macro evaluates all the taken arguments sequentially
 --
--- `
--- (do
---  (def! x 10)
---  (def! y (+ x 1))
---  (def! z (+ y 1)))
--- `
--- returns 12.
+-- >>> :{
+-- >>> [z|
+-- >>>  (do
+-- >>>    (def! x 10)
+-- >>>    (def! y (+ x 1))
+-- >>>    (def! z (+ y 1)))
+-- >>> |] == [p|12|]
+-- >>> :}
+-- True
 --
--- >>> let sexpr = Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "y") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomInt 1) Nil))) Nil))) (Cons (Cons (AtomSymbol "def!") (Cons (AtomSymbol "z") (Cons (Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomInt 1) Nil))) Nil))) Nil))
--- >>> (result, _, _) <- runMaruEvaluatorDefault $ execMacro do_ sexpr
--- >>> result
--- Right (AtomInt 12)
+-- >>> [z|(do)|] == [p|()|] -- () is nil
+-- True
 do_ :: MaruMacro
 do_ = MaruMacro $ \case
   -- The calculation for `()` is not needed
@@ -329,50 +329,24 @@ if_ = MaruMacro $ \case
   s -> returnInvalid "if" s
 
 
--- `
--- (def! x 10)
--- (fn* (a) x)
--- `
--- makes
--- `(fn* (a) 10)`
---
---
--- the expansion is recursively,
--- but only the symbol of +, -, *, / are not expanded.
--- `
--- (def! z 1)
--- (def! y (- 1 z)
--- (def! x (+ y z))
--- (fn* (a) x)
--- `
--- makes
--- `(fn* (a) (+ (- 1 1) 1))`
---TODO: ^^^ Think about this behavior and Add this to below (funcall's) doc comment if it is correct
-
 -- |
--- Make a temporary function (it is often called 'lambda function').
+-- Evaluate an expression of `fn*`.
 --
--- fn* macro is made up by this and `funcall` macro.
+-- This and 'funcall' are so related, this is evaluator.
 --
--- This is the caller, 'binding' is the callee.
---
--- Expand a S expression of its body (Make a closure expression).
---
--- If the conversion of S expression can be executed in any time (or if the completely immutability is promised),
--- this expansion can be the one of strategy in the real for the binding variables of the closure.
+-- simply constant folding in `fn*`
+-- (remove variables without +,-,*,/ and parameters in `fn*`)
 --
 -- >>> :{
--- do
---    let modifiedEnv = initialEnv <>
---                            [[ ("z", AtomInt 1)
---                             , ("y", Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomSymbol "z") Nil)))
---                             , ("x", Cons (AtomSymbol "+") (Cons (AtomSymbol "y") (Cons (AtomSymbol "z") Nil)))
---                             ]]
---    let sexpr = Cons (Cons (AtomSymbol "a") Nil) (Cons (AtomSymbol "x") Nil)
---    (result, _, _) <- flip runMaruEvaluator modifiedEnv $ execMacro binding sexpr
---    return result
--- :}
--- Right (Cons (AtomSymbol "fn*") (Cons (Cons (AtomSymbol "a") Nil) (Cons (Cons (AtomSymbol "+") (Cons (Cons (AtomSymbol "-") (Cons (AtomInt 1) (Cons (AtomInt 1) Nil))) (Cons (AtomInt 1) Nil))) Nil)))
+-- >>> [z|
+-- >>>  (do
+-- >>>    (def! z 10)
+-- >>>    (def! y (- 1 z))
+-- >>>    (def! x (+ y z))
+-- >>>    (fn* (a) (+ (- 1 1) 1)))
+-- >>> |] == [p|(fn* (a) (+ (- 1 1) 1))|]
+-- >>> :}
+-- True
 binding :: MaruMacro
 binding = MaruMacro $ \case
   Cons params body -> do
@@ -404,16 +378,16 @@ binding = MaruMacro $ \case
 -- |
 -- Apply 'args' to 'params' with 'body' as a function body.
 --
--- fn* macro is made up by this and `binding` macro.
+-- This and 'binding' are so related, this is evaluatee.
 --
--- `((fn* (x y) (+ x y)) 1 2)`
---
--- >>> let args = Cons (AtomInt 1) (Cons (AtomInt 2) Nil)
--- >>> let params = Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil)
--- >>> let body = Cons (AtomSymbol "+") (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
--- >>> (result, _, _) <- runMaruEvaluatorDefault $ execMacro funcall (Cons params (Cons body (Cons args Nil)))
--- >>> result
--- Right (AtomInt 3)
+-- >>> :{
+-- >>> [z|
+-- >>>   ((fn* (x y)
+-- >>>     (+ x y)
+-- >>>    ) 1 2)
+-- >>> |] == [p|3|]
+-- >>> :}
+-- True
 funcall :: MaruMacro
 funcall = MaruMacro $ \s -> case flatten s of
   [params, body, args] -> do
