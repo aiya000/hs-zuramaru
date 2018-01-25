@@ -64,7 +64,7 @@ module Maru.Type.Eval
   , runMaruCalculator
   , First' (..)
   , first'
-  , expandVars
+  , constantFold
   , substituteVar
   ) where
 
@@ -365,43 +365,45 @@ lookupVar sym = do
 -- |
 -- Expand the value of the variables, but these are not evaluated.
 --
+-- (Please see 'constant folding' in wikipedia or else)
+--
 -- And +, -, *, and / are not expanded
 -- (because it is regarded as like the axioms)
 --
 -- simply expanding
 --
--- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> expandVars (AtomSymbol "x")
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> constantFold (AtomSymbol "x")
 -- >>> sexpr
 -- Right (AtomInt 10)
 --
 -- multi variables
 --
--- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomBool True) >> expandVars (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomBool True) >> constantFold (Cons (AtomSymbol "x") (Cons (AtomSymbol "y") Nil))
 -- >>> sexpr
 -- Right (Cons (AtomInt 10) (Cons (AtomBool True) Nil))
 --
 -- nested expanding
 --
--- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomSymbol "x") >> expandVars (AtomSymbol "y")
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ newScope "x" (AtomInt 10) >> newScope "y" (AtomSymbol "x") >> constantFold (AtomSymbol "y")
 -- >>> sexpr
 -- Right (AtomInt 10)
 --
 -- the quote is kept
 --
--- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ expandVars (Quote (AtomSymbol "xxx"))
+-- >>> (sexpr, _, _) <- flip runMaruEvaluator E.initialEnv $ constantFold (Quote (AtomSymbol "xxx"))
 -- >>> sexpr
 -- Right (Quote (AtomSymbol "xxx"))
-expandVars :: (MaruScopesAssociation xs, FailAssociation xs) => SExpr -> Eff xs SExpr
-expandVars (AtomSymbol "+") = return $ AtomSymbol "+"
-expandVars (AtomSymbol "-") = return $ AtomSymbol "-"
-expandVars (AtomSymbol "*") = return $ AtomSymbol "*"
-expandVars (AtomSymbol "/") = return $ AtomSymbol "/"
-expandVars Nil = return Nil
-expandVars (AtomInt x) = return $ AtomInt x
-expandVars (AtomBool x) = return $ AtomBool x
-expandVars (Cons x y) = Cons <$> expandVars x <*> expandVars y
-expandVars (AtomSymbol var) = lookupVar var >>= expandVars
-expandVars (Quote x) = return $ Quote x
+constantFold :: (MaruScopesAssociation xs, FailAssociation xs) => SExpr -> Eff xs SExpr
+constantFold (AtomSymbol "+") = return $ AtomSymbol "+"
+constantFold (AtomSymbol "-") = return $ AtomSymbol "-"
+constantFold (AtomSymbol "*") = return $ AtomSymbol "*"
+constantFold (AtomSymbol "/") = return $ AtomSymbol "/"
+constantFold Nil = return Nil
+constantFold (AtomInt x) = return $ AtomInt x
+constantFold (AtomBool x) = return $ AtomBool x
+constantFold (Cons x y) = Cons <$> constantFold x <*> constantFold y
+constantFold (AtomSymbol var) = lookupVar var >>= constantFold
+constantFold (Quote x) = return $ Quote x
 
 
 -- |
