@@ -50,7 +50,7 @@ import qualified Maru.Type.SExpr as MSym (pack)
 -- >>> :set -XOverloadedLists
 -- >>> :set -XQuasiQuotes
 -- >>> import Control.Lens (_Just)
--- >>> import Maru.QQ.ShortName (z, p)
+-- >>> import Maru.QQ.ShortName (z, pp)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
 -- >>> import qualified Maru.Type.Eval as TE
 -- >>> let runMaruEvaluatorDefault = flip runMaruEvaluator initialEnv
@@ -290,11 +290,11 @@ defBang = MaruMacro $ \case
 -- >>>    (def! x 10)
 -- >>>    (def! y (+ x 1))
 -- >>>    (def! z (+ y 1)))
--- >>> |] == [p|12|]
+-- >>> |] == [pp|12|]
 -- >>> :}
 -- True
 --
--- >>> [z|(do)|] == [p|()|] -- () is nil
+-- >>> [z|(do)|] == [pp|()|] -- () is nil
 -- True
 do_ :: MaruMacro
 do_ = MaruMacro $ \case
@@ -343,7 +343,7 @@ if_ = MaruMacro $ \case
 -- >>>    (def! y (- 1 z))
 -- >>>    (def! x (+ y z))
 -- >>>    (fn* (a) (+ (- 1 1) 1)))
--- >>> |] == [p|(fn* (a) (+ (- 1 1) 1))|]
+-- >>> |] == [pp|(fn* (a) (+ (- 1 1) 1))|]
 -- >>> :}
 -- True
 binding :: MaruMacro
@@ -384,7 +384,7 @@ binding = MaruMacro $ \case
 -- >>>   ((fn* (x y)
 -- >>>     (+ x y)
 -- >>>    ) 1 2)
--- >>> |] == [p|3|]
+-- >>> |] == [pp|3|]
 -- >>> :}
 -- True
 funcall :: MaruMacro
@@ -430,14 +430,14 @@ print_ = MaruMacro $ nilOf . \case
 -- |
 -- Make a list with arguments
 --
--- >>> [z|(list)|] == [p|()|]
+-- >>> [z|(list)|] == [pp|()|]
 -- True
--- >>> [z|(list 1 2 3)|] == [p|(1 2 3)|]
+-- >>> [z|(list 1 2 3)|] == [pp|(1 2 3)|]
 -- True
 --
 -- each arguments are evaluated
 --
--- >>> [z|(list (+ 1 2) (+ 3 4))|] == [p|(3 7)|]
+-- >>> [z|(list (+ 1 2) (+ 3 4))|] == [pp|(3 7)|]
 -- True
 list :: MaruMacro
 list = MaruMacro $ fmap scottEncode . mapM execute . flatten
