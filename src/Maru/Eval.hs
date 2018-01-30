@@ -23,6 +23,15 @@
 module Maru.Eval
   ( initialEnv
   , eval
+  , letStar
+  , call
+  , do_
+  , if_
+  , binding
+  , funcall
+  , hiMaruEnv
+  , print_
+  , list
   ) where
 
 import Control.Exception.Safe (Exception, SomeException, toException)
