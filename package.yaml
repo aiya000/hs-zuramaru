@@ -29,6 +29,7 @@ dependencies:
     - megaparsec
     - mono-traversable
     - mtl
+    - mwc-random
     - profunctors
     - readline
     - safe
