@@ -18,8 +18,10 @@
 -- @MaruEvaluator@ evaluates @SEexpr@.
 --
 -- NOTE:
--- Please see 'Maru.QQ.ShortName' and 'Maru.QQ'
--- for each quasi-quote in the doctest
+-- Please see below items for each quasi-quote in the doctest
+--
+-- - 'Maru.QQ.ShortName' ('Maru.QQ')
+-- - 'Maru.Type.SExpr'
 module Maru.Eval
   ( initialEnv
   , eval
