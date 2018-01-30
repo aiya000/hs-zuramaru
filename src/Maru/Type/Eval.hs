@@ -70,6 +70,7 @@ module Maru.Type.Eval
 
 import Control.Lens hiding ((<|))
 import Control.Monad.Fail (MonadFail(..))
+import Data.Char (ord, chr)
 import Data.Extensible
 import Data.List.NonEmpty (NonEmpty(..), (<|))
 import Data.Map.Lazy (Map)
@@ -78,9 +79,9 @@ import Data.Proxy (Proxy(..))
 import Data.Semigroup (Semigroup(..))
 import Data.Text (Text)
 import Data.Typeable (Typeable, typeRep)
-import Data.Unique (newUnique, hashUnique)
 import Maru.Type.SExpr
 import Prelude hiding (fail, lookup)
+import System.Random.MWC (uniform, createSystemRandom)
 import TextShow (TextShow(..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Lazy as M
@@ -260,19 +261,34 @@ runMaruEvaluator m env = flatten <$> runMaruEvaluator' m env
     flatten ((x, y), z) = (x, y, z)
 
 -- |
--- Create a symbol of the variable name,
--- it is unique (is not duplicated) in the runtime.
-newSymbol :: MaruEvaluator MaruSymbol
-newSymbol = ("n" <>) <$> newSymbol' ""
+-- Similar to 'Data.Unique.newUnique',
+--
+-- Make a fresh random name that is unique at that time.
+--
+-- NOTE:
+-- This name is dupplicated at astronomical odds possibility,
+-- but maybe, you don't have to remember this.
+--
+-- below is example values
+-- `
+-- "sym-JUKBRHRI"
+-- "sym-XABVBJWU"
+-- "sym-JHONAKUL"
+-- `
+newSymbol :: IOEffAssociation xs => Eff xs MaruSymbol
+newSymbol = liftIOEff $ ("sym-" <>) . MTS.pack <$> newRandomHash
   where
-    -- Take a base of the name.
-    newSymbol' :: MaruSymbol -> MaruEvaluator MaruSymbol
-    newSymbol' baseName = do
-      name <- liftIOEff $ (baseName <>) . MTS.pack . show . hashUnique <$> newUnique
-      env <- getMaruEnv
-      case lookup name env of
-           Nothing -> newSymbol' name
-           Just  _ -> return name
+    newRandomHash :: IO String
+    newRandomHash = do
+      rand <- createSystemRandom
+      xs <- sequence . replicate 8 $ uniform rand
+      return $ map toAlpha xs
+
+    toAlpha :: Int -> Char
+    toAlpha x =
+      let first = ord 'A'
+      in chr . (+ first) . abs $ x `mod` 26
+
 
 --NOTE: Can this is alternated by some lens's function ?
 -- |
