@@ -172,6 +172,9 @@ execute sexpr = execMacro call sexpr
 --
 -- (let* (x 10) x)
 --
+-- >>> [z|(let (x 10) x)|]
+-- AtomInt 10
+--
 -- >>> (result, env, _) <- runMaruEvaluatorDefault $ execMacro letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
 -- >>> result
 -- Right (AtomInt 10)
