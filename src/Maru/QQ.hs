@@ -1,5 +1,6 @@
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Present compile time lisp (zuramaru) literals as quasi-quotes.
@@ -103,6 +104,7 @@ toPat Nil          = ConP (mkName "Nil") []
 toPat (AtomInt x)  = ConP (mkName "AtomInt") [LitP $ intL x]
 toPat (AtomBool x) = ConP (mkName "AtomBool") [boolP x]
 -- This requires OverloadedStrings
+toPat (AtomSymbol (MaruSymbol "__")) = WildP
 toPat (AtomSymbol (MaruSymbol x)) = ConP (mkName "AtomSymbol") [ConP (mkName "MaruSymbol") [LitP . StringL $ T.unpack x]]
 
 
@@ -167,6 +169,15 @@ toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` tex
 -- >>> case Quote (AtomInt 10) of; [parse|'10|] -> "good"
 -- "good"
 -- >>> case Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil) of; [parse|(x 10)|] -> "good"
+-- "good"
+--
+-- and `__` to be a wild pattern
+--
+-- >>> case AtomInt 10 of; [parse|__|] -> "good"
+-- "good"
+-- >>> case AtomSymbol "konoko" of; [parse|__|] -> "good"
+-- "good"
+-- >>> case Cons (AtomInt 1) (Cons (AtomInt 2) Nil) of; [parse|(1 __)|] -> "good"
 -- "good"
 --
 -- As types (compile time calculations)
