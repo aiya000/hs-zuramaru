@@ -162,26 +162,3 @@ test_quote_macro =
       "''2" `shouldBeEvaluatedTo` "(quote 2)"
       "'(10 '20)" `shouldBeEvaluatedTo` "(10 (quote 20))"
   ]
-
-
-test_this_macro :: [TestTree]
-test_this_macro =
-  [ testCase "cab be called as a current function recursively" $
-      [s|
-        ((fn (x)
-            (if (<= 0 x)
-                0
-                (+ x (this (- x 1)))
-            )) 5)
-      |] `shouldBeEvaluatedTo` "15"
-  , testCase "means a mostly inner if it nests" $
-      [s|
-        ((fn (a)
-            ((fn (x)
-                (if (<= 0 x)
-                    0
-                    (this (- x 1))))
-              (- a 1)))
-          5)
-      |] `shouldBeEvaluatedTo` "10"
-  ]

@@ -172,7 +172,7 @@ execute sexpr = execMacro call sexpr
 --
 -- (let* (x 10) x)
 --
--- >>> [z|(let (x 10) x)|]
+-- >>> [z|(let* (x 10) x)|]
 -- AtomInt 10
 --
 -- >>> (result, env, _) <- runMaruEvaluatorDefault $ execMacro letStar (Cons (Cons (AtomSymbol "x") (Cons (AtomInt 10) Nil)) (Cons (AtomSymbol "x") Nil))
@@ -360,6 +360,35 @@ if_ = MaruMacro $ \case
 -- >>> |] == [pp|(fn* (a) (+ (- 1 1) 1))|]
 -- >>> :}
 -- True
+--
+-- `this` macro is expanded to a binding myself with a unique symbol,
+-- it can make recursive functions.
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   (let* f (fn* (x)
+-- >>>             (if (<= 0 x)
+-- >>>                 0
+-- >>>                 (+ x (this (- x 1)))))
+-- >>>     (f 5))
+-- >>> |]
+-- >>> :}
+-- AtomInt 15
+--
+-- Always `this` means a mostly inner if `fn*` nests
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   ((fn (a)
+-- >>>       ((fn (x)
+-- >>>           (if (<= 0 x)
+-- >>>               0
+-- >>>               (this (- x 1))))
+-- >>>         (- a 1)))
+-- >>>     5)
+-- >>> |]
+-- >>> :}
+-- AtomInt 10
 binding :: MaruMacro
 binding = MaruMacro $ \case
   Cons params body -> do
