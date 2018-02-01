@@ -378,26 +378,26 @@ binding = MaruMacro $ \case
   Cons params body -> do
     let cause = "fn* (caller): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
     params' <- includeFail cause . return $ flatten params ^? asSymbolList
-    expandedBody <- expandVarsWihtoutParams params' body
+    expandedBody <- constantFold' params' body
     return $ Cons (AtomSymbol "fn*") (Cons params expandedBody)
   s -> returnInvalid "fn* (caller)" s
   where
-    -- Similar to 'expandVars',
+    -- Similar to 'constantFold',
     -- but if the 'MaruSymbol' is included in taken ['MaruSymbol'],
     -- it is not expanded
-    expandVarsWihtoutParams :: [MaruSymbol] -> SExpr -> MaruEvaluator SExpr
-    expandVarsWihtoutParams _ (AtomSymbol "+") = return $ AtomSymbol "+"
-    expandVarsWihtoutParams _ (AtomSymbol "-") = return $ AtomSymbol "-"
-    expandVarsWihtoutParams _ (AtomSymbol "*") = return $ AtomSymbol "*"
-    expandVarsWihtoutParams _ (AtomSymbol "/") = return $ AtomSymbol "/"
-    expandVarsWihtoutParams _ Nil = return Nil
-    expandVarsWihtoutParams _ (AtomInt x) = return $ AtomInt x
-    expandVarsWihtoutParams _ (AtomBool x) = return $ AtomBool x
-    expandVarsWihtoutParams _ (Quote x) = return $ Quote x
-    expandVarsWihtoutParams params' (Cons x y) = Cons <$> expandVarsWihtoutParams params' x <*> expandVarsWihtoutParams params' y
-    expandVarsWihtoutParams params' (AtomSymbol var) =
+    constantFold' :: [MaruSymbol] -> SExpr -> MaruEvaluator SExpr
+    constantFold' _ (AtomSymbol "+") = return $ AtomSymbol "+"
+    constantFold' _ (AtomSymbol "-") = return $ AtomSymbol "-"
+    constantFold' _ (AtomSymbol "*") = return $ AtomSymbol "*"
+    constantFold' _ (AtomSymbol "/") = return $ AtomSymbol "/"
+    constantFold' _ Nil = return Nil
+    constantFold' _ (AtomInt x) = return $ AtomInt x
+    constantFold' _ (AtomBool x) = return $ AtomBool x
+    constantFold' _ (Quote x) = return $ Quote x
+    constantFold' params' (Cons x y) = Cons <$> constantFold' params' x <*> constantFold' params' y
+    constantFold' params' (AtomSymbol var) =
       if var `elem` params' then return $ AtomSymbol var
-                            else lookupVar var >>= expandVarsWihtoutParams params'
+                            else lookupVar var >>= constantFold' params'
 
 
 -- |
