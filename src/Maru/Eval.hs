@@ -344,21 +344,67 @@ if_ = MaruMacro $ \case
 
 -- |
 -- Bind variables to constant values on `fn*` block (= a function) is evaluated,
--- but parameters (dummy arguments) and +,-,*,/ (basic functions) are kept.
+-- but parameters (dummy arguments), + - * / (basic functions), and quoted stuffs are kept.
 --
 -- A pair of this and 'funcallStar' is `fn*` macro.
 --
 -- Normal, users should use `fn` ('binding')
 -- because 'bindingStar' doesn't support recursive functions.
 --
+-- In below example
+--
+-- 1. x is bound by `10`
+-- 2. y is bound by `20` (notice: `(+ 10 x)` is evaluated immediately by `def!`)
+-- 3 x and y are expanded in the function
+--
 -- >>> :{
 -- >>> [z|
 -- >>>  (do
--- >>>    (def! z 10)
--- >>>    (def! y (- 1 z))
--- >>>    (def! x (+ y z))
--- >>>    (fn* (a) (+ (- 1 1) 1)))
--- >>> |] == [pp|(fn* (a) (+ (- 1 1) 1))|]
+-- >>>    (def! x 10)
+-- >>>    (def! y (+ 10 x))
+-- >>>    (fn* (a) (+ x y)))
+-- >>> |] == [pp|(fn* (a) (+ 10 20))|]
+-- >>> :}
+-- True
+--
+-- the parameters are kept (the mapping ahead is not existent)
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   (do
+-- >>>     (def! x 10)
+-- >>>     (fn* (a) (+ x a)))
+-- >>> |] == [pp|(fn* (a) (+ 10 a))|]
+-- >>> :}
+-- True
+--
+-- the quoted blocks are not expanded
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   (do
+-- >>>     (def! x 10)
+-- >>>     (fn* () '(+ x 2)))
+-- >>> |] == [pp|(fn* () '(+ x 2))|]
+-- >>> :}
+-- True
+--
+-- lexical scopes
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   (let* (x 10)
+-- >>>     (fn* (x) x))
+-- >>> |] == [pp|(fn* (x) x)|]
+-- >>> :}
+-- True
+--
+-- >>> :{
+-- >>> [z|
+-- >>>   (do
+-- >>>     (def! x 10)
+-- >>>     (fn* () (let* (x 'konoko) x)))
+-- >>> |] == [pp|(fn* () (let* (x 'konoko) x))|]
 -- >>> :}
 -- True
 bindingStar :: MaruMacro
