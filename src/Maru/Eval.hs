@@ -29,8 +29,8 @@ module Maru.Eval
   , call
   , do_
   , if_
-  , binding
-  , funcall
+  , bindingStar
+  , funcallStar
   , hiMaruEnv
   , print_
   , list
@@ -157,9 +157,9 @@ execute (Cons (AtomSymbol "let*") s) = execMacro letStar s
 execute (Cons (AtomSymbol "do") s) = execMacro do_ s
 execute (Cons (AtomSymbol "if") s) = execMacro if_ s
 -- the forms of '((fn* xxx yyy) z)' are applied as a function
-execute (Cons (Cons (AtomSymbol "fn*") (Cons params (Cons body Nil))) args) = execMacro funcall $ Cons params (Cons body (Cons args Nil))
+execute (Cons (Cons (AtomSymbol "fn*") (Cons params (Cons body Nil))) args) = execMacro funcallStar $ Cons params (Cons body (Cons args Nil))
 -- the forms of '(fn* xxx yyy)' of '(let* (f (fn* xxx yyy)))' are evaluated
-execute (Cons (AtomSymbol "fn*") s) = execMacro binding s
+execute (Cons (AtomSymbol "fn*") s) = execMacro bindingStar s
 -- `hi-maru-env` for debug
 execute (Cons (AtomSymbol "hi-maru-env") Nil) = execMacro hiMaruEnv Nil
 execute (Cons (AtomSymbol "print") s) = execMacro print_ s
@@ -346,7 +346,10 @@ if_ = MaruMacro $ \case
 -- Bind variables to constant values on `fn*` block (= a function) is evaluated,
 -- but parameters (dummy arguments) and +,-,*,/ (basic functions) are kept.
 --
--- A pair of this and 'funcall' is `fn*` macro.
+-- A pair of this and 'funcallStar' is `fn*` macro.
+--
+-- Normal, users should use `fn` ('binding')
+-- because 'bindingStar' doesn't support recursive functions.
 --
 -- >>> :{
 -- >>> [z|
@@ -358,29 +361,14 @@ if_ = MaruMacro $ \case
 -- >>> |] == [pp|(fn* (a) (+ (- 1 1) 1))|]
 -- >>> :}
 -- True
---
--- Keep lexcal scopes (variable overlappnig)
---
--- >>> :{
--- >>> let result = [z|
--- >>>   (do
--- >>>     (def! x 0)
--- >>>     (print x)
--- >>>     (fn* (x) x))
--- >>> |]
--- >>> case result of
--- >>>      [pp|(fn* (x) 0)|] -> "bad"
--- >>>      [pp|(fn* (x) x)|] -> "good"
--- >>> :}
--- "good"
-binding :: MaruMacro
-binding = MaruMacro $ \case
+bindingStar :: MaruMacro
+bindingStar = MaruMacro $ \case
   Cons params body -> do
-    let cause = "fn* (caller): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    let cause = "fn* (bindingStar): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
     params' <- includeFail cause . return $ flatten params ^? asSymbolList
     expandedBody <- constantFold' params' body
     return $ Cons (AtomSymbol "fn*") (Cons params expandedBody)
-  s -> returnInvalid "fn* (caller)" s
+  s -> returnInvalid "fn* (bindingStar)" s
   where
     -- Similar to 'constantFold',
     -- but if the 'MaruSymbol' is included in taken ['MaruSymbol'],
@@ -403,7 +391,10 @@ binding = MaruMacro $ \case
 -- |
 -- Apply arguments (real arguments) to parameters (dummy arguments) of a function.
 --
--- A pair of this and 'funcall' is `fn*` macro.
+-- A pair of this and 'bindingStar' is `fn*` macro.
+--
+-- Normal, users should use `fn` ('funcallStar')
+-- because 'bindingStar' doesn't support recursive functions.
 --
 -- >>> :{
 -- >>> [z|
@@ -413,46 +404,17 @@ binding = MaruMacro $ \case
 -- >>> |]
 -- >>> :}
 -- AtomInt 3
---
--- `this` macro is expanded to a binding myself with a unique symbol,
--- it can make recursive functions.
---
--- >>> :{
--- >>> [z|
--- >>>   (let* f (fn* (x)
--- >>>             (if (<= 0 x)
--- >>>                 0
--- >>>                 (+ x (this (- x 1)))))
--- >>>     (f 5))
--- >>> |]
--- >>> :}
--- AtomInt 15
---
--- Always `this` means a mostly inner if `fn*` nests
---
--- >>> :{
--- >>> [z|
--- >>>   ((fn* (a)
--- >>>       ((fn* (x)
--- >>>           (if (<= 0 x)
--- >>>               0
--- >>>               (this (- x 1))))
--- >>>         (- a 1)))
--- >>>     5)
--- >>> |]
--- >>> :}
--- AtomInt 10
-funcall :: MaruMacro
-funcall = MaruMacro $ \s -> case flatten s of
+funcallStar :: MaruMacro
+funcallStar = MaruMacro $ \s -> case flatten s of
   [params, body, args] -> do
-    let cause = "fn* (callee): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    let cause = "fn* (funcallStar): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
     mappee <- includeFail cause . return $ flatten params ^? asSymbolList
     mapper <- mapM execute $ flatten args
     when (length mappee /= length mapper) .
-      throwFail $ "fn* (callee): the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
+      throwFail $ "fn* (funcallStar): the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
     let mapping = map (uncurry substituteVar) $ zip mappee mapper
     execute $ foldl' (&) body mapping
-  _  -> returnInvalid "fn* (callee)" s
+  _  -> returnInvalid "fn* (funcallStar)" s
 
 
 -- |
