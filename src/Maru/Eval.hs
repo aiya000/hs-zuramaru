@@ -358,6 +358,21 @@ if_ = MaruMacro $ \case
 -- >>> |] == [pp|(fn* (a) (+ (- 1 1) 1))|]
 -- >>> :}
 -- True
+--
+-- Keep lexcal scopes (variable overlappnig)
+--
+-- >>> :{
+-- >>> let result = [z|
+-- >>>   (do
+-- >>>     (def! x 0)
+-- >>>     (print x)
+-- >>>     (fn* (x) x))
+-- >>> |]
+-- >>> case result of
+-- >>>      [pp|(fn* (x) 0)|] -> "bad"
+-- >>>      [pp|(fn* (x) x)|] -> "good"
+-- >>> :}
+-- "good"
 binding :: MaruMacro
 binding = MaruMacro $ \case
   Cons params body -> do
