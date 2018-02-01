@@ -442,14 +442,20 @@ bindingStar = MaruMacro $ \case
 -- Normal, users should use `fn` ('funcallStar')
 -- because 'bindingStar' doesn't support recursive functions.
 --
+-- >>> [z|((fn* () 10))|]
+-- AtomInt 10
+--
+-- >>> [z|((fn* (x) x) 10)|]
+-- AtomInt 10
+--
 -- >>> :{
 -- >>> [z|
 -- >>>   ((fn* (x y)
 -- >>>     (+ x y)
--- >>>    ) 1 2)
+-- >>>    ) 4 6)
 -- >>> |]
 -- >>> :}
--- AtomInt 3
+-- AtomInt 10
 funcallStar :: MaruMacro
 funcallStar = MaruMacro $ \s -> case flatten s of
   [params, body, args] -> do
