@@ -343,12 +343,10 @@ if_ = MaruMacro $ \case
 
 
 -- |
--- Evaluate an expression of `fn*`.
+-- Bind variables to constant values on `fn*` block (= a function) is evaluated,
+-- but parameters (dummy arguments) and +,-,*,/ (basic functions) are kept.
 --
--- This and 'funcall' are so related, this is evaluator.
---
--- simply constant folding in `fn*`
--- (remove variables without +,-,*,/ and parameters in `fn*`)
+-- A pair of this and 'funcall' is `fn*` macro.
 --
 -- >>> :{
 -- >>> [z|
@@ -375,7 +373,7 @@ if_ = MaruMacro $ \case
 -- >>> :}
 -- AtomInt 15
 --
--- Always `this` means a mostly inner if `fn*` nests
+-- Keep lexcal scopes (variable overlappnig)
 --
 -- >>> :{
 -- >>> [z|
@@ -416,11 +414,10 @@ binding = MaruMacro $ \case
                             else lookupVar var >>= expandVarsWihtoutParams params'
 
 
---NOTE: 'params' means dummy arguments, 'args' means real arguments
 -- |
--- Apply 'args' to 'params' with 'body' as a function body.
+-- Apply arguments (real arguments) to parameters (dummy arguments) of a function.
 --
--- This and 'binding' are so related, this is evaluatee.
+-- A pair of this and 'funcall' is `fn*` macro.
 --
 -- >>> :{
 -- >>> [z|
