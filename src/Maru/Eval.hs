@@ -395,9 +395,9 @@ binding = MaruMacro $ \case
 -- >>>   ((fn* (x y)
 -- >>>     (+ x y)
 -- >>>    ) 1 2)
--- >>> |] == [pp|3|]
+-- >>> |]
 -- >>> :}
--- True
+-- AtomInt 3
 --
 -- `this` macro is expanded to a binding myself with a unique symbol,
 -- it can make recursive functions.
