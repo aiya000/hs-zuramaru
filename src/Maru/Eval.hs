@@ -91,13 +91,13 @@ declareException "EvalException" ["EvalException"]
 -- This is the empty.
 initialEnv :: MaruEnv
 initialEnv = [[ ("nil", Nil) --TODO: Should this mapping is resolved in the parser or the preprocessor ?
-              , ("def!", AtomSymbol "#core-macro")
-              , ("let*", AtomSymbol "#core-macro")
-              , ("do", AtomSymbol "#core-macro")
-              , ("if", AtomSymbol "#core-macro")
-              , ("fn*", AtomSymbol "#core-macro")
-              , ("print", AtomSymbol "#core-macro")
-              , ("list", AtomSymbol "#core-macro")
+              , ("def!", AtomSymbol "#def!")
+              , ("let*", AtomSymbol "#let*")
+              , ("do", AtomSymbol "#do")
+              , ("if", AtomSymbol "#if")
+              , ("fn*", AtomSymbol "#fn*")
+              , ("print", AtomSymbol "#print")
+              , ("list", AtomSymbol "#list")
               ]]
 
 
