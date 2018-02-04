@@ -106,7 +106,7 @@ initialEnv = [[ ("nil", Nil) --TODO: Should this mapping is resolved in the pars
 -- like "funcName: an invalid condition is detected `{invalidTerm}`"
 -- ('return with the invalid term')
 returnInvalid :: Text -> SExpr -> MaruEvaluator a
-returnInvalid funcName invalidTerm = throwFail $ funcName <> ": an invalid condition is detected `" <> showt invalidTerm <> "`"
+returnInvalid funcName invalidTerm = throwFail $ funcName <> ": an invalid condition is detected `" <> readable invalidTerm <> "`"
 
 
 -- |
@@ -187,7 +187,7 @@ letStar = MaruMacro $ \case
     result <- execute body
     popNewerScope
     return result
-  s -> fail $ "let*: an invalid condition is detected `" ++ show s ++ "`"
+  s -> fail . T.unpack $ "let*: an invalid condition is detected `" <> readable s <> "`"
 
 
 -- |
@@ -256,7 +256,7 @@ call = MaruMacro call'
       val <- lookupVar sym
       execute $ Cons val args
 
-    call' s@(Cons x _) = throwFail $ "expected the symbol of the function or the macro, but got `" <> showt x <> "` (in `" <> showt s <> "`)"
+    call' s@(Cons x _) = throwFail $ "expected a symbol of either a function or a macro, but got `" <> readable x <> "` in `" <> readable s <> "`"
 
 
 -- |
@@ -410,7 +410,7 @@ if_ = MaruMacro $ \case
 bindingStar :: MaruMacro
 bindingStar = MaruMacro $ \case
   Cons params body -> do
-    let cause = "fn* (bindingStar): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    let cause = "fn* (bindingStar): the function's formal parameter must be the symbol, but another things are specified: `" <> readable params <> "`"
     params' <- includeFail cause . return $ flatten params ^? asSymbolList
     expandedBody <- constantFold' params' body
     return $ Cons (AtomSymbol "fn*") (Cons params expandedBody)
@@ -459,7 +459,7 @@ bindingStar = MaruMacro $ \case
 funcallStar :: MaruMacro
 funcallStar = MaruMacro $ \s -> case flatten s of
   [params, body, args] -> do
-    let cause = "fn* (funcallStar): the function's formal parameter must be the symbol, but another things are specified: `" <> showt params <> "`"
+    let cause = "fn* (funcallStar): the function's formal parameter must be the symbol, but another things are specified: `" <> readable params <> "`"
     mappee <- includeFail cause . return $ flatten params ^? asSymbolList
     mapper <- mapM execute $ flatten args
     when (length mappee /= length mapper) .
