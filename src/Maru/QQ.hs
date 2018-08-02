@@ -186,6 +186,8 @@ toType (AtomSymbol (MaruSymbol x)) = PromotedT (mkName "HAtomSymbol") `AppT` tex
 -- AtomInt 10
 -- >>> fromSing (sing :: Sing [parse|konoko|])
 -- AtomSymbol "konoko"
+-- >>> fromSing (sing :: Sing [parse|'aiya000|])
+-- Quote (AtomSymbol "aiya000")
 -- >>> fromSing (sing :: Sing [parse|(1 2 3)|])
 -- Cons (AtomInt 1) (Cons (AtomInt 2) (Cons (AtomInt 3) Nil))
 parse :: QuasiQuoter

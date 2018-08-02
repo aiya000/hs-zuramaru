@@ -403,8 +403,8 @@ if_ = MaruMacro $ \case
 -- >>> [z|
 -- >>>   (do
 -- >>>     (def! x 10)
--- >>>     (fn* () (let* (x 'konoko) x)))
--- >>> |] == [pp|(fn* () (let* (x 'konoko) x))|]
+-- >>>     (fn* () (let* (x 20) x)))
+-- >>> |] == [pp|(fn* () (let* (x 20) x))|]
 -- >>> :}
 -- True
 bindingStar :: MaruMacro
