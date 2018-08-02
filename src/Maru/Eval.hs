@@ -141,7 +141,7 @@ flatten Nil            = []
 flatten (AtomInt x)    = [AtomInt x]
 flatten (AtomBool x)   = [AtomBool x]
 flatten (AtomSymbol x) = [AtomSymbol x]
-flatten (Cons x y)     = [x] ++ flatten y
+flatten (Cons x y)     = x : flatten y
 flatten (Quote x)      = [Quote x]
 
 
@@ -464,7 +464,7 @@ funcallStar = MaruMacro $ \s -> case flatten s of
     mapper <- mapM execute $ flatten args
     when (length mappee /= length mapper) .
       throwFail $ "fn* (funcallStar): the dummy params and the real args are different length: params `" <> showt mappee <> "`, args `" <> showt mapper <> "`"
-    let mapping = map (uncurry substituteVar) $ zip mappee mapper
+    let mapping = zipWith substituteVar mappee mapper
     execute $ foldl' (&) body mapping
   _  -> returnInvalid "fn* (funcallStar)" s
 
