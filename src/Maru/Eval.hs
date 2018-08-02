@@ -61,7 +61,7 @@ import qualified Maru.Type.SExpr as MSym (pack)
 -- >>> :set -XOverloadedLists
 -- >>> :set -XQuasiQuotes
 -- >>> import Control.Lens (_Just)
--- >>> import Maru.QQ.ShortName (z, pp)
+-- >>> import Maru.QQ (z, pp)
 -- >>> import qualified Maru.Eval.RuntimeOperation as OP
 -- >>> import qualified Maru.Type.Eval as TE
 -- >>> let runMaruEvaluatorDefault = flip runMaruEvaluator initialEnv

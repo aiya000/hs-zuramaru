@@ -36,7 +36,10 @@
 module Maru.QQ
   ( parse
   , parsePreprocess
-  , zurae
+  , zura
+  , p
+  , pp
+  , z
   ) where
 
 import Control.Arrow ((>>>))
@@ -59,7 +62,7 @@ import qualified Maru.Preprocessor as Maru
 -- >>> import Maru.Type.TypeLevel (HighSExpr(..), Sing(..))
 -- >>> import System.IO.Silently (silence)
 
---TODO: Implement tests to check the compiler errors (See 'Maru.QQ.parse', 'Maru.QQ.zurae' documentation for conditions of the compile error)
+--TODO: Implement tests to check the compiler errors (See 'Maru.QQ.parse', 'Maru.QQ.zura' documentation for conditions of the compile error)
 --      (What can I implement it ?)
 
 
@@ -241,9 +244,6 @@ parsePreprocess = QuasiQuoter
 --
 -- Occure the compile error if the code throws exceptions.
 --
--- この関数名zuraeの発音はずら〜（ずらあ）です。
--- (the e suffix means an 'e'valuation)
---
 -- NOTICE:
 -- Please be careful to the halting problem.
 -- The halting safety is abandon
@@ -257,20 +257,20 @@ parsePreprocess = QuasiQuoter
 -- >>>        return result
 -- >>> :}
 --
--- >>> (==) <$> return [zurae|10|] <*> force "10"
+-- >>> (==) <$> return [zura|10|] <*> force "10"
 -- True
--- >>> (==) <$> return [zurae|'sugar|] <*> force "'sugar"
+-- >>> (==) <$> return [zura|'sugar|] <*> force "'sugar"
 -- True
--- >>> (==) <$> return [zurae|'(1 2 3)|] <*> force "'(1 2 3)"
+-- >>> (==) <$> return [zura|'(1 2 3)|] <*> force "'(1 2 3)"
 -- True
--- >>> (==) <$> return [zurae|(print 10)|] <*> force "(print 10)"
+-- >>> (==) <$> return [zura|(print 10)|] <*> force "(print 10)"
 -- 10True
-zurae :: QuasiQuoter
-zurae = QuasiQuoter
+zura :: QuasiQuoter
+zura = QuasiQuoter
   { quoteExp  = power toExp
   , quotePat  = power toPat
   , quoteType = power toType
-  , quoteDec  = error "Maru.QQ.zurae: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
+  , quoteDec  = error "Maru.QQ.zura: the expansion to `[Dec]` (`quoteDec`) isn't support supported"
   }
   where
     power :: (SExpr -> a) -> String -> Q a
@@ -279,5 +279,17 @@ zurae = QuasiQuoter
       Right sexpr -> do
         result <- runIO $ Maru.eval Maru.initialEnv sexpr
         case result of
-          Left  e -> fail $ "Maru.QQ.zurae: an error is occured in the compile time: " ++ show e
+          Left  e -> fail $ "Maru.QQ.zura: an error is occured in the compile time: " ++ show e
           Right (sexpr, _, _) -> return $ f sexpr
+
+-- | The shorthand for 'parse'
+p :: QuasiQuoter
+p  = parse
+
+-- | The shorthand for 'parsePreprocess'
+pp :: QuasiQuoter
+pp = parsePreprocess
+
+-- | The shorthand for 'zura'
+z :: QuasiQuoter
+z = zura

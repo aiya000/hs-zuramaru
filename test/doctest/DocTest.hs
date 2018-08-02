@@ -3,7 +3,7 @@ import Test.DocTest (doctest)
 --TODO: Find all .hs in ./src, and doctest it
 
 main :: IO ()
-main = do
+main =
   doctestIt "src" "src/Maru/Type/SExpr.hs"
     [ "src/Maru/Parser.hs"
     , "src/Maru/Preprocessor.hs"
@@ -12,7 +12,6 @@ main = do
     , "src/Maru/Type/TypeLevel.hs"
     , "src/Maru/Eval/RuntimeOperation.hs"
     , "src/Maru/QQ.hs"
-    , "src/Maru/QQ/ShortName.hs"
     ]
 
 doctestIt :: FilePath -> FilePath -> [FilePath] -> IO ()
